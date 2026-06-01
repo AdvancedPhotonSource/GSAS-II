@@ -890,7 +890,7 @@ class G2Project(G2ObjectWrapper):
            named 'data', as an example, ``G2Project.data['Notebook']['data']``
 
          * The contents of child entries will be found in the item
-           using the names of the parent and child, for example
+           using the names of the  and child, for example
            ``G2Project.data['Phases']['NaCl']``
 
     :param str gpxfile: Existing .gpx file to be loaded. If nonexistent,
@@ -1328,7 +1328,8 @@ class G2Project(G2ObjectWrapper):
     def add_phase(self, phasefile=None, phasename=None, histograms=[],
                       fmthint=None, mag=False,
                       spacegroup='P 1',cell=None, URL=False,
-                      useNet = False):
+                      useNet=False,
+                      PhaseRef=None):
         """Loads a phase into the project, usually from a .cif file
 
         :param str phasefile: The CIF file (or other file type, see fmthint)
@@ -1364,9 +1365,14 @@ class G2Project(G2ObjectWrapper):
           most likely to occur with origin-1 settings, where allowed,
           the importer will call Bilbao "CIF to Standard Setting" web service.
           (Default is False).
+        :param PhaseRef: Used for magnetic phases only, a reference 
+            to the  (aka chemical/nuclear) phase. This can be the phase
+            name (str), the phase's ranId, the phase's index (both int) or
+            a phase object (:class:`G2Phase`)
         :returns: A :class:`G2Phase` object representing the
             new phase.
         """
+        parentPhase = None
         LoadG2fil()
         histograms = [self.histogram(h).name for h in histograms]
         if phasefile is None:  # create a phase, rather than reading it
@@ -1418,10 +1424,14 @@ class G2Project(G2ObjectWrapper):
                                           useNet=useNet)
         phasereader = phasereaders[0]
 
-        if phasereader.MPhase and mag:
+        # for mcifs, the Phase info is in Mphase
+        if hasattr(phasereader,'MPhase') and phasereader.MPhase and mag:
             phObj = phasereader.MPhase
         else:
             phObj = phasereader.Phase
+            
+        if phObj['General']['Type'] == 'magnetic' and mag and PhaseRef is not None:
+            parentPhase = self.phase(PhaseRef)
 
         phasename = phasename or phObj['General']['Name']
         phaseNameList = [p.name for p in self.phases()]
@@ -1446,6 +1456,35 @@ class G2Project(G2ObjectWrapper):
                 else:
                     Constraints['Phase'].append(i)
 
+        # make ISODISTORT magnetic phase constraints here
+        if mag and parentPhase:
+            oldPhase = parentPhase
+            newPhase = phObj
+            oRanId = oldPhase['ranId']
+            nRanId = newPhase['ranId']
+            Vratio = newPhase['General']['Cell'][7]/oldPhase['General']['Cell'][7]
+            if 'ISODISTORT' in phObj and 'XformInfo' in phObj['ISODISTORT']:
+                import numpy.linalg as nl
+                Trans = phObj['ISODISTORT']['XformInfo'].get('Trans',np.eye(3))
+                Vec = phObj['ISODISTORT']['XformInfo'].get('offset',[0,0,0])
+                Vratio = np.abs(nl.det(Trans))  # better volume ratio
+                debug = False
+                # create constraints relating two unit cells
+                Constraints['Phase'] += G2lat.GenCellConstraints(Trans,oRanId,nRanId,
+                            G2lat.cell2A(oldPhase['General']['Cell'][1:7]),
+                            oldPhase['General']['SGData'],
+                            newPhase['General']['SGData'],debug)
+                # create constraints relating the atoms in newPhase to their positions in the chemical cell
+                constr,message = G2lat.MatchGenAtomConstraints(
+                        oldPhase,newPhase,Trans,[0,0,0],Vec)
+                if message:
+                    print('magCIF import Warning:',message)
+                Constraints['Phase'] += constr
+            for hist in histograms:
+                hRanId = self.histogram(hist).ranId
+                constrList = G2lat.GenHAPConstraints(Vratio,oRanId,nRanId,hRanId)
+                Constraints['HAP'] += constrList
+                    
         data = self.data['Phases'][phasename]
 #        generalData = data['General']
 #        SGData = generalData['SGData']

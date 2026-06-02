@@ -45,8 +45,12 @@ def BCS_init(threadCallback=None):
     if threadCallback == '':
         # setup default threading for BCS Post commands
         def BCS_sleep():
-            wx.GetApp().Yield()
-            wx.MilliSleep(100)
+            try:
+                wx.GetApp().Yield()
+                wx.MilliSleep(100)
+            except:
+                import time
+                time.sleep(0.1)
             #print('BCS_sleep')
         BCS.initAPI(threadSleep=BCS_sleep)
         return
@@ -384,7 +388,7 @@ def GetStdSGset(SGData=None, oprList=[]):
     xform = re.split(r'parclose\.png',re.split(r'paropen\.png',page)[1])[0] # pull out section w/Xform matrix
     mat = re.split(r'</pre>',re.split('<pre>',xform)[1])[0].split('\n')
     offsetV = [eval(m.split()[3]) for m in mat]
-    xformM = np.array([[float(i) for i in m.split()[:3]] for m in mat])
+    xformM = np.array([[float(eval(i)) for i in m.split()[:3]] for m in mat])
     return sgnum, sgnam, xformM.T, offsetV
 
 # minsup = 'nph-minsup' # coded but not used

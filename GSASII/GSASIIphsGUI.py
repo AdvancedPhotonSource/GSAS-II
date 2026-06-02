@@ -7083,7 +7083,7 @@ at one of the following locations:
             data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
             data['ISODISTORT']['selection'] = None
             print('ISODISTORT run complete')
-            wx.CallAfter(G2phsG2.UpdateISODISTORT,G2frame.data)
+            wx.CallAfter(G2phsG2.UpdateISODISTORT,G2frame,data)
         elif data['ISODISTORT']['ISOmethod'] != 4 or radio is None:
             G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
         else:

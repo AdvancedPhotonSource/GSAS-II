@@ -2147,11 +2147,13 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         if num:
                             sum = np.sum(Z)
                         pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
+                elif name =='SpinRB':
+                    continue
                 elif name == 'General':
                     pFile.write('  target   sig     obs  expression        variables \n')
                     for expObj,target,esd in itemRest[rest]:
                         val = '?'
-                        calcobj = G2obj.ExpressionCalcObj(expObj)
+                        #calcobj = G2obj.ExpressionCalcObj(expObj)
                         # need to get parmDict to evaluate the value
                         #calcobj.SetupCalc(parmDict)
                         #val = ' {:8.3g} '.format(calcobj.EvalExpression())
@@ -4330,6 +4332,7 @@ def WriteVecRBModel(RBModel,sigDict={},irb=None):
 
 atmPattrn = re.compile("::A[xyz]:")
 fmtSplit =  re.compile('%([0-9]+)\\.([0-9]+)(.*)')
+
 def fmtESD(varname,SigDict,fmtcode,ndig=None,ndec=None):
     '''Format an uncertainty value as requested, but surround the
     number by () if the parameter is set by an equivalence

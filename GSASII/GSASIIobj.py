@@ -33,7 +33,7 @@ data tree item.
 restraintNames = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
                   ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
                   ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments'],
-                  ['General','General']]
+                  ['General','General'],['SpinRB','SpinRBs']]
 '''Names of restraint keys for the restraint dict and the location of
 the restraints in each dict
 '''

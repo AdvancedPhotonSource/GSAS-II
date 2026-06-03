@@ -675,6 +675,8 @@ def GetSHC(pfx,parmDict):
 def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
     'Compute user-supplied and built-in restraint functions'
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})  #these are lists of rbIds; could be missing
+    SRBIds = RBIds['Spin']
     pNames = []
     pVals = []
     pWt = []
@@ -689,6 +691,8 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
         textureData = General['SH Texture']
         SGData = General['SGData']
         Atoms = Phases[phase]['Atoms']
+        RBData = Phases[phase]['RBModels']
+        SpinRB = RBData.get('Spin',[])
         AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'],cia+8)
         cell = General['Cell'][1:7]
         Amat,Bmat = G2lat.cell2AB(cell)
@@ -763,6 +767,41 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                                 pWt.append(wt/esd**2)
                                 pWsum[name] += wt*((obs-calc)/esd)**2
                                 pWnum[name] += 1
+                    elif name =='SpinRB':
+                        Npts = 20
+                        PSI,GAM = np.mgrid[0:2*Npts,0:Npts]   #[azm,pol]
+                        PSI = PSI.flatten()*360./(2*Npts)  #azimuth 0-360 ncl
+                        GAM = GAM.flatten()*180./Npts  #polar 0-180 incl
+                        
+                        for ires,[iAt,esd,ifUnit,esdU] in enumerate(itemRest[rest]):                            
+                            for irb,RBObj in enumerate(SpinRB):
+                                if iAt == RBObj['Ids'][0]:
+                                    for ish in range(len(RBObj['RBId'])):   #do this by shell
+                                        SH = np.zeros(2*Npts*Npts)
+                                        for item in RBObj['SHC'][ish]:
+                                            iRb = SRBIds.index(RBObj['RBId'][ish])
+                                            pName = '%d::RBSSh;%d;%s:%d:%d'%(pId,ish,item,AtLookup[iAt],iRb)
+                                            SH += np.array(G2lat.KslCalc(item,PSI,GAM))*parmDict[pName]
+                                        SH1 = ma.masked_greater(SH,0.0)
+                                        IndSH1 = np.array(ma.nonzero(SH1))
+                                        for ind in IndSH1.T:
+                                            pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,ires,PSI[ind],GAM[ind]))
+                                            pVals.append(SH1[ind][0])
+                                            pWt.append(wt/esd**2)
+                                            pWsum[name] += wt*(-SH1[ind]/esd)**2
+                                            pWnum[name] += 1
+                                        # if ifUnit:
+                                        #     Z2 = 1.-Z
+                                        #     for ind in np.ndindex(grid,grid):
+                                        #         pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
+                                        #         pVals.append(Z2[ind[0]][ind[1]])
+                                        #         pWt.append(wt/esd2**2)
+                                        #         pWsum[name] += wt*(Z2/esd2)**2
+                                        #         pWnum[name] += 1
+                                        
+
+
+
 
                     elif name == 'Texture':
                         SHkeys = list(textureData['SH Coeff'][1].keys())
@@ -866,6 +905,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
        restraint# in pNames (pDerv[variable#][restraint#])
     '''
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})  #these are lists of rbIds; could be missing
+    SRBIds = RBIds['Spin']
     pDerv = np.zeros((len(varyList),len(pVal)))
     for pName in pNames: # loop over restraints
         if 'General' == pName.split(':')[1]:
@@ -883,12 +924,13 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
         General = Phases[phase]['General']
         cx,ct,cs,cia = General['AtomPtrs']
         SGData = General['SGData']
+        RBData = Phases[phase]['RBModels']
+        SpinRB = RBData.get('Spin',[])
         Atoms = Phases[phase]['Atoms']
         AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'],cia+8)
         cell = General['Cell'][1:7]
         Amat,Bmat = G2lat.cell2AB(cell)
         textureData = General['SH Texture']
-
         SHkeys = list(textureData['SH Coeff'][1].keys())
         SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
@@ -897,6 +939,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
         phaseRest = restraintDict.get(phase,{})
         names = dict(G2obj.restraintNames)
         lasthkl = np.array([0,0,0])
+        deriv = []
+        dNames = []
         for ip,pName in enumerate(pNames): # loop over restraints
             try:  # needed for when a phase is not used in a seq. fit
                 pnames = pName.split(':')
@@ -911,7 +955,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     itemRest = phaseRest[name]
                     if name in ['Bond','Angle','Plane','Chiral']:
                         indx,ops,obs,esd = itemRest[names[name]][Id]
-                        dNames = []
+#                        dNames = []
                         for ind in indx:
                             dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
                         XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
@@ -926,7 +970,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     elif name in ['Torsion','Rama']:
                         coffDict = itemRest['Coeff']
                         indx,ops,cofName,esd = itemRest[names[name]][Id]
-                        dNames = []
+#                        dNames = []
                         for ind in indx:
                             dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
                         XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
@@ -936,23 +980,23 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                             deriv = G2mth.getRamaDeriv(XYZ,Amat,coffDict[cofName])
                     elif name == 'ChemComp':
                         indx,factors,obs,esd = itemRest[names[name]][Id]
-                        dNames = []
+#                        dNames = []
                         for ind in indx:
                             dNames += [str(pId)+'::Afrac:'+str(AtLookup[ind])]
                             mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
                             deriv = mul*factors
                     elif name == 'Moments':
                         indx,obs,esd = itemRest[names[name]][Id]
-                        dNames = []
-                        deriv = []
+                        # dNames = []
+                        # deriv = []
                         moms = G2mth.GetAtomMomsByID(pId,parmDict,AtLookup,indx)
                         for i,ind in enumerate(indx):
                             calc = G2mth.GetMag(moms[i],cell)
                             dNames += [str(pId)+'::'+Xname+':'+str(AtLookup[ind]) for Xname in ['AMx','AMy','AMz']]
                             deriv += list(G2mth.GetMagDerv(moms[i],cell)*np.sign((obs-calc)))
                     elif 'Texture' in name:
-                        deriv = []
-                        dNames = []
+                        # deriv = []
+                        # dNames = []
                         hkl,grid,esd1,ifesd2,esd2 = itemRest[names[name]][Id]
                         hkl = np.array(hkl)
                         if np.any(lasthkl-hkl):
@@ -969,9 +1013,24 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                                 Ksl = G2lat.GetKsl(l,m,sam,psi,gam)[0]
                                 dNames += [str(pId)+'::'+SHname]
                                 deriv.append(-ODFln[SHname][0]*Ksl/SHCoef[SHname])
+                    elif 'SpinRB' in name:
+                        iAt,esd1,ifesd2,esd2 = itemRest[names[name]][Id]
+                        if 'unit' in name:
+                            pass
+                        else:
+                            PSI = float(pnames[3])
+                            GAM = float(pnames[4])
+                            for irb,RBObj in enumerate(SpinRB):
+                                if iAt == RBObj['Ids'][0]:
+                                    for ish in range(len(RBObj['RBId'])):   #do this by shell
+                                        iRb = SRBIds.index(RBObj['RBId'][ish])
+                                        for item in RBObj['SHC'][ish]:
+                                            dNames += ['%d::RBSSh;%d;%s:%d:%d'%(pId,ish,item,AtLookup[iAt],iRb)]
+                                            deriv.append(G2lat.KslCalc(item,PSI,GAM))
+                        
                     elif name == 'General':
-                        deriv = []
-                        dNames = []
+                        # deriv = []
+                        # dNames = []
                         eq,obs,esd = itemRest[name][Id]
                         calcobj = G2obj.ExpressionCalcObj(eq)
                         parmlist = list(eq.assgnVars.values()) # parameters used in this expression
@@ -1010,14 +1069,21 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                             else:
                                 drv = 0
                             pDerv[ind][ip] = drv
-                    # Add derivatives into matrix, if needed
-                    for dName,drv in zip(dNames,deriv):
-                        try:   # if parameter is not refined
-                            ind = varyList.index(dName)
-                            pDerv[ind][ip] += drv
-                        except ValueError:
-                            pass
+                    # # Add derivatives into matrix, if needed
+                    # for dName,drv in zip(dNames,deriv):
+                    #     try:   # if parameter is not refined
+                    #         ind = varyList.index(dName)
+                    #         pDerv[ind][ip] += drv
+                    #     except ValueError:
+                    #         pass
             except:
+                pass
+        # Add derivatives into matrix, if needed
+        for dName,drv in zip(dNames,deriv):
+            try:   # if parameter is not refined
+                ind = varyList.index(dName)
+                pDerv[ind][ip] += drv
+            except ValueError:
                 pass
 
         lasthkl = np.array([0,0,0])

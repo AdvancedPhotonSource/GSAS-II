@@ -10138,9 +10138,6 @@ at one of the following locations:
                 RBObj['sliceSh'] = not RBObj['sliceSh']
                 G2plt.PlotStructure(G2frame,data)
                 
-            def OnNegDen(event):
-                RBObj['noNeg'][0] = not RBObj['noNeg'][0]
-
             symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','3m','32','-3','3','4/mmm','-42m',
                 'mmm','2/m','2','m','-1','1']
             RBObj['hide'] = RBObj.get('hide',[False for i in range(len(RBObj['atType']))])
@@ -10197,18 +10194,11 @@ at one of the following locations:
             plotLine.Add(fadeShell,0,WACV)
             plotLine.Add(sliceShell,0,WACV)
             plotLine.Add(addShell,0,WACV)
-            negDen = wx.CheckBox(RigidBodies,label='Use negative density penalty for all shells? Penalty: ')
-            negDen.SetValue(RBObj['noNeg'][0])
-            negDen.Bind(wx.EVT_CHECKBOX,OnNegDen)            
-            secLine.Add(negDen,0,WACV)
-            secLine.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['noNeg'],1,nDig=(10,4),
-                xmin=0.,xmax=1.,typeHint=float),0,WACV)
             sprbSizer.Add(plotLine)
             G2G.HorizontalLine(sprbSizer,RigidBodies)
             sprbSizer.Add(topLine)
             sprbSizer.Add(secLine)
             sprbSizer.Add(SHsizer())
-            
             return sprbSizer
 
         def ResrbSizer(RBObj,resIndx):

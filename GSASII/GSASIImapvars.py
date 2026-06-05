@@ -1919,7 +1919,7 @@ def Map2Dict(parmDict,varyList):
 
     :param dict parmDict: a dict containing parameter values keyed by the
       parameter names. For new variables created by constraints, entries
-      will be added to the dictionary, if not alreay present, or the 
+      will be added to the dictionary, if not already present, or the 
       values will be recomputed.
 
     :param list varyList: a list of parameters names. Will be modified.

@@ -7469,7 +7469,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
             # Phase / Atoms tab
             G2G.Define_wxId('wxID_ATOMSEDITADD', 'wxID_ATOMSEDITINSERT', 'wxID_ATOMSEDITDELETE',
-                'wxID_ATOMSMODIFY', 'wxID_ATOMSTRANSFORM', 'wxID_ATOMSVIEWADD', 'wxID_ATOMVIEWINSERT',
+                'wxID_ATOMSMODIFY', 'wxID_ATOMSTRANSFORM', 'wxID_ATOMSVIEWADD', #'wxID_ATOMVIEWINSERT',
                 'wxID_RELOADDRAWATOMS', 'wxID_ATOMSDISAGL', 'wxID_ATOMMOVE', 'wxID_MAKEMOLECULE',
                 'wxID_ATOMSPDISAGL', 'wxID_ISODISP', 'wxID_ADDHATOM', 'wxID_UPDATEHATOM','wxID_ATOMSCLEARHIST',
                 'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY','wxID_ATOMSBNDANGLHIST','wxID_ATOMSSAVEHIST',
@@ -7486,10 +7486,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.AtomEdit.AppendSubMenu(submenu,'On selected atoms...','Set/Act on selected atoms')
             submenu.Append(G2G.wxID_ATOMSSETSEL,'Refine selected','Set refinement flags for selected atoms')
             submenu.Append(G2G.wxID_ATOMSMODIFY,'Modify parameters','Modify parameters values for all selected atoms')
-            submenu.Append(G2G.wxID_ATOMSSETVP,'Set viewpoint','Set the viewpoint to be position of 1st selected atom')
-            submenu.Append(G2G.wxID_ATOMMOVE,'Move atom to view point','Move a single atom to viewpoint in plot')
+            submenu.Append(G2G.wxID_ATOMSSETVP,'Set view point','Set the view point to be position of 1st selected atom')
+            submenu.Append(G2G.wxID_ATOMMOVE,'Move atom to view point','Move a single atom to view point in plot')
             submenu.Append(G2G.wxID_ATOMSEDITINSERT,'Insert atom','Inserts an H atom before all selected atoms')
-            submenu.Append(G2G.wxID_ATOMVIEWINSERT,'Insert viewpoint','Select atom row to insert before; inserted as an H atom')
+            #submenu.Append(G2G.wxID_ATOMVIEWINSERT,'Insert view point','Select atom row to insert before; inserted as an H atom')
             submenu.Append(G2G.wxID_ADDHATOM,'Calc H atoms','Insert H atoms in expected bonding positions for selected atoms')
             submenu.Append(G2G.wxID_ATOMSEDITDELETE,'Delete atom','Delete selected atoms')
             submenu.Append(G2G.wxID_ATOMSTRANSFORM,'Transform atoms','Symmetry transform selected atoms')
@@ -7497,7 +7497,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             submenu.Append(G2G.wxID_ATOMSSETLST,'Select from list','Select atoms from a filtered listbox')
 
             self.AtomEdit.Append(G2G.wxID_ATOMSEDITADD,'Append atom','Appended as an H atom')
-            self.AtomEdit.Append(G2G.wxID_ATOMSVIEWADD,'Append view point','Appended as an H atom')
+            self.AtomEdit.Append(G2G.wxID_ATOMSVIEWADD,'Append atom at view point','Appended as an H atom')
             self.AtomEdit.Append(G2G.wxID_UPDATEHATOM,'Update H atoms','Update H atoms in standard positions')
             self.AtomEdit.Append(G2G.wxID_MAKEMOLECULE,'Assemble molecule','Select a single atom to assemble as a molecule from scattered atom positions')
             self.AtomEdit.Append(G2G.wxID_COLLECTATOMS,'Collect atoms','Collect selected atoms to specified unit cell location')
@@ -7629,11 +7629,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMCOLOR,'Atom color','Select atoms first')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMRESETCOLOR,'Reset atom colors','Resets all atom colors to defaults')
             self.DrawAtomEdit.Append(G2G.wxID_DRWAEDITRADII,'Edit atom radii','Edit drawing atom radii')
-            self.DrawAtomEdit.Append(G2G.wxID_DRAWVIEWPOINT,'View point','View point is 1st atom selected')
+            self.DrawAtomEdit.Append(G2G.wxID_DRAWVIEWPOINT,'Set view point','View point is 1st atom selected')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWSETSEL,'Select from list','Select atoms from a filtered listbox')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWADDEQUIV,'Add atoms','Add symmetry & cell equivalents to drawing set from selected atoms')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWADDSPHERE,'Add sphere of atoms','Add atoms within sphere of enclosure')
-            self.DrawAtomEdit.Append(G2G.wxID_DRAWADDBOX,'Add box of atoms','Add atoms within box of enclosure')
+#            self.DrawAtomEdit.Append(G2G.wxID_DRAWADDBOX,'Add box of atoms','Add atoms within box of enclosure')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWTRANSFORM,'Transform draw atoms','Transform selected atoms by symmetry & cell translations')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCOORD,'Fill CN-sphere','Fill coordination sphere for selected atoms')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCELL,'Fill unit cell','Fill unit cell with selected atoms')

@@ -4957,14 +4957,14 @@ to use these entries'''
             rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
         Items = [G2G.wxID_ATOMSEDITINSERT,G2G.wxID_ATOMSEDITDELETE,
             G2G.wxID_ATOMSMODIFY,G2G.wxID_ATOMSTRANSFORM,G2G.wxID_MAKEMOLECULE,
-            G2G.wxID_ATOMVIEWINSERT,G2G.wxID_ATOMMOVE,G2G.wxID_ADDHATOM]
+            G2G.wxID_ATOMMOVE,G2G.wxID_ADDHATOM] # G2G.wxID_ATOMVIEWINSERT,
         if atomData:
             for item in Items:
                 G2frame.dataWindow.AtomsMenu.Enable(item,True)
         else:
             for item in Items:
                 G2frame.dataWindow.AtomsMenu.Enable(item,False)
-        Items = [G2G.wxID_ATOMVIEWINSERT, G2G.wxID_ATOMSVIEWADD,G2G.wxID_ATOMMOVE]
+        Items = [G2G.wxID_ATOMSVIEWADD,G2G.wxID_ATOMMOVE] # G2G.wxID_ATOMVIEWINSERT,
         if 'showABC' in data['Drawing']:
             for item in Items:
                 G2frame.dataWindow.AtomsMenu.Enable(item,True)
@@ -13028,7 +13028,7 @@ tab, use Operations->"Pawley create")''')
         # set view point
         indx = getAtomSelections(G2frame.MapPeaks)
         if not indx:
-            G2frame.ErrorDialog('Set viewpoint','No peaks selected')
+            G2frame.ErrorDialog('Set view point','No peaks selected')
             return
         mapPeaks = data['Map Peaks']
         drawingData = data['Drawing']
@@ -13472,7 +13472,7 @@ tab, use Operations->"Pawley create")''')
 
         G2frame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2G.wxID_ATOMSEDITADD)
         G2frame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2G.wxID_ATOMSVIEWADD)
-        G2frame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2G.wxID_ATOMVIEWINSERT)
+        #G2frame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2G.wxID_ATOMVIEWINSERT)
         G2frame.Bind(wx.EVT_MENU, OnHydAtomUpdate, id=G2G.wxID_UPDATEHATOM)
         G2frame.Bind(wx.EVT_MENU, OnAtomMove, id=G2G.wxID_ATOMMOVE)
         G2frame.Bind(wx.EVT_MENU, MakeMolecule, id=G2G.wxID_MAKEMOLECULE)
@@ -13521,7 +13521,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, SetViewPoint, id=G2G.wxID_DRAWVIEWPOINT)
         G2frame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2G.wxID_DRAWADDEQUIV)
         G2frame.Bind(wx.EVT_MENU, AddSphere, id=G2G.wxID_DRAWADDSPHERE)
-        G2frame.Bind(wx.EVT_MENU, AddBox, id=G2G.wxID_DRAWADDBOX)
+        #G2frame.Bind(wx.EVT_MENU, AddBox, id=G2G.wxID_DRAWADDBOX)
         G2frame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2G.wxID_DRAWTRANSFORM)
         G2frame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2G.wxID_DRAWFILLCOORD)
         G2frame.Bind(wx.EVT_MENU, FillUnitCell, id=G2G.wxID_DRAWFILLCELL)

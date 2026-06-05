@@ -782,26 +782,16 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                                             iRb = SRBIds.index(RBObj['RBId'][ish])
                                             pName = '%d::RBSSh;%d;%s:%d:%d'%(pId,ish,item,AtLookup[iAt],iRb)
                                             SH += np.array(G2lat.KslCalc(item,PSI,GAM))*parmDict[pName]
-                                        SH1 = ma.masked_greater(SH,0.0)
-                                        IndSH1 = np.array(ma.nonzero(SH1))
-                                        for ind in IndSH1.T:
+                                        for ind,sh in enumerate(SH):
                                             pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,ires,PSI[ind],GAM[ind]))
-                                            pVals.append(SH1[ind][0])
-                                            pWt.append(wt/esd**2)
-                                            pWsum[name] += wt*(-SH1[ind]/esd)**2
-                                            pWnum[name] += 1
-                                        # if ifUnit:
-                                        #     Z2 = 1.-Z
-                                        #     for ind in np.ndindex(grid,grid):
-                                        #         pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
-                                        #         pVals.append(Z2[ind[0]][ind[1]])
-                                        #         pWt.append(wt/esd2**2)
-                                        #         pWsum[name] += wt*(Z2/esd2)**2
-                                        #         pWnum[name] += 1
-                                        
-
-
-
+                                            if sh < 0.:
+                                                pVals.append(sh)
+                                                pWt.append(wt/esd**2)
+                                                pWsum[name] += wt*(-sh/esd)**2
+                                                pWnum[name] += 1
+                                            else:
+                                                pVals.append(0.0)
+                                                pWt.append(0.0)
 
                     elif name == 'Texture':
                         SHkeys = list(textureData['SH Coeff'][1].keys())
@@ -813,22 +803,31 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                             phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
                             ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
                             R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
-                            Z1 = ma.masked_greater(Z,0.0)           #is this + or -?
-                            IndZ1 = np.array(ma.nonzero(Z1))
-                            for ind in IndZ1.T:
-                                pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
-                                pVals.append(Z1[ind[0]][ind[1]])
-                                pWt.append(wt/esd1**2)
-                                pWsum[name] += wt*(-Z1[ind[0]][ind[1]]/esd1)**2
-                                pWnum[name] += 1
+                            R = R.flatten()
+                            P = P.flatten()
+                            Z = Z.flatten()
+                            for ind,z in enumerate(Z):
+                                pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind],P[ind]))
+                                if z < 0.:
+                                    pVals.append(z)
+                                    pWt.append(wt/esd1**2)
+                                    pWsum[name] += wt*(-Z[ind]/esd1)**2
+                                    pWnum[name] += 1
+                                else:
+                                    pVals.append(0.0)
+                                    pWt.append(0.0)
                             if ifesd2:
                                 Z2 = 1.-Z
-                                for ind in np.ndindex(grid,grid):
-                                    pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
-                                    pVals.append(Z2[ind[0]][ind[1]])
-                                    pWt.append(wt/esd2**2)
-                                    pWsum[name] += wt*(Z2/esd2)**2
-                                    pWnum[name] += 1
+                                for ind,z2 in enumerate(Z2):
+                                    pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind],P[ind]))
+                                    if z2 < 0.0:
+                                        pVals.append(z2)
+                                        pWt.append(wt/esd2**2)
+                                        pWsum[name] += wt*(z2/esd2)**2
+                                        pWnum[name] += 1
+                                    else:
+                                        pVals.append(0.0)
+                                        pWt.append(0.0)
                     elif name == 'General':
                         for i,(eq,obs,esd) in enumerate(itemRest[rest]):
                             calcobj = G2obj.ExpressionCalcObj(eq)
@@ -918,8 +917,6 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                 stepDict[parm] = G2obj.getVarStep(parm,parmDict)
             break
     for phase in Phases:
-#        if phase not in restraintDict:
-#            continue
         pId = Phases[phase]['pId']
         General = Phases[phase]['General']
         cx,ct,cs,cia = General['AtomPtrs']
@@ -955,7 +952,6 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     itemRest = phaseRest[name]
                     if name in ['Bond','Angle','Plane','Chiral']:
                         indx,ops,obs,esd = itemRest[names[name]][Id]
-#                        dNames = []
                         for ind in indx:
                             dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
                         XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
@@ -970,7 +966,6 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     elif name in ['Torsion','Rama']:
                         coffDict = itemRest['Coeff']
                         indx,ops,cofName,esd = itemRest[names[name]][Id]
-#                        dNames = []
                         for ind in indx:
                             dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
                         XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
@@ -980,23 +975,18 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                             deriv = G2mth.getRamaDeriv(XYZ,Amat,coffDict[cofName])
                     elif name == 'ChemComp':
                         indx,factors,obs,esd = itemRest[names[name]][Id]
-#                        dNames = []
                         for ind in indx:
                             dNames += [str(pId)+'::Afrac:'+str(AtLookup[ind])]
                             mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
                             deriv = mul*factors
                     elif name == 'Moments':
                         indx,obs,esd = itemRest[names[name]][Id]
-                        # dNames = []
-                        # deriv = []
                         moms = G2mth.GetAtomMomsByID(pId,parmDict,AtLookup,indx)
                         for i,ind in enumerate(indx):
                             calc = G2mth.GetMag(moms[i],cell)
                             dNames += [str(pId)+'::'+Xname+':'+str(AtLookup[ind]) for Xname in ['AMx','AMy','AMz']]
                             deriv += list(G2mth.GetMagDerv(moms[i],cell)*np.sign((obs-calc)))
                     elif 'Texture' in name:
-                        # deriv = []
-                        # dNames = []
                         hkl,grid,esd1,ifesd2,esd2 = itemRest[names[name]][Id]
                         hkl = np.array(hkl)
                         if np.any(lasthkl-hkl):
@@ -1015,22 +1005,17 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                                 deriv.append(-ODFln[SHname][0]*Ksl/SHCoef[SHname])
                     elif 'SpinRB' in name:
                         iAt,esd1,ifesd2,esd2 = itemRest[names[name]][Id]
-                        if 'unit' in name:
-                            pass
-                        else:
-                            PSI = float(pnames[3])
-                            GAM = float(pnames[4])
-                            for irb,RBObj in enumerate(SpinRB):
-                                if iAt == RBObj['Ids'][0]:
-                                    for ish in range(len(RBObj['RBId'])):   #do this by shell
-                                        iRb = SRBIds.index(RBObj['RBId'][ish])
-                                        for item in RBObj['SHC'][ish]:
-                                            dNames += ['%d::RBSSh;%d;%s:%d:%d'%(pId,ish,item,AtLookup[iAt],iRb)]
-                                            deriv.append(G2lat.KslCalc(item,PSI,GAM))
+                        PSI = float(pnames[3])
+                        GAM = float(pnames[4])
+                        for irb,RBObj in enumerate(SpinRB):
+                            if iAt == RBObj['Ids'][0]:
+                                for ish in range(len(RBObj['RBId'])):   #do this by shell
+                                    iRb = SRBIds.index(RBObj['RBId'][ish])
+                                    for item in RBObj['SHC'][ish]:
+                                        dNames += ['%d::RBSSh;%d;%s:%d:%d'%(pId,ish,item,AtLookup[iAt],iRb)]
+                                        deriv.append(G2lat.KslCalc(item,PSI,GAM))
                         
                     elif name == 'General':
-                        # deriv = []
-                        # dNames = []
                         eq,obs,esd = itemRest[name][Id]
                         calcobj = G2obj.ExpressionCalcObj(eq)
                         parmlist = list(eq.assgnVars.values()) # parameters used in this expression
@@ -1069,13 +1054,6 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                             else:
                                 drv = 0
                             pDerv[ind][ip] = drv
-                    # # Add derivatives into matrix, if needed
-                    # for dName,drv in zip(dNames,deriv):
-                    #     try:   # if parameter is not refined
-                    #         ind = varyList.index(dName)
-                    #         pDerv[ind][ip] += drv
-                    #     except ValueError:
-                    #         pass
             except:
                 pass
         # Add derivatives into matrix, if needed

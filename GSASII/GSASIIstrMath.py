@@ -788,10 +788,10 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                                                 pVals.append(sh)
                                                 pWt.append(wt/esd**2)
                                                 pWsum[name] += wt*(-sh/esd)**2
-                                                pWnum[name] += 1
                                             else:
                                                 pVals.append(0.0)
                                                 pWt.append(0.0)
+                                        pWnum[name] += ma.count(ma.masked_greater(SH,0.0))
 
                     elif name == 'Texture':
                         SHkeys = list(textureData['SH Coeff'][1].keys())

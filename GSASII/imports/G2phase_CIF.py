@@ -302,7 +302,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.MPhase['General']['SGData']['MagSpGrp'] = MSSpGrp.replace(',','').replace('\\','')
                     self.MPhase['General']['SSGData'] = SSGData
 
-            if magnetic:    #replace std operaors with those from cif file - probably not the same!
+            if magnetic:    #replace std operators with those from cif file - probably not the same!
                 SGData['SGFixed'] = True
                 SGData['SGOps'] = []
                 SGData['SGCen'] = []

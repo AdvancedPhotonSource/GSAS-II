@@ -1017,7 +1017,8 @@ class G2Slider(wx.Slider):
         wx.Slider.SetMin(self,ci(xmin*self.iscale))
 
 def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
-    onChange=None,onChangeArgs=[],sizer=None,nDig=None,size=(50,20)):
+    onChange=None,onChangeArgs=[],sizer=None,nDig=None,
+                       size=(50,20),slsize=(200,25)):
     '''A customized combination of a wx.Slider and a validated
     wx.TextCtrl (see :class:`ValidatedTxtCtrl`) that allows either
     a slider or text entry to set a value within a range.
@@ -1049,6 +1050,15 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
 
     :param list onChangeArgs: arguments to be passed to onChange function
        when called.
+
+    :param wx.Sizer sizer: a reference to a wx.BoxSizer to be used 
+       to place the TextCtrl and Slider into. If None (the default),
+       the sizer is created.
+
+    :param tuple size: size of the TextCtrl [defaults to (50,20)]
+
+    :param tuple slsize: slsize of the Slider [defaults to (200,25)]
+
     :returns: returns a wx.BoxSizer containing the widgets
     '''
 
@@ -1065,7 +1075,7 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
     else:
         hSizer = sizer
     hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    vScale = G2Slider(parent,style=wx.SL_HORIZONTAL,size=(200,25))
+    vScale = G2Slider(parent,style=wx.SL_HORIZONTAL,size=slsize)
     vScale.SetScaling(iscale)
     vScale.SetScaledRange(xmin,xmax)
     vScale.SetLineSize(1)

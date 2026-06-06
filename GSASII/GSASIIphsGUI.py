@@ -5856,7 +5856,9 @@ to use these entries'''
             thresh=[[8.0,6.0],[17.191,11.527]],pickHandler=pickHandler)
 
     def OnShowIsoDistortCalc(event):
-        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        #from importlib import reload
+        #reload(G2cnstG)
+        #print(f'reloading {G2cnstG}')
         G2cnstG.ShowIsoDistortCalc(G2frame,data['General']['Name'])
 
     def OnShowIsoModes(event):
@@ -7525,6 +7527,9 @@ at one of the following locations:
 
 #### Draw Atom routines ################################################################################
     def UpdateDrawAtoms(G2frame,data,atomStyle=''):
+        # save pointers to window and routines
+        G2frame.drawAtoms.UpdateDrawAtoms = UpdateDrawAtoms
+        G2frame.drawAtoms.OnReloadDrawAtoms = OnReloadDrawAtoms
         drawAtoms = G2frame.drawAtoms
         def RefreshDrawAtomGrid(event):
             def SetChoice(name,c,n=0):
@@ -7648,7 +7653,7 @@ at one of the following locations:
             drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
             G2plt.PlotStructure(G2frame,data)
     
-    #### UpdateDrawAtoms executable code starts here
+        #### UpdateDrawAtoms executable code starts here
         topSizer = G2frame.dataWindow.topBox
         topSizer.Clear(True)
         parent = G2frame.dataWindow.topPanel
@@ -13530,6 +13535,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnDrawDistVP, id=G2G.wxID_DRAWDISTVP)
         G2frame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2G.wxID_DRAWDISAGLTOR)
         G2frame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2G.wxID_DRAWPLANE)
+        G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_DRAWISO)
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRBOND)
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRANGLE)
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRPLANE)

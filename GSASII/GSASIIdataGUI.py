@@ -6713,8 +6713,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     #        self.ConstraintEdit.Append(id=G2G.wxID_ADDRIDING, kind=wx.ITEM_NORMAL,text='Add H riding constraints',
     #            help='Add H atom riding constraints between atom parameter values')
     #        self.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,False)
-            self.ConstraintEdit.Append(G2G.wxID_SHOWISO,'Show ISODISTORT modes',
-                    'Show ISODISTORT mode values for all phases')
+            self.ConstraintEdit.Append(G2G.wxID_SHOWISO,'Show New Var modes',
+                    'Show New Var constraints and dependent vars')
             self.ConstraintEdit.Enable(G2G.wxID_SHOWISO,False)
 
             self.PostfillDataMenu()
@@ -7518,8 +7518,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.AtomCompute.Append(G2G.wxID_ATOMSCLEARHIST,'Clear all B&&A histograms','Clear all bond & angle histograms')
             self.AtomCompute.Append(G2G.wxID_ATOMFRACSPLIT,'Apportion atom frac','2 atom type site fraction apportion')
             self.AtomCompute.Append(G2G.wxID_ATOMSDENSITY,'Density','Compute density for current phase')
-            self.AtomCompute.ISOcalc = self.AtomCompute.Append(G2G.wxID_ISODISP,'ISODISTORT mode values',
-                'Compute values of ISODISTORT modes from atom parameters')
+            self.AtomCompute.ISOcalc = self.AtomCompute.Append(G2G.wxID_ISODISP,
+                                'Show New Var modes',
+                                'Show New Var constraints and dependent vars')
             self.PostfillDataMenu()
 
             # Phase / Imcommensurate "waves" tab
@@ -7652,6 +7653,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.DrawAtomCompute.Append(G2G.wxID_DRAWDISAGLTOR,'Dist. Ang. Tors.',
                 'Compute distance, angle or torsion for 2-4 selected atoms')
             self.DrawAtomCompute.Append(G2G.wxID_DRAWPLANE,'Best plane','Compute best plane for 4+ selected atoms')
+            G2G.Define_wxId('wxID_DRAWISO')            
+            self.DrawAtomCompute.Append(G2G.wxID_DRAWISO,'Show New Var modes',
+                                'Show New Var constraints and dependent vars')
             self.DrawAtomRestraint.Append(G2G.wxID_DRAWRESTRBOND,'Add bond restraint','Add bond restraint for selected atoms (2)')
             self.DrawAtomRestraint.Append(G2G.wxID_DRAWRESTRANGLE,'Add angle restraint',
                 'Add angle restraint for selected atoms (3: one end 1st)')

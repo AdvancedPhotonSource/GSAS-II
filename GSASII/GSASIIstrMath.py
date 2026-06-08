@@ -1013,7 +1013,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                                     iRb = SRBIds.index(RBObj['RBId'][ish])
                                     for item in RBObj['SHC'][ish]:
                                         dNames += ['%d::RBSSh;%d;%s:%d:%d'%(pId,ish,item,AtLookup[iAt],iRb)]
-                                        deriv.append(G2lat.KslCalc(item,PSI,GAM))
+                                        deriv.append(G2lat.KslCalc(item,PSI,GAM)/(4.0*np.pi))
                         
                     elif name == 'General':
                         eq,obs,esd = itemRest[name][Id]

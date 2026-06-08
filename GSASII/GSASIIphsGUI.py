@@ -10116,7 +10116,7 @@ at one of the following locations:
                         for item in RBObj['SHC'][iSh]:
                             shcSizer.Add(wx.StaticText(RigidBodies,label='%s'%item.strip('+').strip('-')))
                             shcSizer.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['SHC'][iSh][item],0,nDig=(8,5),
-                                typeHint=float,size=(70,-1),OnLeave=NewSHC))
+                                typeHint=float,size=(70,-1),OnLeave=NewSHC,xmin=-1.0,xmax=1.0))
                             schref = wx.CheckBox(RigidBodies,label=' refine? ')
                             schref.SetValue(RBObj['SHC'][iSh][item][2])
                             schref.Bind(wx.EVT_CHECKBOX,OnSchRef)

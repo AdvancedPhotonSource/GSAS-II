@@ -7640,8 +7640,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCELL,'Fill unit cell','Fill unit cell with selected atoms')
             G2G.Define_wxId('wxID_DRAWADDMOLECULE')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWADDMOLECULE,'Complete molecule','Cyclicly add atoms bonded to selected atoms')
-            G2G.Define_wxId('wxID_DRAWVOIDMAP')
-            self.DrawAtomEdit.Append(G2G.wxID_DRAWVOIDMAP,'Create void map','Create a map of locations outside of any VDW radius')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWDELETE,'Delete atoms','Delete selected atoms from drawing set')
             G2G.Define_wxId('wxID_RELOADATOMS')
             self.DrawAtomEdit.Append(G2G.wxID_RELOADATOMS,'Update draw atoms','Update atom drawing list')
@@ -7656,6 +7654,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             G2G.Define_wxId('wxID_DRAWISO')            
             self.DrawAtomCompute.Append(G2G.wxID_DRAWISO,'Show New Var modes',
                                 'Show New Var constraints and dependent vars')
+            G2G.Define_wxId('wxID_DRAWVOIDMAP')
+            self.DrawAtomCompute.Append(G2G.wxID_DRAWVOIDMAP,'Create void map','Create a map of locations outside of any VDW radius')
             self.DrawAtomRestraint.Append(G2G.wxID_DRAWRESTRBOND,'Add bond restraint','Add bond restraint for selected atoms (2)')
             self.DrawAtomRestraint.Append(G2G.wxID_DRAWRESTRANGLE,'Add angle restraint',
                 'Add angle restraint for selected atoms (3: one end 1st)')
@@ -9340,8 +9340,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         # debug stuff
         # if GSASIIpath.GetConfigValue('debug'):
         #     print('Debug: reloading G2phG')
-        #     import imp
-        #     imp.reload(G2phG)
+        #     from importlib import reload
+        #     reload(G2phG)
         # end debug stuff
         G2phG.UpdatePhaseData(G2frame,item,data)
     elif G2frame.GPXtree.GetItemText(parentID) == 'Restraints':

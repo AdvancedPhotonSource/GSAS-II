@@ -2748,7 +2748,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     Plot.axvline(hkl[-2],color=clr,dashes=dash,lw=1.5)
             for hkl in G2frame.Extinct: # plot extinct reflections
-                clr = 'b'
+                clr = 'g'
                 if Page.plotStyle['qPlot']:
                     Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=2)
                 elif Page.plotStyle['dPlot']:

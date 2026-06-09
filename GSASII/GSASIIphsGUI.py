@@ -8574,6 +8574,13 @@ at one of the following locations:
         G2stMn.DisAglTor(DATData)
 
     def MapVoid(event):
+        def onColor(event):
+            'respond to color button press'
+            c = event.GetEventObject().GetValue() # RGBA
+            voidPar['color'] = [int(i*c.alpha/255) for i in (
+                c.red,c.green,c.blue)] # RGB w/black background
+            event.GetEventObject().SetValue(voidPar['color'])
+        import wx.lib.colourselect as csel
         generalData = data['General']
         rMax = max(data['General']['vdWRadii'])
         cell = data['General']['Cell'][1:7]
@@ -8584,7 +8591,8 @@ at one of the following locations:
                     'Set parameters for void computation for phase '+generalData.get('Name','?')))
         # get cell ranges
         xmax = 2. - rMax/cell[0]
-        voidPar = {'a':1., 'b':1., 'c':1., 'grid':.25, 'probe':0.5}
+        voidPar = {'a':1., 'b':1., 'c':1., 'grid':.25, 'probe':0.5,
+                       'drawsize':0.05,'brightness':3.0, 'color':[50,50,255]}
         for i in ('a', 'b', 'c'):
             mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,i,'Max '+i+' value: ',0.,xmax,100))
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8594,6 +8602,21 @@ at one of the following locations:
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
         hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Probe radius (A)'))
         hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'probe',nDig=(5,2), xmin=0.1, xmax=2., typeHint=float))
+
+        G2G.HorizontalLine(mainSizer,voidDlg)
+        mainSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,
+                    'Void map visualization parameters'))
+        mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,'drawsize',
+                                        'Brightness: ',0.001,1.0,500))
+        mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,'brightness',
+                                        'Brightness: ',0.1,5.0,50))
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Void map color:'))
+        cbut = csel.ColourSelect(voidDlg, wx.ID_ANY, '',
+                                     tuple(voidPar['color']),
+                                     size = wx.DefaultSize)
+        cbut.Bind(csel.EVT_COLOURSELECT, onColor)
+        hSizer.Add(cbut)
         mainSizer.Add(hSizer)
 
         def OnOK(event): voidDlg.EndModal(wx.ID_OK)
@@ -8616,6 +8639,8 @@ at one of the following locations:
         if res != wx.ID_OK: return
         drawingData['Voids'] = VoidMap(data, voidPar['a'], voidPar['b'], voidPar['c'],
             voidPar['grid'],voidPar['probe'])
+        for key in ('drawsize','brightness','color'):
+            drawingData['void'+key] = voidPar[key]
         drawingData['showVoids'] = True
         G2plt.PlotStructure(G2frame,data)
 

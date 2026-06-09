@@ -1756,7 +1756,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed A')
             return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
@@ -6562,7 +6562,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed B')
             return
         GL.glShadeModel(GL.GL_SMOOTH)
         GL.glEnable(GL.GL_LIGHTING)
@@ -7657,7 +7657,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
         if drawingData['showVoids']:
-            RC = len(drawingData['Voids'])*[[0.05,2*Bl]]
+            color = drawingData.get('voidcolor',Bl)
+            brightness = drawingData.get('voidbrightness',2.)
+            drawsize = drawingData.get('voiddrawsize',0.05)
+#            RC = len(drawingData['Voids'])*[[0.05,2*Bl]]
+            RC = len(drawingData['Voids'])*[
+                [drawsize,brightness*np.array(color)]]
             RenderDots(drawingData['Voids'],RC)
             # for x,y,z in drawingData['Voids']:
             #     RenderSphere(x,y,z,.05,(0.,0.,1.),True)
@@ -7926,7 +7931,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed C')
             return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
@@ -8179,7 +8184,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed D')
             return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
@@ -8655,7 +8660,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed E')
             return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)

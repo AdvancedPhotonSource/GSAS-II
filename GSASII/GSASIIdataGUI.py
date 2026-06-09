@@ -3150,7 +3150,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        sash = max(min(100,GSASIIpath.GetConfigValue('Split_Loc',250)),500)
+        sash = min(max(100,GSASIIpath.GetConfigValue('Split_Loc',250)),500)
         # if GSASIIpath.GetConfigValue('debug'):
         #     print('SplitterWindow sash=',sash,GSASIIpath.GetConfigValue('Split_Loc'))
         self.mainPanel.SplitVertically(self.treePanel, self.dataWindow.outer, sash)

@@ -9955,18 +9955,20 @@ at one of the following locations:
             sytsymtxt = wx.StaticText(RigidBodies,label='%s site symmetry: %s, multiplicity: %d '%(Name,Sytsym,Mult))
             rbSizer.Add(topSizer)
             rbSizer.Add(sytsymtxt)
-            if rbType != 'Residue':
-                choices = [' x ',' y ',' z ','x+y','x+y+z']
-                RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
-                try:
-                    symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
-                except KeyError:
-                    symax = ' z '
+            choices = [' x ',' y ',' z ','x+y','x+y+z']
+            RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
+            try:
+                symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
+            except KeyError:
+                symax = ' z '
+            if rbType == 'Spin':
                 symRadioSet = wx.RadioBox(RigidBodies,choices=choices,label='RB polar axis is aligned along:')
                 symRadioSet.SetStringSelection(symax)
                 symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
                 Indx[symRadioSet.GetId()] = rbId
                 rbSizer.Add(symRadioSet)
+            else:
+                rbSizer.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis is %s'%symax))
             return rbSizer
 
         def SpnrbSizer(RBObj,spnIndx):

@@ -3215,6 +3215,25 @@ class G2Project(G2ObjectWrapper):
         except:
             return
 
+    def get_LastFitResults(self):
+        '''Returns the shifts on refined variables and their uncertainties in the last refinement cycle
+
+        :returns: a dict with the last least-squares shifts and a dict of sigma values.
+        '''
+        if 'Lastshft' not in self['Covariance']['data']:
+            raise G2ScriptException('No shift values found in project, has a refinement been run?')
+        if 'varyList' not in self['Covariance']['data']:
+            raise G2ScriptException('No varyList found in project, has a refinement been run?')
+        if 'sig' not in self['Covariance']['data']:
+            raise G2ScriptException('No sigma values found in project, has a refinement been run?')
+        try:
+            return (
+                dict(zip(self['Covariance']['data']['varyList'],self['Covariance']['data']['Lastshft'].tolist())),
+                dict(zip(self['Covariance']['data']['varyList'],self['Covariance']['data']['sig'].tolist()))
+                )
+        except:
+            return None,None
+
     def get_Variable(self,var):
         '''Returns the value and standard uncertainty (esd) for a variable
         parameters, as defined in the last refinement cycle

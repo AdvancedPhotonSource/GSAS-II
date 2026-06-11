@@ -307,6 +307,7 @@ method                                                                  Use
 :meth:`~GSASIIscriptable.G2Project.set_Controls`                        Set overall GSAS-II control settings such as number of cycles and to set parameter limits.
                                                                         This is also used to set up a sequential
                                                                         fit. (Also see :meth:`~GSASIIscriptable.G2Project.get_Controls` to read values.)
+:meth:`~GSASIIscriptable.G2Project.get_LastFitResults`                  Retrieves the shifts and sigma values from the last least-squares cycle
 :meth:`~GSASIIscriptable.G2Project.imageMultiDistCalib`                 Performs a global calibration fit with images at multiple distance settings.
 :meth:`~GSASIIscriptable.G2Project.get_Constraints`                     Retrieves :ref:`constraint definition <Constraint_definitions_table>` entries.
 :meth:`~GSASIIscriptable.G2Project.add_HoldConstr`                      Adds a hold constraint on one or more variables

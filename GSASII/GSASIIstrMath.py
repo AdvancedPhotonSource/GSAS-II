@@ -5211,6 +5211,8 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
         GoOn = dlg.Update(int(100.*pSum/np.sum(M**2)),newmsg='Restraints')
     Histograms['RestraintSum'] = pSum
     Histograms['RestraintTerms'] = len(pVals)
+    Histograms['Restraints'] = pWsum
+    Histograms['nRestraints'] = pWnum
     return M
 
 def calcMassFracs(varyList,covMatrix,Phases,hist,hId):

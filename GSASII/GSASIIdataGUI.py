@@ -9196,7 +9196,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
                 text = ('\nTotal residuals after last refinement:                                       \n'+
-                        '\twR = {:.3f}\n\tchi**2 = {:.1f}\n\tGOF = {:.2f}').format(
+                        '\twR = {:.3f}\n\tχ**2 = {:.1f}\n\tGOF = {:.2f}').format(
                         Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
                 text += '\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}'.format(
                     Rvals['Nobs'],Nvars,Rvals.get('SVD0',0.))
@@ -9208,13 +9208,23 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
                 if Rvals.get('RestraintSum',0) > 0:
-                    chisq_data = (Rvals['chisq']-Rvals['RestraintSum'])/(Rvals['Nobs']-Rvals['Nvars'])
+                    diffr_chisq = (Rvals['chisq']-Rvals['RestraintSum'])
+                    chisq_data = (diffr_chisq)/(Rvals['Nobs']-Rvals['Nvars'])
                     lbl = '\nData-only residuals (without restraints)'
+                    lbl += f'\n\tχ**2 = {diffr_chisq:.1f}'
                     lbl += f'\n\tGOF = {np.sqrt(chisq_data):.2f}'
                     lbl += f'\n\tReduced χ**2 = {chisq_data:.2f}'
                     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
+                Restraints = Rvals.get('Restraints',{})
+                if len(Restraints):
+                    nRestraints = Rvals['nRestraints']
+                    lbl = '\nRestraint residuals:'
+                    for name in Restraints:
+                        if nRestraints[name]:
+                            lbl += '\n               %s: N = %d, χ**2 = %.1f'%(name,nRestraints[name],Restraints[name])
+                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
+                    
                 plotSizer = wx.BoxSizer(wx.HORIZONTAL)
-
                 if 'Lastshft' in data and not data['Lastshft'] is None:
                     showShift = wx.Button(G2frame.dataWindow,label='Plot shift/esd -- last refinement')
                     showShift.Bind(wx.EVT_BUTTON,OnShowShift)

@@ -362,6 +362,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,h
         Rvals['Nobs'] = Histograms['Nobs']
         Rvals['Nvars'] = len(varyList)
         Rvals['RestraintSum'] = Histograms.get('RestraintSum',0.)
+        Rvals['Restraints'] = Histograms.get('Restraints',{})
+        Rvals['nRestraints'] = Histograms.get('nRestraints',{})
         Rvals['RestraintTerms'] = Histograms.get('RestraintTerms',0)
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
         Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs']+Rvals['RestraintTerms']-len(varyList)))

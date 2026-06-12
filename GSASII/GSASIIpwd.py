@@ -1326,7 +1326,7 @@ def getFCJVoigt3(pos,sig,gam,shl,xdata):
     returns: array: calculated peak function at each xdata
     returns: integral of peak; nominally = 1.0
     '''
-    if len(xdata):
+    if len(xdata)>1:
         cw = np.diff(xdata)
         cw = np.append(cw,cw[-1])
         Df = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
@@ -1364,7 +1364,7 @@ def getExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
     returns: array: calculated peak function at each xdata
     returns: integral of peak; nominally = 1.0
     '''
-    if len(xdata):
+    if len(xdata)>1:
         cw = np.diff(xdata)
         cw = np.append(cw,cw[-1])
         Df = pyd.pypsvfcjexpo(len(xdata),xdata-pos,pos,alp,bet,sig,gam,shl)

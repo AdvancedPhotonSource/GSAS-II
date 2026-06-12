@@ -433,7 +433,8 @@ def downloadFile(URL,download_loc=None):
     return filename
 
 def import_generic(filename, readerlist, fmthint=None, bank=None,
-                       URL=False, download_loc=None, useNet=True):
+                       URL=False, download_loc=None, useNet=True,
+                       buffer=None):
     """Attempt to import a filename, using a list of reader objects.
 
     Returns the first reader object which worked."""
@@ -496,7 +497,10 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
             #                    .format(filename,len(rd.selections)))
 
             block = 0
-            rdbuffer = {}
+            if buffer is None:
+                rdbuffer = {}
+            else:
+                rdbuffer = buffer
             repeat = True
             while repeat:
                 repeat = False
@@ -2694,8 +2698,10 @@ class G2Project(G2ObjectWrapper):
         """
         LoadG2fil()
         if not URL: imagefile = os.path.abspath(os.path.expanduser(imagefile))
+        rdbuffer = {}
         readers = import_generic(imagefile, Readers['Image'],
-                    fmthint=fmthint, URL=URL, download_loc=download_loc)
+                    fmthint=fmthint, URL=URL, download_loc=download_loc,
+                                     buffer=rdbuffer)
         objlist = []
         for i,rd in enumerate(readers):
             if indexList is not None and i not in indexList:
@@ -2706,10 +2712,19 @@ class G2Project(G2ObjectWrapper):
                 #see this: G2IO.EditImageParms(self,rd.Data,rd.Comments,rd.Image,imagefile)
                 rd.SciPy = False
             rd.readfilename = imagefile
+            TreeLbl = 'IMG '+os.path.basename(imagefile)
             if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
-                rd.Data['ImageTag'] = None
+                imageInfo = imagefile
+            elif 'imagemap' in rdbuffer:
+                # if there is an image map, save the entry there rather than
+                # a simple number (HDF5 only at present)
+                rd.Data['ImageTag'] = rdbuffer['imagemap'][rd.imageEntry]
+                TreeLbl += f' #{i:04}'
+                imageInfo = (imagefile,rd.Data.get('ImageTag'))
             else:
                 rd.Data['ImageTag'] = rd.repeatcount
+                imageInfo = (imagefile,rd.Data.get('ImageTag'))
+                TreeLbl += f' #{rd.Data.get("ImageTag",-1):04}'
             rd.Data['formatName'] = rd.formatName
             if rd.sumfile:
                 rd.readfilename = rd.sumfile
@@ -2718,13 +2733,6 @@ class G2Project(G2ObjectWrapper):
             # Code from G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
             Imax = np.amax(rd.Image)
             ImgNames = [i[0] for i in self.names if i[0].startswith('IMG ')]
-            TreeLbl = 'IMG '+os.path.basename(imagefile)
-            ImageTag = rd.Data.get('ImageTag')
-            if ImageTag:
-                TreeLbl += ' #'+'%04d'%(ImageTag)
-                imageInfo = (imagefile,ImageTag)
-            else:
-                imageInfo = imagefile
             TreeName = G2obj.MakeUniqueLabel(TreeLbl,ImgNames)
             # MT dict to contain image info
             ImgDict = {}

@@ -994,7 +994,11 @@ class GSASII(wx.Frame):
 
     def OnImportGeneric(self,reader,readerlist,label,multiple=False,
         usedRanIdList=[],Preview=True,load2Tree=False,filename=None):
-        '''Used for all imports, including Phases, datasets, images...
+        '''Used for all imports from GUI, including Phases, datasets, images...
+
+        N.B. The code here is largely duplicated in 
+        :func:`GSASIIscriptable:import_generic` so any changes made here
+        need to be duplicated there, too. 
 
         Called from :meth:`GSASII.OnImportPhase`, :meth:`GSASII.OnImportImage`,
         :meth:`GSASII.OnImportSfact`, :meth:`GSASII.OnImportPowder`,
@@ -1273,6 +1277,10 @@ class GSASII(wx.Frame):
         reader item associated with the menu item, which will be
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
+
+        N.B. The code here is largely duplicated in 
+        :mod:`GSASIIscriptable` so any changes made here
+        need to be duplicated there, too. 
         '''
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
@@ -1513,6 +1521,10 @@ If you continue from this point, it is quite likely that all intensity computati
         where all appropriate formats will be tried.
 
         A reader object is filled each time an image is read.
+
+        N.B. The code here is largely duplicated in 
+        :mod:`GSASIIscriptable` so any changes made here
+        need to be duplicated there, too. 
         '''
         self.CheckNotebook()
         # look up which format was requested
@@ -1541,6 +1553,10 @@ If you continue from this point, it is quite likely that all intensity computati
         reader item associated with the menu item, which will be
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
+
+        N.B. The code here is largely duplicated in 
+        :mod:`GSASIIscriptable` so any changes made here
+        need to be duplicated there, too. 
         '''
         # get a list of existing histograms
         HKLFlist = []
@@ -1991,6 +2007,10 @@ If you continue from this point, it is quite likely that all intensity computati
         where all appropriate formats will be tried.
 
         Also reads an instrument parameter file for each dataset.
+
+        N.B. The code here is largely duplicated in 
+        :mod:`GSASIIscriptable` so any changes made here
+        need to be duplicated there, too. 
         '''
         FP,tth = 25.0,150.
         # get a list of existing histograms
@@ -2625,6 +2645,8 @@ If you continue from this point, it is quite likely that all intensity computati
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
         Small angle data is presumed to be as QIE form for either x-rays or neutrons
+
+        N.B. This code is not yet duplicated in :mod:`GSASIIscriptable`. 
         '''
 
         def GetSASDIparm(reader):
@@ -2718,6 +2740,8 @@ If you continue from this point, it is quite likely that all intensity computati
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
         Reflectometry data is presumed to be in QIE form for x-rays of neutrons
+
+        N.B. This code is not yet duplicated in :mod:`GSASIIscriptable`. 
         '''
 
         def GetREFDIparm(reader):
@@ -2817,6 +2841,10 @@ If you continue from this point, it is quite likely that all intensity computati
         reader item associated with the menu item, which will be
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
+
+        N.B. The code here is largely duplicated in 
+        :mod:`GSASIIscriptable` so any changes made here
+        need to be duplicated there, too. 
         '''
         # get a list of existing histograms
         PDFlist = []

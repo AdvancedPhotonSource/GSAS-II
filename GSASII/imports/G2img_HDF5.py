@@ -79,10 +79,12 @@ class HDF5_Reader(G2obj.ImportImage):
         if imagenum is None: imagenum = 1
         quick = False
         # do we have a image number or a map to the section with the image?
+        imageTag = None
         try:
             int(imagenum) # test if image # is a tuple
         except: # pull the section name and number out from the imagenum value
-            kwargs = {'name':imagenum[0],'num':imagenum[1]}
+            readargs = {'name':imagenum[0],'num':imagenum[1]}
+            imageTag = imagenum
             quick = True
         # set up an index as to where images are found
         self.buffer = kwarg.get('buffer',{})
@@ -138,10 +140,14 @@ class HDF5_Reader(G2obj.ImportImage):
                 self.errors = 'No images selected from file'
                 fp.close()
                 return False
-            kwargs = {'imagenum':imagenum}
-        self.Data,self.Npix,self.Image = self.readDataset(fp,**kwargs)
+            readargs = {'imagenum':imagenum}
+        self.Data,self.Npix,self.Image = self.readDataset(fp,**readargs)
         if quick:
             fp.close()
+            if GSASIIpath.GetConfigValue('debug'): print(f'Read image {imagenum} from file {filename}')
+            # pointer to section of file & image number here
+            if imageTag:
+                self.Data['ImageTag'] = imageTag 
             return True
         if self.Npix == 0:
             self.errors = 'No valid images found in file'

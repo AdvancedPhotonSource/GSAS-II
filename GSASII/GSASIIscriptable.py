@@ -434,10 +434,16 @@ def downloadFile(URL,download_loc=None):
 
 def import_generic(filename, readerlist, fmthint=None, bank=None,
                        URL=False, download_loc=None, useNet=True,
-                       buffer=None):
+                       buffer=None,imageKey=None):
     """Attempt to import a filename, using a list of reader objects.
+    
+    This is not intended to be called directly in scripting, only by
+    routines like G2Project.add_phase() and G2Project.add_image but
+    this may be used to read CIFs, as is done with OnISODISTORT_kvec
+    in GSASIIpwdGUI.
 
-    Returns the first reader object which worked."""
+    Returns the first reader object which is read successfully.
+    """
     if URL is True:
         filename = downloadFile(filename,download_loc)
     # Translated from OnImportGeneric method in GSASIIGUI.py
@@ -506,14 +512,20 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 repeat = False
                 block += 1
                 rd.objname = os.path.basename(filename)
+                if imageKey:
+                    blockKey = imageKey
+                else:
+                    blockKey = block
                 if GSASIIpath.GetConfigValue('debug'):
-                    flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
+                    # don't use try/except so we see errors
+                    flag = rd.Reader(filename,buffer=rdbuffer, blocknum=blockKey)
                 else:
                     try:
-                        flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
+                        flag = rd.Reader(filename,buffer=rdbuffer, blocknum=blockKey)
                     #except Exception as msg:
                     except Exception:
                         flag = False
+                if imageKey: rd.repeat = False # only read one image      
                 if flag:
                     # Omitting image loading special cases
                     rd.readfilename = filename
@@ -525,12 +537,12 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 if rd.warnings:
                     G2fil.G2Print("Read warning by", rd.formatName, "reader:",
                           rd.warnings)
+                elif imageKey is not None:
+                    G2fil.G2Print(f"{filename} block {imageKey} read by Reader {rd.formatName}")
                 elif bank is None:
-                    G2fil.G2Print("{} read by Reader {}"
-                              .format(filename,rd.formatName))
+                    G2fil.G2Print(f"{filename} read by Reader {rd.formatName}")
                 else:
-                    G2fil.G2Print("{} block # {} read by Reader {}"
-                              .format(filename,bank,rd.formatName))
+                    G2fil.G2Print(f"{filename} block # {bank} read by Reader {rd.formatName}")
                 return rd_list
     raise G2ImportException(f"No reader could read file: {filename}")
 
@@ -2655,7 +2667,7 @@ class G2Project(G2ObjectWrapper):
 
     def add_image(self, imagefile, fmthint=None, defaultImage=None,
                       indexList=None, cacheImage=False,
-                      URL=False, download_loc=None):
+                      URL=False, download_loc=None,imageKey=None):
         """Load an image into a project
 
         :param str imagefile: The image file to read, a filename.
@@ -2669,7 +2681,9 @@ class G2Project(G2ObjectWrapper):
         :param list indexList: specifies the image numbers (counting from zero)
           to be used from the file when a file has multiple images. A value of
           ``[0,2,3]`` will cause the only first, third and fourth images in the file
-          to be included in the project.
+          to be included in the project. Note that with this option, all images
+          are read from the file, but only the specified image(s) are retained.
+          Do not use imageKey and indexList together.
         :param bool cacheImage: When True, the image is cached to save
           in rereading it later. Default is False (no caching).
         :param bool URL: if True, the contents of imagefile is a URL
@@ -2694,14 +2708,24 @@ class G2Project(G2ObjectWrapper):
           If URL is specified and the default download_loc
           value is used (None), the image will be saved in a temporary
           location that will persist until the OS removes it.
+        :param imageKey: This can be a single image number (int) to read
+          a specific image (numbered starting with 1) or for files
+          that have images in named sections, (right now this is only HDF5),
+          it can be a tuple of form ('section',0) where 'section' is
+          the section name (such as '/exchange/data') and 0 is the image
+          number in that section. If imageKey is specified, only one image
+          is read. 
+          Do not use imageKey and indexList together.
         :returns: a list of :class:`G2Image` object(s) for the added image(s)
         """
         LoadG2fil()
         if not URL: imagefile = os.path.abspath(os.path.expanduser(imagefile))
         rdbuffer = {}
+        if imageKey and indexList: 
+            raise Exception("add_image Error: Do not use imageKey and indexList together.")
         readers = import_generic(imagefile, Readers['Image'],
                     fmthint=fmthint, URL=URL, download_loc=download_loc,
-                                     buffer=rdbuffer)
+                                     buffer=rdbuffer,imageKey=imageKey)
         objlist = []
         for i,rd in enumerate(readers):
             if indexList is not None and i not in indexList:
@@ -2713,7 +2737,13 @@ class G2Project(G2ObjectWrapper):
                 rd.SciPy = False
             rd.readfilename = imagefile
             TreeLbl = 'IMG '+os.path.basename(imagefile)
-            if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
+            if 'ImageTag' in rd.Data: # HDF5 quickread by tag
+                TreeLbl += f' {rd.Data['ImageTag'][0]}-{rd.Data['ImageTag'][1]}'
+                rd.Data['ImageTag'] = (rd.Data['ImageTag'][0], 
+                                       rd.Data['ImageTag'][1],
+                                       rd.Image.shape)
+                imageInfo = (imagefile,rd.Data.get('ImageTag'))
+            elif rd.repeatcount == 1 and not rd.repeat and not imageKey: # skip image number if only one in set
                 imageInfo = imagefile
             elif 'imagemap' in rdbuffer:
                 # if there is an image map, save the entry there rather than

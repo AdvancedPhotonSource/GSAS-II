@@ -4461,6 +4461,11 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     # get parameter values and initialize and prepare constraints
     from . import GSASIImiscGUI as G2IO
     parmDict = G2IO.mkParmDictfromTree(G2frame)
+    if not parmDict:
+        G2G.G2MessageBox(G2frame,
+            'No parameters values were loaded. Are histogram(s) defined and linked to phase(s)?',
+            'No parameters')
+        return
     # get the variables dependent on the New Vars
     depVars = []        # find the dependent variables
     for key in constrDict:

@@ -1318,8 +1318,9 @@ def mkParmDictfromTree(G2frame,sigDict=None):
     covDict = {}
     consDict = {}
 
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if G2frame.GPXtree.IsEmpty(): return # nothing to do
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    if not Phases or not Histograms: return # nothing to do
     rigidbodyDict = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     covDict = G2frame.GPXtree.GetItemPyData(

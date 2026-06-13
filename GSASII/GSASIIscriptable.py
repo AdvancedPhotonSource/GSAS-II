@@ -2738,7 +2738,7 @@ class G2Project(G2ObjectWrapper):
             rd.readfilename = imagefile
             TreeLbl = 'IMG '+os.path.basename(imagefile)
             if 'ImageTag' in rd.Data: # HDF5 quickread by tag
-                TreeLbl += f' {rd.Data['ImageTag'][0]}-{rd.Data['ImageTag'][1]}'
+                TreeLbl += f" {rd.Data['ImageTag'][0]}-{rd.Data['ImageTag'][1]}"
                 rd.Data['ImageTag'] = (rd.Data['ImageTag'][0], 
                                        rd.Data['ImageTag'][1],
                                        rd.Image.shape)

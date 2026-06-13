@@ -242,6 +242,70 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
         self.CloseFile()
         print(hist+'reflections written to file '+self.fullpath)                        
 
+class ExportPowderReflHKLF(G2fil.ExportBaseclass):
+    '''Used to create a text file of reflections from a powder data set as shelx HKLF file
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
+            G2frame=G2frame,
+            formatName = 'reflection list as HKLF',
+            extension='.hkl',
+            longFormatName = 'Export powder reflection list as a HKLF file'
+            )
+        self.exporttype = ['powder']
+        self.multiple = False # only allow one histogram to be selected
+
+    def Exporter(self,event=None):
+        '''Export a set of powder reflections as a shelx HKLF file
+        '''
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        if self.ExportSelect( # set export parameters
+            AskFile='default' # base name on the GPX file name
+            ): return 
+        self.OpenFile()
+        hist = list(self.histnam)[0] # there should only be one histogram, in any case take the 1st
+        self.Write('#Histogram '+hist)
+        histblk = self.Histograms[hist]
+        for phasenam in histblk['Reflection Lists']:
+            phasDict = histblk['Reflection Lists'][phasenam]
+            self.Write('#Phase '+str(phasenam))
+            if phasDict.get('Super',False):
+                hklfmt = "{:5d}{:5d}{:5d}{:3d}"
+                hfmt = "{:>20s}"
+                fmt = "{:>20s}{:8.2f}{:8.2f}"
+                self.Write(hfmt.format("#h,k,l,m,F^2,sig(F^2)"))
+                refList = phasDict['RefList']
+                for refItem in refList:
+                    if 'T' in phasDict['Type']:
+                        h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:17]
+                    elif 'C' in phasDict['Type']:
+                        h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = refItem[:14]
+                    elif 'B' in phasDict['Type']:
+                        h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:17]
+                    sig = np.sqrt(Fobs)
+                    self.Write(fmt.format(hklfmt.format(int(h),int(k),int(l),int(m)),Fobs,sig))
+            else:
+                hklfmt = "{:5d}{:5d}{:5d}"
+                hfmt = "{:>15s}"
+                fmt = "{:>15s}{:8g}{:8g}"
+                self.Write(hfmt.format("#h,k,l,F^2,sig(F^2)"))
+                refList = phasDict['RefList']
+                for refItem in refList:
+                    if 'T' in phasDict['Type']:
+                        h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:16]
+                    elif 'C' in phasDict['Type']:
+                        h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = refItem[:13]
+                    elif 'B' in phasDict['Type']:
+                        h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:16]
+                    sig = np.sqrt(Fobs)
+                    self.Write(fmt.format(hklfmt.format(int(h),int(k),int(l)),Fobs,sig))
+        self.CloseFile()
+        print(hist+'reflections written to file '+self.fullpath)                        
+
 class ExportSingleText(G2fil.ExportBaseclass):
     '''Used to create a text file with single crystal reflection data
     skips user rejected & space group extinct reflections

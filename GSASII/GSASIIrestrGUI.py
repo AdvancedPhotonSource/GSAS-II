@@ -928,8 +928,9 @@ def UpdateRestraints(G2frame,data,phaseName):
             restData['Use'] = Obj.GetValue()
 
         wtBox = wx.BoxSizer(wx.HORIZONTAL)
+        restData['wtFactor'] = float(restData['wtFactor'])
         wtBox.Add(wx.StaticText(wind,-1,'Phase '+phaseName+' Restraint weight factor: '),0,WACV)
-        wtfactor = G2G.ValidatedTxtCtrl(wind,restData,'wtFactor',nDig=(10,2,'g'),typeHint=float)
+        wtfactor = G2G.ValidatedTxtCtrl(wind,restData,'wtFactor',nDig=(12,4,'f'),typeHint=float)
         wtBox.Add(wtfactor,0,WACV)
         useData = wx.CheckBox(wind,-1,label=' Use?')
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)

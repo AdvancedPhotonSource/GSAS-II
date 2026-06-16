@@ -2862,7 +2862,8 @@ class G2Project(G2ObjectWrapper):
             imageList = self.images()
 
         LoadG2fil()
-        # code based on GSASIIimgGUI..OnDistRecalib
+        # code based on GSASIIimgGUI.OnMultiDistRecalib, but needs an update
+        raise Exception('This command needs to be revised to function properly')
         obsArr = np.array([]).reshape(0,4)
         parmDict = {}
         varList = []

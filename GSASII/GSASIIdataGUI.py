@@ -7320,6 +7320,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             ImageParams = wx.Menu(title='')
             self.ImageMenu.Append(menu=ImageParams, title='Parms')
             ImageParams.Append(G2G.wxID_IMCOPYCONTROLS,'Copy Controls','Copy image controls to other images')
+            G2G.Define_wxId('wxID_IMCOPYFLAGS')
+            ImageParams.Append(G2G.wxID_IMCOPYFLAGS,'Copy Flags','Copy image refinement settings to other images')
             ImageParams.Append(G2G.wxID_IMCOPYSELECTED,'Copy Selected','Copy selected image controls to other images')
             ImageParams.Append(G2G.wxID_IMSAVECONTROLS,'Save Controls','Save image controls to file')
             ImageParams.Append(G2G.wxID_SAVESELECTEDCONTROLS,'Save Multiple Controls','Save controls from selected images to file')

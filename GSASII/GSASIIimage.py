@@ -55,13 +55,22 @@ def peneCorr(tth,dep,dist):
     
     return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
 
-def GetTthP(x,y,parmDict):
-    ''' Compute angle between detector normal & sample scattering ray vector
+def GetTthP(x,y,parmDict,dist=None,detX=None,detY=None):
+    '''Compute angle between detector normal & sample scattering ray vector
+    For Multi-distance use, dist, detX & detY change for 
+    different detector positions.
 
     :param float/array x: detector x-position in mm
     :param float/array y: detector y-position in mm
-    :param dict parmDict: dictionary of detector orientation parameters in fitting routine
-        names are: det-X, det-Y, tilt, dist & phi
+    :param dict parmDict: dictionary of detector orientation parameters 
+      in fitting routine.
+      Used entries are: det-X, det-Y, tilt, dist & phi
+      In multi-dist, used entries are: tilt & phi, and the following 
+      are specified:
+    :param float/array dist: detector distance
+    :param float/array detX: X Position of beam center
+    :param float/array detY: Y Position of beam center
+
     :returns: float/array angle: = 2-theta if tilt is zero
     '''
     def costth(xyz,d0):
@@ -69,51 +78,26 @@ def GetTthP(x,y,parmDict):
         u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
         return np.dot(u,d0)
     
-    dx = x-parmDict['det-X']
-    dy = y-parmDict['det-Y']
     tilt = parmDict['tilt']
-    dist = parmDict['dist']/npcosd(tilt)    #sample-beam intersection point on detector plane
+    if dist is None:
+        dx = x-parmDict['det-X']
+        dy = y-parmDict['det-Y']
+        dist = parmDict['dist']/npcosd(tilt)    #sample-beam intersection point on detector plane
+    else:
+        dx = x - detX
+        dy = y - detY
+        dist = dist/npcosd(tilt)    #sample-beam intersection point on detector plane
+
     T = makeMat(tilt,0)         #detector tilt matrix
     R = makeMat(parmDict['phi'],2)     #rotation of tilt axis matrix
     MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T)
     d001 = np.array([0.,0.,1.])         #vector along z (beam direction); normal to untilted detector plane
     r001 = np.inner(d001,MN)            #should rotate vector same as detector
     dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #transform detector pixel x,y by tilt/rotate
-    dxyz0 += np.array([0.,0.,dist])         #shift away from sample
+    #dxyz0 += np.array([0.,0.,dist])         #shift away from sample
+    dxyz0[:,:,2] += dist                #shift away from sample
     ctth0 = costth(dxyz0,r001)              #cos of angle between detector normal & sample-pixel vector
     return npacosd(ctth0)[0]
-
-def GetTthPmulti(x,y,detX,detY,tilt,dist,phi):
-    '''Compute angle between detector normal & sample scattering ray vector
-
-    :param float/array x: detector x-position in mm
-    :param float/array y: detector y-position in mm
-    :param float/array detX: X Position of beam center
-    :param float/array detY: Y Position of beam center
-    :param float/array tilt: detector tilt (typically a single value)
-    :param float/array dist: detector distance
-    :param float/array phi: detector phi setting (typically a single value)
-
-    :returns: float/array angle: = 2-theta if tilt is zero
-    '''
-    def costth(xyz,d0):
-        ''' compute cos of angle between vectors; xyz not normalized, d0 normalized'''
-        u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
-        return np.dot(u,d0)
-    
-    dx = detX
-    dy = detY
-    dist = dist/npcosd(tilt)    #sample-beam intersection point on detector plane
-    T = makeMat(tilt,0)         #detector tilt matrix
-    R = makeMat(phi,2)     #rotation of tilt axis matrix
-    MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T)
-    d001 = np.array([0.,0.,1.])         #vector along z (beam direction); normal to untilted detector plane
-    r001 = np.inner(d001,MN)            #should rotate vector same as detector
-    dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #transform detector pixel x,y by tilt/rotate
-    dxyz0[:,:,2] += dist                #shift away from sample
-    ctth0 = costth(dxyz0,r001)          #cos of angle between detector normal & sample-pixel vector
-    return npacosd(ctth0)[0]
-
 
 def SamAbs(data,tax,tay,muT):
     'Compute sample absorption correction for images'
@@ -185,6 +169,83 @@ def FitEllipse(xy):
         phi -= 90.
     return cent,phi,radii
 
+ellipseCalcCount = 0
+ellipseCalcRMS = None
+def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
+    '''Compute the deviations from the ellipse point locations
+    '''
+    x,y,dsp = xyd
+    if progressDlg:
+        global ellipseCalcCount,ellipseCalcRMS
+        ellipseCalcCount += 1
+        msg = ""
+        if ellipseCalcRMS is not None:
+            msg = f'RMS error: {ellipseCalcRMS:.3f} '
+        msg += f'eval #{ellipseCalcCount}'
+        GoOn = progressDlg.Update(ellipseCalcCount%100,newmsg=msg)
+        if not GoOn[0]:
+            print('Multi-distance fit cancelled')
+            raise KeyboardInterrupt('Multi-distance fit cancelled')
+            return None
+    deltaMode = False
+    if keyArray is not None and 'deltaDist' in parmDict:
+        deltaMode = True
+    varyDict = dict(zip(varyList,B))
+    parms = {}
+    for parm in parmDict:
+        if parm in varyList:
+            parms[parm] = varyDict[parm]
+        else:
+            parms[parm] = parmDict[parm]
+    phi = parms['phi']-90.               #get rotation of major axis from tilt axis
+    if keyArray is None:
+        detX = parms['det-X']
+        detY = parms['det-Y']
+        dist = parms['dist']
+        detX = np.array(len(x)*[parms['det-X']])
+        detY = np.array(len(x)*[parms['det-Y']])
+        dist = np.array(len(x)*[parms['dist']])
+        dtth = GetTthP(x,y,parmDict)        #sample-detector ray wrt detector plane != 2-theta if tilted
+    else:
+        detX = np.array([parms[f'det-X{k}'] for k in keyArray])
+        detY = np.array([parms[f'det-Y{k}'] for k in keyArray])
+        if deltaMode:
+            dist = np.array([parms[f'dist{k}'] for k in keyArray]) - parms['deltaDist']
+        else:
+            dist = np.array([parms[f'dist{k}'] for k in keyArray])
+        dtth = GetTthP(x,y,parmDict,dist,detX,detY)        #sample-detector ray wrt detector plane != 2-theta if tilted
+
+    tth = 2.0*npasind(parms['wave']/(2.*dsp))
+    phi0 = npatan2d(y-detY,x-detX)
+    dxy = peneCorr(dtth,parms['dep'],dist)
+    stth = npsind(tth)
+    cosb = npcosd(parms['tilt'])
+    tanb = nptand(parms['tilt'])
+    tbm = nptand((tth-parms['tilt'])/2.)
+    tbp = nptand((tth+parms['tilt'])/2.)
+    d = dist+dxy
+    fplus = d*tanb*stth/(cosb+stth)
+    fminus = d*tanb*stth/(cosb-stth)
+    vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
+    vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
+    R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
+    R1 = (vplus+vminus)/2.                                    #major axis
+    zdis = (fplus-fminus)/2.
+    Robs = np.sqrt((x-detX)**2+(y-detY)**2)
+    rsqplus = R0**2+R1**2
+    rsqminus = R0**2-R1**2
+    R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
+    Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
+    P = 2.*R0**2*zdis*npcosd(phi0-phi)
+    Rcalc = (P+Q)/R
+    M = (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
+    if progressDlg: # keep track of GOF
+        rms = np.sqrt((M**2).sum()/(25.*len(M)))
+        if ellipseCalcRMS is None: ellipseCalcRMS = rms
+        ellipseCalcRMS = min(ellipseCalcRMS,rms)
+    return M
+
+
 def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     '''Fit detector calibration parameters
 
@@ -216,43 +277,6 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         print (ptstr)
         print (sigstr)
         
-    def ellipseCalcD(B,xyd,varyList,parmDict):
-
-        x,y,dsp = xyd
-        varyDict = dict(zip(varyList,B))
-        parms = {}
-        for parm in parmDict:
-            if parm in varyList:
-                parms[parm] = varyDict[parm]
-            else:
-                parms[parm] = parmDict[parm]
-        phi = parms['phi']-90.               #get rotation of major axis from tilt axis
-        dtth = GetTthP(x,y,parmDict)        #sample-detector ray wrt detector plane != 2-theta if tilted
-        tth = 2.0*npasind(parms['wave']/(2.*dsp))
-        phi0 = npatan2d(y-parms['det-Y'],x-parms['det-X'])
-        dxy = peneCorr(dtth,parms['dep'],parms['dist'])
-        stth = npsind(tth)
-        cosb = npcosd(parms['tilt'])
-        tanb = nptand(parms['tilt'])
-        tbm = nptand((tth-parms['tilt'])/2.)
-        tbp = nptand((tth+parms['tilt'])/2.)
-        d = parms['dist']+dxy
-        fplus = d*tanb*stth/(cosb+stth)
-        fminus = d*tanb*stth/(cosb-stth)
-        vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
-        vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
-        R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
-        R1 = (vplus+vminus)/2.                                    #major axis
-        zdis = (fplus-fminus)/2.
-        Robs = np.sqrt((x-parms['det-X'])**2+(y-parms['det-Y'])**2)
-        rsqplus = R0**2+R1**2
-        rsqminus = R0**2-R1**2
-        R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
-        Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
-        P = 2.*R0**2*zdis*npcosd(phi0-phi)
-        Rcalc = (P+Q)/R
-        M = (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
-        return M
 
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
     fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f']
@@ -282,26 +306,56 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     else:
         return [chisq,vals,sigList]
 
-def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
+def FitMultiDist(rings,varyList,parmDict,keyArray,Print=True,covar=False,
+                     progressDlg=None):
     '''Fit detector calibration parameters with multi-distance data
 
-    :param np.array rings: vector of ring positions (x,y,dist,d-space)
+    :param np.array rings: vector of ring positions (x,y,d-space)
     :param list varyList: calibration parameters to be refined
     :param dict parmDict: calibration parameters
+    :param list keyArray: key to look up distances for each ring position.
+      Length must be the same as rings.
     :param bool Print: set to True (default) to print the results
     :param bool covar: set to True to return the covariance matrix (default is False)
+    :param progressDlg: wx.ProgressDialog object or None (default)
     :returns: [chisq,vals,sigDict] unless covar is True, then
         [chisq,vals,sigDict,coVarMatrix] is returned
     '''
 
-    def CalibPrint(parmDict,sigDict,chisq,Npts):
+    def CalibPrint(parmDict,sigDict,chisq,Npts,keyArray):
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
-        for d in sorted(set([i[5:] for i in parmDict.keys() if 'det-X' in i]),key=lambda x:int(x)):
+        keylen = None
+        if 'deltaDist' in parmDict:
+            keylen = -1
+        print ('\nImage Parameters:')
+        ptlbls = 'names :'
+        ptstr =  'values:'
+        sigstr = 'esds  :'
+        names = ['wave', 'dep', 'phi', 'tilt']
+        if 'deltaDist' in parmDict:
+            names += ['deltaDist']
+        for name in names:
+            if name == 'wave':
+                fmt = '%12.6f'
+            elif name == 'dep':
+                fmt = '%12.4f'
+            else:
+                fmt = '%12.3f'
+
+            ptlbls += "%s" % (name.rjust(12))
+            if name == 'phi':
+                ptstr += fmt % (parmDict[name]%360.)
+            else:
+                ptstr += fmt % (parmDict[name])
+            if name in sigDict:
+                sigstr += fmt % (sigDict[name])
+            else:
+                sigstr += 12*' '
+        for k in sorted(set(keyArray)):
             fmt = '%12.3f'
-            for key in 'det-X','det-Y','delta':
-                name = key+d
+            for name in (f'det-X{k}',f'det-Y{k}',f'dist{k}')[:keylen]:
                 if name not in parmDict: continue
                 ptlbls += "%12s" % name
                 ptstr += fmt % (parmDict[name])
@@ -322,81 +376,15 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
             print (ptlbls)
             print (ptstr)
             print (sigstr)
-        print ('\nImage Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
-        ptlbls = 'names :'
-        ptstr =  'values:'
-        sigstr = 'esds  :'
-        names = ['wavelength', 'dep', 'phi', 'tilt']
-        if 'deltaDist' in parmDict:
-            names += ['deltaDist']
-        for name in names:
-            if name == 'wavelength':
-                fmt = '%12.6f'
-            elif name == 'dep':
-                fmt = '%12.4f'
-            else:
-                fmt = '%12.3f'
-
-            ptlbls += "%s" % (name.rjust(12))
-            if name == 'phi':
-                ptstr += fmt % (parmDict[name]%360.)
-            else:
-                ptstr += fmt % (parmDict[name])
-            if name in sigDict:
-                sigstr += fmt % (sigDict[name])
-            else:
-                sigstr += 12*' '
-        print (ptlbls)
-        print (ptstr)
-        print (sigstr)
-        print()
-
-    def ellipseCalcMultiD(B,xyd,varyList,parmDict):
-        x,y,dist,dsp = xyd
-        varyDict = dict(zip(varyList,B))
-        parms = {}
-        for parm in parmDict:
-            if parm in varyList:
-                parms[parm] = varyDict[parm]
-            else:
-                parms[parm] = parmDict[parm]
-        # create arrays with detector center values
-        detX = np.array([parms['det-X'+str(int(d))] for d in dist])
-        detY = np.array([parms['det-Y'+str(int(d))] for d in dist])
-        if 'deltaDist' in parms:
-            deltaDist = parms['deltaDist']
-        else:
-            deltaDist = np.array([parms['delta'+str(int(d))] for d in dist])
-
-        phi = parms['phi']-90.               #get rotation of major axis from tilt axis
-        tth = 2.0*npasind(parms['wavelength']/(2.*dsp))
-        dtth = GetTthPmulti(x,y,detX,detY,parms['tilt'],dist,parms['phi'])
-        phi0 = npatan2d(y-detY,x-detX)
-        dxy = peneCorr(dtth,parms['dep'],dist-deltaDist)
-        stth = npsind(tth)
-        cosb = npcosd(parms['tilt'])
-        tanb = nptand(parms['tilt'])
-        tbm = nptand((tth-parms['tilt'])/2.)
-        tbp = nptand((tth+parms['tilt'])/2.)
-        d = (dist-deltaDist)+dxy
-        fplus = d*tanb*stth/(cosb+stth)
-        fminus = d*tanb*stth/(cosb-stth)
-        vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
-        vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
-        R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
-        R1 = (vplus+vminus)/2.                                    #major axis
-        zdis = (fplus-fminus)/2.
-        Robs = np.sqrt((x-detX)**2+(y-detY)**2)
-        rsqplus = R0**2+R1**2
-        rsqminus = R0**2-R1**2
-        R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
-        Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
-        P = 2.*R0**2*zdis*npcosd(phi0-phi)
-        Rcalc = (P+Q)/R
-        return (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
+        print (f'\nchi**2: {chisq:.3g}, Number of points: {Npts}\n')
 
     p0 = [parmDict[key] for key in varyList]
-    result = leastsq(ellipseCalcMultiD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
+    global ellipseCalcCount,ellipseCalcRMS
+    ellipseCalcCount = 0
+    ellipseCalcRMS = None
+    result = leastsq(ellipseCalcD,p0,
+                         args=(rings.T,varyList,parmDict,keyArray,progressDlg),
+                         full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])
@@ -406,7 +394,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         sig = list(np.sqrt(np.diag(result[1])))
     sigDict = {name:s for name,s in zip(varyList,sig)}
     if Print:
-        CalibPrint(parmDict,sigDict,chisq,rings.shape[0])
+        CalibPrint(parmDict,sigDict,chisq,rings.shape[0],keyArray)
     if covar:
         return [chisq,vals,sigDict,result[1]]
     else:

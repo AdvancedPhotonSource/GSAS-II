@@ -148,6 +148,7 @@ class HDF5_Reader(G2obj.ImportImage):
             # pointer to section of file & image number here
             if imageTag:
                 self.Data['ImageTag'] = imageTag 
+            self.Data['ImageSection'] = imagenum[0]
             return True
         if self.Npix == 0:
             self.errors = 'No valid images found in file'
@@ -255,9 +256,6 @@ class HDF5_Reader(G2obj.ImportImage):
         '''
         if name is None:
             name,num,size = self.buffer['imagemap'][imagenum-1] # look up image in map
-            quick = False
-        else:
-            quick = True
         dset = fp[name]
         if num == None:
             image = dset[()]
@@ -272,9 +270,7 @@ class HDF5_Reader(G2obj.ImportImage):
             msg = f'Unexpected image dimensions {name}'
             print(msg)
             raise Exception(msg)
-        if quick:
-            return {},None,image.T
-        # add parametric values to the brginning of the comments
+        # add parametric values to the beginning of the comments
         self.Comments = []
         for k in self.buffer.get('ParamTrackingVars',[]):
             arr = self.buffer['ParamTrackingVars'][k]
@@ -308,7 +304,7 @@ class HDF5_Reader(G2obj.ImportImage):
                     print(f'Using DetPixelSize* for Pixel size: {pixelsize}.')
         except:
             pixelsize = None
-            print(f'No PixelSize[XY], DetSize[XY] or DetPixelSize[XY].')
+            print('No PixelSize[XY], DetSize[XY] or DetPixelSize[XY].')
         # default pixel size (for APS sector 6?)
         if not pixelsize:
             pixelsize = [74.8,74.8]

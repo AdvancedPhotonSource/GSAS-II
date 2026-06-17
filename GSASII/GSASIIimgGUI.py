@@ -298,6 +298,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     varyList.append('setdist')
                     sigList.append(None)
                     covar = np.pad(covar, (0,1), 'constant')
+                    vals.append(parmDict['dist']-Data.get('setdist',Data['distance']))
+                    sigList.append(None)
+                    varyList.append('deltaDist')                    
 #                    vals.append(Data.get('samplechangerpos',Data['samplechangerpos']))
 #                    varyList.append('chgrpos')
 #                    sigList.append(None)
@@ -544,46 +547,54 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             if fail: G2G.G2MessageBox(G2frame,
                              'Image fitting failed. See the console for an error message',
                              'Fit Failed')
-        # if not fail:
-        #     # More work is needed to allow this to display in the sequential results
-        #     Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential Multi-Distance image calibration results')
-        #     if Id:
-        #         SeqResult = G2frame.GPXtree.GetItemPyData(Id)
-        #     else:
-        #         Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential Multi-Distance image calibration results')
-        #     breakpoint()
+        if not fail:
+            # More work is needed to allow this to display in the sequential results
+            Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential Multi-Distance image calibration results')
+            if Id:
+                SeqResult = G2frame.GPXtree.GetItemPyData(Id)
+            else:
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential Multi-Distance image calibration results')
                 
-        #     # display a sequential result table
-        #     SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
-        #     SeqResult['histNames'] = []
-        #     varyList = []
-        #     for item in items:
-        #         name = Names[item]
-        #         G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
-        #         Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
-        #         key = str(int(Data['setdist']))
-        #         vals = []
-        #         sigList = []
-        #         if 'deltaDist' in parmDict:
-        #             vals.append(parmDict[f'dist{key}']) - parmDict['deltaDist']
-        #             sigList.append(sigDict['deltaDist'])
-        #         else:
-        #             vals.append(parmDict[f'dist{key}'])
-        #             sigList.append(sigDict[f'dist{key}'])
-        #         vals.append(Data.get('setdist',Data['distance']))
-        #         sigList.append(None)
-        #         vals.append(parmDict[f'det-X{key}'])
-        #         sigList.append(sigDict[f'det-X{key}'])
-        #         vals.append(parmDict[f'det-Y{key}'])
-        #         sigList.append(sigDict[f'det-Y{key}'])
-        #         SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
-        #                 'covMatrix':covar,'title':name,'parmDict':{}}
-        #         SeqResult['histNames'].append(name)
-        #     G2frame.GPXtree.SetItemPyData(Id,SeqResult)
-        # print ('All selected images recalibrated - results in Sequential Multi-Distance image calibration results')
-        # G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-        # G2plt.PlotExposedImage(G2frame,event=None)
-        # G2frame.GPXtree.SelectItem(Id)
+            # display a sequential result table
+            SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
+            SeqResult['histNames'] = []
+            varyList = []
+            for item in items:
+                name = Names[item]
+                G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
+                key = str(int(Data['setdist']))
+                vals = []
+                sigList = []
+                if 'deltaDist' in parmDict:
+                    vals.append(parmDict[f'dist{key}']) - parmDict['deltaDist']
+                    sigList.append(sigDict['deltaDist'])
+                    varyList.append('deltaDist')
+                else:
+                    vals.append(parmDict[f'dist{key}'])
+                    sigList.append(sigDict[f'dist{key}'])
+                    varyList.append('dist')
+                vals.append(Data.get('setdist',Data['distance']))
+                sigList.append(None)
+                varyList.append('setdist')
+                vals.append(parmDict[f'det-X{key}'])
+                sigList.append(sigDict[f'det-X{key}'])
+                varyList.append('det-X')
+                vals.append(parmDict[f'det-Y{key}'])
+                sigList.append(sigDict[f'det-Y{key}'])
+                varyList.append('det-Y')
+                if 'deltaDist' not in parmDict:
+                    vals.append(parmDict[f'dist{key}']-Data.get('setdist',Data['distance']))
+                    sigList.append(sigDict[f'dist{key}'])
+                    varyList.append('deltaDist')                    
+                SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
+                        'covMatrix':covar,'title':name,'parmDict':{}}
+                SeqResult['histNames'].append(name)
+            G2frame.GPXtree.SetItemPyData(Id,SeqResult)
+        print ('All selected images recalibrated - results in Sequential Multi-Distance image calibration results')
+        G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
+        G2plt.PlotExposedImage(G2frame,event=None)
+        G2frame.GPXtree.SelectItem(Id)
 
 
     def OnClearCalib(event):

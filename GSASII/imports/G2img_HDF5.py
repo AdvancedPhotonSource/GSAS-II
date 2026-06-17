@@ -86,6 +86,7 @@ class HDF5_Reader(G2obj.ImportImage):
             readargs = {'name':imagenum[0],'num':imagenum[1]}
             imageTag = imagenum
             quick = True
+            self.UniversalComments = self.visit(fp)
         # set up an index as to where images are found
         self.buffer = kwarg.get('buffer',{})
         if not quick and not self.buffer.get('imagemap'):
@@ -247,7 +248,8 @@ class HDF5_Reader(G2obj.ImportImage):
                     else:
                         print(f'Skipping entry {dset.name}. Shape is {dims}')
                 except Exception as msg:
-                    print(f'Skipping entry {dset.name} Error getting shape\n{msg}')
+                    #print(f'Skipping entry {dset.name} Error getting shape\n{msg}')
+                    pass
         fp.visititems(func)
         return header
 

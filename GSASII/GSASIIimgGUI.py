@@ -567,9 +567,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 vals = []
                 sigList = []
                 if 'deltaDist' in parmDict:
-                    vals.append(parmDict[f'dist{key}']) - parmDict['deltaDist']
+                    vals.append(parmDict[f'dist{key}'] - parmDict['deltaDist'])
                     sigList.append(sigDict['deltaDist'])
-                    varyList.append('deltaDist')
+                    varyList.append('dist')
                 else:
                     vals.append(parmDict[f'dist{key}'])
                     sigList.append(sigDict[f'dist{key}'])

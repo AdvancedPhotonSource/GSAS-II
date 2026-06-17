@@ -311,6 +311,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 G2frame.GPXtree.SetItemPyData(Id,SeqResult)
         finally:
             dlg.Destroy()
+        G2frame.AddToNotebook('Recalibrate all on %d images'%len(items))       
         print ('All selected images recalibrated - results in Sequential image calibration results')
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2plt.PlotExposedImage(G2frame,event=None)
@@ -508,6 +509,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         varList += [v+key]
             print(f'\nFitting {obsArr.shape[0]} ring picks and {len(varList)} variables...')
             result = G2img.FitMultiDist(obsArr,varList,parmDict,keyArr,progressDlg=pgbar,covar=True)
+            chisq = result[0]
             covar = result[3]
             sigDict = result[2]
             covData = {'title':'Multi-distance recalibrate','covMatrix':covar,'varyList':varList,'variables':result[1]}
@@ -548,7 +550,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                              'Image fitting failed. See the console for an error message',
                              'Fit Failed')
         if not fail:
-            # More work is needed to allow this to display in the sequential results
             Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential Multi-Distance image calibration results')
             if Id:
                 SeqResult = G2frame.GPXtree.GetItemPyData(Id)
@@ -591,6 +592,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         'covMatrix':covar,'title':name,'parmDict':{}}
                 SeqResult['histNames'].append(name)
             G2frame.GPXtree.SetItemPyData(Id,SeqResult)
+            G2frame.AddToNotebook(
+                'Multi distance image calibration chi**2 = %.2f for %d ring picks and %d variables'%(chisq,obsArr.shape[0],len(varList)))            
         print ('All selected images recalibrated - results in Sequential Multi-Distance image calibration results')
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2plt.PlotExposedImage(G2frame,event=None)

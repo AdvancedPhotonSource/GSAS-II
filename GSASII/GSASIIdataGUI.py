@@ -5810,7 +5810,12 @@ No: least-squares fitting starts with previously fit structure factors.'''
                 tbl.append((i,Rvals['parmDictBeforeFit'][i],Rvals['parmDictAfterFit'][i],
                                 Rvals['parmDictSigDict'].get(i),txt))
             lbl = f'Refinement results, Rw={Rw:.3f}'
-            ans = G2G.G2AfterFit(self,text,lbl,tbl)  # this replaces the next 8 lines
+            if Controls['max cyc']:
+                ans = G2G.G2AfterFit(self,text,lbl,tbl)
+            else:
+                G2G.G2MessageBox(self,
+                    'Zero cycle "refinement" computation completed',lbl)
+                ans = None
             if ans == wx.ID_OK:  # refinement has been accepted save, log & display
                 self.reloadFromGPX(rtext,Rvals)
                 G2IO.LogCellChanges(self)

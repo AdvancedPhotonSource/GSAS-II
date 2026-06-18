@@ -1848,7 +1848,17 @@ value for each pixel in the image. </li>
 </ul>
 <h3 id="menu-commands">Menu commands</h3>
 <p>Three sets of menu commands are associated with the Image Controls tree item. The first, <strong>Calibration</strong>, provides commands to perform calibration from an image (where the calibration values are fitted from a diffraction pattern image taken with a calibrant). 
-<img alt="Calibration Menu" src="images/CalMenu.png" /></p>
+<img alt="Calibration Menu" src="images/CalMenu.png" />
+* Calibrate: The calibrate command will expect you to have already set a calibrant and as well as any other settings in the Calibration controls and then to click on several points for the first diffraction ring with the left mouse button. Then click on the right mouse button to begin the calibration process, which will search for the location of additonal rings.
+* Recalibrate: Repeats the calibration process using the previously-located position for the first ring and current image settings.
+* Recalibrate all: Repeats the calibration process using the previously-located position for the first ring and current image settings, but for a series of selected images. 
+* Calculate rings: Computes and displays the ring positions from the calibration settings. Does not change any values. 
+* Multi-distance Recalibrate: Performs a calibration on a series of images that have different distance placements. The tilt angle, the tilt rotation, the penetration and the wavelength, will be required to be the same for all included images, if refined. The beam center X &amp; Y values are independent for each image. This command can operate in two modes: If any of the detector distance settings are set to be refined, then those distances are optimized individually (the wavelength cannot be refined in this case). If none of the distances are set to be refined, then a overall offset for all detectors is fit. The wavelength parameter will also be refined if the refine flag is on for the first image.
+* Clear calibration: Deletes previous ring pick information from the current image</p>
+<!-- 
+* Multiimage Gain map: TBD
+-->
+
 <p>The Integration menu provides the ability to radially integrate an image to provide one or more powder diffraction patterns (requires that calibration parameters must be set first.)</p>
 <p><img alt="Integration Menu" src="images/IntMenu.png" /></p>
 <p>Finally, the Parms menu has commands allow the values on the window to be saved to a file, read from a file or copied to other images. The "Xfer controls" menu command differs from the "Copy Controls" command in that integration range for the current image is scaled when applied for other images based on the detector distances.</p>

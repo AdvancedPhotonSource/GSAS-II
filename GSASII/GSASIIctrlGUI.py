@@ -31,19 +31,22 @@ import copy
 import random as ran
 import numpy as np
 
-from . import GSASIIpath
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIpwdGUI as G2pdG
-from . import GSASIIspc as G2spc
-from . import GSASIIobj as G2obj
-from . import GSASIIfiles as G2fil
-from . import GSASIIElem as G2elem
-from . import GSASIIpwd as G2pwd
-from . import GSASIIlattice as G2lat
-from . import GSASIImath as G2mth
-#from . import GSASIIstrMain as G2stMn
-from . import GSASIImiscGUI as G2IO
-from .tutorialIndex import tutorialIndex
+if __name__ == '__main__': # allow this file to be run directly
+    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+import GSASII
+from GSASII import GSASIIpath
+from GSASII import GSASIIdataGUI as G2gd
+from GSASII import GSASIIpwdGUI as G2pdG
+from GSASII import GSASIIspc as G2spc
+from GSASII import GSASIIobj as G2obj
+from GSASII import GSASIIfiles as G2fil
+from GSASII import GSASIIElem as G2elem
+from GSASII import GSASIIpwd as G2pwd
+from GSASII import GSASIIlattice as G2lat
+from GSASII import GSASIImath as G2mth
+#from GSASII import GSASIIstrMain as G2stMn
+from GSASII import GSASIImiscGUI as G2IO
+from GSASII.tutorialIndex import tutorialIndex
 
 # Define a short names for convenience
 DULL_YELLOW = (230,230,190)
@@ -1671,7 +1674,8 @@ class ScrolledMultiEditor(wx.Dialog):
                     but = (-1,-1)
                 else:
                     import wx.lib.colourselect as wscs  # is there a way to test?
-                    but = wscs.ColourSelect(label='v', # would like to use '\u2193' or '\u25BC' but not in WinXP
+#                    but = wscs.ColourSelect(label='v', # would like to use '\u2193' or '\u25BC' but not in WinXP
+                    but = wscs.ColourSelect(label='\u2193',
                                             parent=panel,colour=(255,255,200),size=wx.Size(30,23),
                                             style=wx.RAISED_BORDER)
                     but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
@@ -1704,9 +1708,8 @@ class ScrolledMultiEditor(wx.Dialog):
         panel.SetAutoLayout(1)
         panel.SetupScrolling()
         # patch for wx 2.9 on Mac
-        i,j= wx.__version__.split('.')[0:2]
-        if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
-            panel.SetMinSize((subSizer.GetSize()[0]+30,panel.GetSize()[1]))
+        #if 'wxOSX' in wx.PlatformInfo:
+        #    panel.SetMinSize((subSizer.GetSize()[0]+30,panel.GetSize()[1]))
         mainSizer.Add(panel,1, wx.ALL|wx.EXPAND,1)
 
         # Sizer for OK/Close buttons. N.B. on Close changes are discarded
@@ -1722,6 +1725,7 @@ class ScrolledMultiEditor(wx.Dialog):
         self.SetSizer(mainSizer)
         mainSizer.Fit(self)
         self.SetMinSize(self.GetSize())
+        self.SendSizeEvent()
 
     def _OnCopyButton(self,event):
         'Implements the copy down functionality'
@@ -10812,6 +10816,23 @@ if __name__ == '__main__':
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame
     ms = wx.BoxSizer(wx.VERTICAL)
+
+    dictlist = [{'InstrName': 'test1'},
+                {'InstrName': 'test2'}]
+    dictlist = [{'InstrName': ''},
+                {'InstrName': ''}]
+    keylist = ['InstrName', 'InstrName']
+    lbllist = ['PWDR sum_ceo2_8nm_sum.tiff Azm= 0.00', 'PWDR sum_ceo2_8nm_sum.tiff Azm= 0.00_1']
+    CallScrolledMultiEditor(
+                frm,dictlist,keylist,
+                prelbl=range(1,len(dictlist)+1),
+                postlbl=lbllist,
+                title='Instrument names',
+                header="Edit instrument names. Note that a non-blank\nname is required for all histograms",
+                CopyButton=True,ASCIIonly=True)
+
+
+    
     #siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',.2,1.2,100)
     #ms.Add(siz)
     #siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',20,50,.1)

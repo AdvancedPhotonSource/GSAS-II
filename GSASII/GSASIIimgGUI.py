@@ -559,37 +559,48 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             # display a sequential result table
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
             SeqResult['histNames'] = []
-            varyList = []
             for item in items:
                 name = Names[item]
                 G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                 Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
-                key = str(int(Data['setdist']))
                 vals = []
-                sigList = []
+                key = str(int(Data['setdist']))
+                # rename parameters in current row
+                origNames = [i for i in varList if key in i or i in ('tilt','phi','wave','deltaDist','dep')]
+                newNames = [i.replace(key,'') for i in origNames]
+                if 'wave' in newNames: 
+                    newNames[newNames.index('wave')] = 'Wavelength'
+                newParmDict = {j:float(parmDict[i]) for i,j in zip(origNames,newNames)}
+                vals = [newParmDict[i] for i in newNames]
+                sigList = [float(sigDict[i]) for i in origNames]
+                # add additional unrefined parameters
+                if 'wave' not in varList:
+                   vals.append(parmDict['wave'])
+                   newNames += ['Wavelength']
+                   newParmDict['Wavelength'] = vals[-1]
+                   sigList.append(None)
                 if 'deltaDist' in parmDict:
                     vals.append(parmDict[f'dist{key}'] - parmDict['deltaDist'])
-                    sigList.append(sigDict['deltaDist'])
-                    varyList.append('dist')
-                else:
+                    newNames += ['dist']
+                    newParmDict['dist'] = vals[-1]
+                    sigList.append(None)
                     vals.append(parmDict[f'dist{key}'])
-                    sigList.append(sigDict[f'dist{key}'])
-                    varyList.append('dist')
-                vals.append(Data.get('setdist',Data['distance']))
-                sigList.append(None)
-                varyList.append('setdist')
-                vals.append(parmDict[f'det-X{key}'])
-                sigList.append(sigDict[f'det-X{key}'])
-                varyList.append('det-X')
-                vals.append(parmDict[f'det-Y{key}'])
-                sigList.append(sigDict[f'det-Y{key}'])
-                varyList.append('det-Y')
-                if 'deltaDist' not in parmDict:
-                    vals.append(parmDict[f'dist{key}']-Data.get('setdist',Data['distance']))
-                    sigList.append(sigDict[f'dist{key}'])
-                    varyList.append('deltaDist')                    
-                SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
-                        'covMatrix':covar,'title':name,'parmDict':{}}
+                    newNames += ['SetPoint']
+                    newParmDict['SetPoint'] = vals[-1]
+                    sigList.append(None)
+                else:
+                    if f'dist{key}' in parmDict:
+                        vals.append(parmDict[f'dist{key}']-Data['setdist'])
+                        sigList.append(sigDict.get(f'dist{key}'))
+                        newNames += ['dist-set']
+                        newParmDict['dist-set'] = vals[-1]
+                    vals.append(Data['setdist'])
+                    newNames += ['SetPoint']
+                    newParmDict['SetPoint'] = vals[-1]
+                    sigList.append(None)
+                    
+                SeqResult[name] = {'variables':vals,'varyList':newNames,'sig':sigList,'Rvals':[],
+                        'covMatrix':[],'title':name,'parmDict':newParmDict}
                 SeqResult['histNames'].append(name)
             G2frame.GPXtree.SetItemPyData(Id,SeqResult)
             G2frame.AddToNotebook(
@@ -597,7 +608,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         print ('All selected images recalibrated - results in Sequential Multi-Distance image calibration results')
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2plt.PlotExposedImage(G2frame,event=None)
-        G2frame.GPXtree.SelectItem(Id)
+        wx.CallAfter(G2frame.GPXtree.SelectItem,Id)
 
 
     def OnClearCalib(event):

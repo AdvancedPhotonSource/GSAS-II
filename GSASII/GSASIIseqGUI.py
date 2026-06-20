@@ -1709,8 +1709,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if None in list(derivs):
                     esdList.append(None)
                 else:
-                    esdList.append(np.sqrt(
-                        np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
+                    try:
+                        esdList.append(np.sqrt(
+                            np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
+                    except:
+                        esdList.append(None)
             psDict = parmDict.copy()
             psDict.update(sampleDict[name])
             try:
@@ -1778,7 +1781,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)
     parent = G2frame.dataWindow.topPanel
-    topSizer.Add(wx.StaticText(parent,label='Sequential results:'),0,WACV)
+    treename = G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection())
+    if treename.lower().startswith('sequential ') and treename.lower().endswith('results'):
+        lbl = treename
+    else:
+        lbl = 'Sequential results: '+treename
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     wx.CallAfter(G2frame.dataWindow.SetDataSize)

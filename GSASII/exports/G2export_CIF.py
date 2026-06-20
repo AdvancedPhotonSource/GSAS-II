@@ -6,7 +6,7 @@
 from __future__ import division, print_function
 import datetime as dt
 import os.path
-import sys
+#import sys
 import numpy as np
 import pickle
 import copy
@@ -1693,6 +1693,11 @@ class ExportCIF(G2fil.ExportBaseclass):
             CIF template is written out from PyCifRW which of course strips comments.
             In all cases the initial data_ header is stripped (there should only be one!)
             '''
+            pathlist = ( # look for CIF templates in the user's directory
+                # and if not there, in the same location as this file
+                os.getcwd(),
+                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.dirname(__file__))
             CIFobj = G2dict.get(cifKey)
             if CIFobj is None: return
             if defaultname:
@@ -1704,11 +1709,11 @@ class ExportCIF(G2fil.ExportBaseclass):
             templateDefName = 'template_'+tmplate+'.cif'
             if not CIFobj: # copying a template
                 lbl = 'Standard version'
-                for pth in [os.getcwd()]+sys.path:
+                for pth in pathlist:
                     fil = os.path.join(pth,defaultname)
                     if os.path.exists(fil) and defaultname: break
                 else:
-                    for pth in sys.path:
+                    for pth in pathlist:
                         fil = os.path.join(pth,templateDefName)
                         if os.path.exists(fil): break
                     else:
@@ -3467,9 +3472,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 lbllist.append(hist)
                 dictlist.append(d)
                 keylist.append('InstrName')
-                instrname = d.get('InstrName')
-                if instrname is None:
-                    d['InstrName'] = ''
+                d['InstrName'] = d.get('InstrName','')
                 if hist.startswith("PWDR") and seqmode: break
             return G2G.CallScrolledMultiEditor(
                 self.G2frame,dictlist,keylist,
@@ -5135,8 +5138,12 @@ def LoadCIFdic():
     :returns: the dict with the definitions
     '''
     cifdic = {}
+    pathlist = ( # look for CIF dictionaries in the user's directory
+                # and if not there, in the same location as this file
+                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.dirname(__file__))
     for ftyp in "cif_core","cif_pd":
-        for loc in sys.path:
+        for loc in pathlist:
             fil = os.path.join(loc,ftyp+".cpickle")
             if not os.path.exists(fil): continue
             fp = open(fil,'rb')
@@ -5147,7 +5154,7 @@ def LoadCIFdic():
             finally:
                 fp.close()
         else:
-            for loc in sys.path:
+            for loc in pathlist:
                 fil = os.path.join(loc,ftyp+".dic")
                 if not os.path.exists(fil): continue
                 #try:
@@ -5198,13 +5205,13 @@ def CIF2dict(cf):
       CIF items and loopstructure is a list of lists that defines
       which items are in which loops.
     '''
-    blk = list(cf)[0] # assume templates are a single CIF block, use the 1st
+    blk = list(cf.keys())[0] # assume templates are a single CIF block, use the 1st
     try:
         loopstructure = cf[blk].loopnames()[:] # copy over the list of loop contents
     except AttributeError:
         loopstructure = [j[:] for j in cf[blk].loops.values()] # method replaced?
     dblk = {}
-    for item in cf[blk]: # make a copy of all the items in the block
+    for item in cf[blk].keys(): # make a copy of all the items in the block
         dblk[item] = cf[blk][item]
     return dblk,loopstructure
 
@@ -5622,7 +5629,12 @@ class CIFtemplateSelect(wx.BoxSizer):
         # find default name for template
         resetTemplate = None
         localTemplate = None
-        for pth in [os.path.dirname(__file__)]+sys.path:           # -- search with default name
+        pathlist = ( # look for CIF templates in the user's directory
+                # and if not there, in the same location as this file
+                os.getcwd(),
+                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.dirname(__file__))
+        for pth in pathlist:           # -- search with default name
             fil = os.path.join(pth,templateDefName)
             if os.path.exists(fil):
                 resetTemplate = fil
@@ -5630,7 +5642,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         if not resetTemplate:    # this should not happen!
             print("Default CIF template file",templateDefName,
                           'not found in path!\nProblem with GSAS-II installation?')
-        for pth in [os.getcwd()]+sys.path: # -- search with name based on hist/phase
+        for pth in pathlist: # -- search with name based on hist/phase
             fil = os.path.join(pth,self.defaultname)
             if os.path.exists(fil) and self.defaultname:
                 localTemplate = fil

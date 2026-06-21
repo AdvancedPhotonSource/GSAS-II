@@ -6901,7 +6901,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
 
-    def RenderTextureSphere(x,y,z,radius,ATcolor=None,shape=[20,10],Texture=None,ifFade=True):
+    def RenderTextureSphere(x,y,z,radius,E,R4,ATcolor=None,shape=[20,10],Texture=None,ifFade=True):
+        s1,s2,s3 = E
         SpFade = np.zeros(list(Texture.shape)+[4,],dtype=np.dtype('B'))
         if ATcolor is None:
             acolor = GetColorMap('RdYlGn')
@@ -6926,13 +6927,17 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glTexParameter(GL.GL_TEXTURE_2D,GL.GL_TEXTURE_MIN_FILTER,GL.GL_LINEAR)
         GL.glTexParameter(GL.GL_TEXTURE_2D,GL.GL_TEXTURE_MAG_FILTER,GL.GL_LINEAR)
         GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,shape[0], shape[1],0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,SpFade)
-        q = GLU.gluNewQuadric()
-        GLU.gluQuadricDrawStyle(q,GLU.GLU_FILL)
-        GLU.gluQuadricTexture(q, GL.GL_TRUE)
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
+        GL.glMultMatrixf(R4.T)
+        GL.glEnable(GL.GL_NORMALIZE)
+        GL.glScale(s1,s2,s3)
+        q = GLU.gluNewQuadric()
+        GLU.gluQuadricDrawStyle(q,GLU.GLU_FILL)
+        GLU.gluQuadricTexture(q, GL.GL_TRUE)
         GLU.gluSphere(q,radius,shape[0],shape[1])
+        GL.glDisable(GL.GL_NORMALIZE)
         GL.glPopMatrix()
         GL.glDisable(GL.GL_CULL_FACE)
         GL.glDisable(GL.GL_TEXTURE_2D)
@@ -7428,6 +7433,15 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         radius = ballScale*BondRadii[atNum]
                 if 'Q' in atom[ct]:
+                    E = [1.,1.,1.]
+                    R4 = np.eye(4)
+                    if atom[cs+3] == 'A':
+                        Uij = atom[cs+5:cs+11]
+                        U = np.multiply(G2spc.Uij2U(Uij),GS)
+                        U = np.inner(Amat,np.inner(U,Amat).T)
+                        E,R = nl.eigh(U)
+                        R4 = np.concatenate((np.concatenate((R,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+                        E = np.sqrt(E)
                     SpnData = G2mth.GetSpnRBData(SpnRB,atom[ci])
                     try:
                         SpnData['nSH'][0]
@@ -7468,12 +7482,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                         GL.glPushMatrix()
                                         SetProjection(np.sqrt(cPos)/5.)
                                         GL.glMatrixMode(GL.GL_MODELVIEW)
-                                        RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                        RenderTextureSphere(x,y,z,radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                         GL.glMatrixMode(GL.GL_PROJECTION)
                                         GL.glPopMatrix()
                                         GL.glMatrixMode(GL.GL_MODELVIEW)
                                     else:
-                                        RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                        RenderTextureSphere(x,y,z,radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:   #not a Q atom
@@ -7503,7 +7517,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                             if np.min(P) < np.max(P):
                                 P = (P-np.min(P))/(np.max(P)-np.min(P))
-                            RenderTextureSphere(x,y,z,radius,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
+                            E = [1.,1.,1.]
+                            R4 = np.eye(4)
+                            RenderTextureSphere(x,y,z,radius,E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
                         else:
                             RenderSphere(x,y,z,radius,atColor)
                     else:

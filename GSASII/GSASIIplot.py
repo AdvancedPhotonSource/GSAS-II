@@ -6902,7 +6902,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glShadeModel(GL.GL_SMOOTH)
 
     def RenderTextureSphere(x,y,z,radius,E,R4,ATcolor=None,shape=[20,10],Texture=None,ifFade=True):
-        s1,s2,s3 = E
+        ''' radius > 0. do CCW wrap for outside else do CW wrap.
+        
+        '''
+        s1,s2,s3 = np.array(E)+abs(radius)
         SpFade = np.zeros(list(Texture.shape)+[4,],dtype=np.dtype('B'))
         if ATcolor is None:
             acolor = GetColorMap('RdYlGn')
@@ -6915,7 +6918,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         spID = GL.glGenTextures(1)
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
         GL.glEnable(GL.GL_BLEND)
-        GL.glFrontFace(GL.GL_CCW)       #shows outside
+        if radius > 0.:
+            GL.glFrontFace(GL.GL_CCW)       #shows outside
+        else:
+            GL.glFrontFace(GL.GL_CW)       #shows outside
         GL.glEnable(GL.GL_CULL_FACE)    #removes striping
         GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glEnable(GL.GL_TEXTURE_2D)
@@ -6936,7 +6942,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         q = GLU.gluNewQuadric()
         GLU.gluQuadricDrawStyle(q,GLU.GLU_FILL)
         GLU.gluQuadricTexture(q, GL.GL_TRUE)
-        GLU.gluSphere(q,radius,shape[0],shape[1])
+        GLU.gluSphere(q,1.0,shape[0],shape[1])
         GL.glDisable(GL.GL_NORMALIZE)
         GL.glPopMatrix()
         GL.glDisable(GL.GL_CULL_FACE)
@@ -7482,12 +7488,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                         GL.glPushMatrix()
                                         SetProjection(np.sqrt(cPos)/5.)
                                         GL.glMatrixMode(GL.GL_MODELVIEW)
-                                        RenderTextureSphere(x,y,z,radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                        RenderTextureSphere(x,y,z,-radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                         GL.glMatrixMode(GL.GL_PROJECTION)
                                         GL.glPopMatrix()
                                         GL.glMatrixMode(GL.GL_MODELVIEW)
                                     else:
-                                        RenderTextureSphere(x,y,z,radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                        # negative radius to ensure correct wrap so stuff is on outside
+                                        RenderTextureSphere(x,y,z,-radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:   #not a Q atom
@@ -7517,7 +7524,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                             if np.min(P) < np.max(P):
                                 P = (P-np.min(P))/(np.max(P)-np.min(P))
-                            E = [1.,1.,1.]
+                            E = [0.,0.,0.]
                             R4 = np.eye(4)
                             RenderTextureSphere(x,y,z,radius,E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
                         else:

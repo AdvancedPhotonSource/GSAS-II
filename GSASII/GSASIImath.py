@@ -6062,6 +6062,10 @@ def normQ(QA):
     ''' get length of quaternion & normalize it
         q=r+ai+bj+ck
     '''
+    if QA[0] < 0:
+        QA[0] %= -1 
+    else:
+        QA[0] %= 1.
     n = np.sqrt(np.sum(np.array(QA)**2))
     return QA/n
 

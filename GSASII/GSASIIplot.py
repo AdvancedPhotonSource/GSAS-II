@@ -6918,12 +6918,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         spID = GL.glGenTextures(1)
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
         GL.glEnable(GL.GL_BLEND)
-        if radius > 0.:
-            GL.glFrontFace(GL.GL_CCW)       #shows outside
-        else:
-            GL.glFrontFace(GL.GL_CW)       #shows outside
-        GL.glEnable(GL.GL_CULL_FACE)    #removes striping
-        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        # if radius > 0.:
+        #     GL.glFrontFace(GL.GL_CCW)       #shows outside
+        # else:
+        #     GL.glFrontFace(GL.GL_CW)       #shows outside
+#        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glBindTexture(GL.GL_TEXTURE_2D, spID)
         GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
@@ -6945,7 +6944,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GLU.gluSphere(q,1.0,shape[0],shape[1])
         GL.glDisable(GL.GL_NORMALIZE)
         GL.glPopMatrix()
-        GL.glDisable(GL.GL_CULL_FACE)
+#        GL.glDisable(GL.GL_CULL_FACE)
         GL.glDisable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_BLEND)
 
@@ -7488,13 +7487,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                         GL.glPushMatrix()
                                         SetProjection(np.sqrt(cPos)/5.)
                                         GL.glMatrixMode(GL.GL_MODELVIEW)
-                                        RenderTextureSphere(x,y,z,-radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                        RenderTextureSphere(x,y,z,radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                         GL.glMatrixMode(GL.GL_PROJECTION)
                                         GL.glPopMatrix()
                                         GL.glMatrixMode(GL.GL_MODELVIEW)
                                     else:
                                         # negative radius to ensure correct wrap so stuff is on outside
-                                        RenderTextureSphere(x,y,z,-radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                        RenderTextureSphere(x,y,z,radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:   #not a Q atom

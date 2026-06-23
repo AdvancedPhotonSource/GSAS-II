@@ -2132,7 +2132,7 @@ def UpdateRigidBodies(G2frame,data):
         name = G2obj.MakeUniqueLabel(name,namelist)
         data['Residue'][rbid] = {'RBname':name,
                 'rbXYZ': coords,
-                'rbRef':[0,1,2,False],
+                'rbRef':[-1,-1,-1,False],
                 'rbTypes':types, 'atNames':atNames,
                 'useCount':0,
                 'rbSeq':rbSeq, 'SelSeq':[0,0],}
@@ -2495,7 +2495,7 @@ unselected atoms appear much darker than selected atoms.
                         data['Residue'] if 'RBname' in data['Residue'][key]]
                 name = G2obj.MakeUniqueLabel(name,namelist)
                 data['Residue'][rbid] = {'RBname':name,'rbXYZ':rbXYZ,
-                    'rbTypes':rbTypes,'atNames':atNames,'rbRef':[0,1,2,False],
+                    'rbTypes':rbTypes,'atNames':atNames,'rbRef':[-1,-1,-1,False],
                     'rbSeq':[],'SelSeq':[0,0],'useCount':0}
                 data['RBIds']['Residue'].append(rbid)
                 for t in rbTypes:
@@ -2914,7 +2914,8 @@ create a Vector or Residue rigid body.
                            data['Residue'] if 'RBname' in data['Residue'][key]]
                 rbName = G2obj.MakeUniqueLabel(rbName,namelist)
                 data['Residue'][resRBsel] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
-                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1,True],'rbSeq':rbSeq,
+#                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1,True],'rbSeq':rbSeq,
+                    'atNames':atNames,'rbRef':[-1,-1,-1,True],'rbSeq':rbSeq,
                     'SelSeq':[0,0],'useCount':0,'molCent':None}
                 data['RBIds']['Residue'].append(resRBsel)
                 print ('Rigid body '+rbName+' added')
@@ -2993,7 +2994,7 @@ create a Vector or Residue rigid body.
                         if 'RBname' in data['Residue'][key]]
             name = G2obj.MakeUniqueLabel(name,namelist)
             data['Residue'][resRBsel] = {'RBname':name,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
-                'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0,'molCent':False}
+                'atNames':atNames,'rbRef':[-1,-1,-1,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0,'molCent':False}
             data['RBIds']['Residue'].append(resRBsel)
             print ('Rigid body UNKRB added')
         text.close()
@@ -3569,20 +3570,29 @@ create a Vector or Residue rigid body.
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                         
             def OnRefSel(event):
+                '''respond to a Orientation reference A-B-C selection
+                '''
                 Obj = event.GetEventObject()
                 iref,res,jref = Indx[Obj.GetId()]
                 sel = Obj.GetValue()
-                ind = atNames.index(sel)
-                if rbData['rbTypes'][ind] == 'H':
-                    G2G.G2MessageBox(G2frame,'You should not select an H-atom for rigid body orientation')
-                rbData['rbRef'][iref] = ind
+                if sel != '':
+                    ind = atNames.index(sel)
+                    if rbData['rbTypes'][ind] == 'H':
+                        G2G.G2MessageBox(G2frame,'You should not select an H-atom for rigid body orientation')
+                        sel = Obj.SetValue('')
+                        return
+                    rbData['rbRef'][iref] = ind
                 FillRefChoice(rbid,rbData)
                 for i,ref in enumerate(RefObjs[jref]):
-                    ref.SetItems([atNames[j] for j in refChoice[rbid][i]])
-                    ref.SetValue(atNames[rbData['rbRef'][i]])                    
+                    choices = []
+                    if rbData['rbRef'][i] < 0: choices = ['']
+                    choices += [atNames[j] for j in refChoice[rbid][i]]
+                    ref.SetItems(choices)
+                    if rbData['rbRef'][i] >= 0:
+                        ref.SetValue(atNames[rbData['rbRef'][i]])
+                if -1 in rbData['rbRef'][:3]: return # don't process until all three atoms are set
                 rbXYZ = rbData['rbXYZ']
-                if not iref:     #origin change
-                    rbXYZ -= rbXYZ[ind]
+                rbXYZ -= rbXYZ[rbData['rbRef'][0]] #origin change
                 Xxyz = rbXYZ[rbData['rbRef'][1]]
                 X = Xxyz/np.sqrt(np.sum(Xxyz**2))
                 Yxyz = rbXYZ[rbData['rbRef'][2]]
@@ -3709,8 +3719,11 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
                 for i in range(3):
                     choices = [atNames[j] for j in refChoice[rbid][i]]
                     refSel = wx.ComboBox(ResidueRBDisplay,-1,value='',
-                        choices=choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                    refSel.SetValue(atNames[rbRef[i]])
+                        choices=['']+choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    if rbRef[i] < 0:
+                        refSel.SetValue('')
+                    else:
+                        refSel.SetValue(atNames[rbRef[i]])
                     refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
                     Indx[refSel.GetId()] = [i,resGrid,len(RefObjs)]
                     refObj[i] = refSel
@@ -3823,22 +3836,25 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             return slideSizer,angSlide
             
         def FillRefChoice(rbid,rbData):
+            '''Fill the atom selection menus for the Orient. Ref selections
+            '''
             choiceIds = [i for i in range(len(rbData['atNames']))]
-            for seq in rbData['rbSeq']:
+            for seq in rbData['rbSeq']: # not sure what this does
                 for i in seq[3]:
                     try:
                         choiceIds.remove(i)
                     except ValueError:
                         pass
-            rbRef = rbData['rbRef']
-            for i in range(3):
+            for i in range(3): # remove the selected atoms from the menu
+                if rbData['rbRef'][i] < 0: continue
                 try:
-                    choiceIds.remove(rbRef[i])
+                    choiceIds.remove(rbData['rbRef'][i])
                 except ValueError:
                     pass
             refChoice[rbid] = [choiceIds[:],choiceIds[:],choiceIds[:]]
-            for i in range(3):
-                refChoice[rbid][i].append(rbRef[i])
+            for i in range(3): # put back in the current selection into that menu
+                if rbData['rbRef'][i] < 0: continue
+                refChoice[rbid][i].append(rbData['rbRef'][i])
                 refChoice[rbid][i].sort()
                 
         def OnRBSelect(event):

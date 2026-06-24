@@ -7,7 +7,7 @@ version: 2
 build:
   os: "ubuntu-lts-latest"
   tools:
-    python: "miniconda-latest"
+    python: "miniforge-latest"
 
 conda:
   environment: docs/environment.yml

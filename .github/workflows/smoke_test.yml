@@ -44,7 +44,9 @@ jobs:
 
       # On macOS, the conda-forge cross-compiler (arm64-apple-darwin20.0.0-clang)
       # requires SDKROOT/CONDA_BUILD_SYSROOT to link against libSystem.dylib.
-      # Without this, meson's C compiler sanity check fails on newer Xcode versions.
+      # Without this, meson's C compiler sanity check fails on newer Xcode versions
+      # (e.g. Xcode 26+) because dyld rejects executables missing LC_LOAD_DYLIB.
+      # MACOSX_DEPLOYMENT_TARGET=11.0 matches the compiler's darwin20 target triplet.
       - name: Set macOS SDK paths
         if: runner.os == 'macOS'
         run: |

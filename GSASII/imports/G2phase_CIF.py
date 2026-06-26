@@ -1391,16 +1391,15 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
             # create the constraints
             modeVarList = []
             for i,row in enumerate(occupancymodeInvmatrix):
-                #constraint = [(1,None)] # place a constant 1 into the expression
                 constraint = []
                 for j,(lbl,k) in enumerate(zip(occVarLbl,row)):
                     if k == 0: continue
-                    #constraint.append([-k,G2varObj[j]])
                     constraint.append([k,G2varObj[j]])
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmodelist[i],None))
                 modeVarList.append(modeVar)
-                constraint += [modeVar,False,'f']
+                constraint += [modeVar,False,'f']    # TODO -- use new form for occupancy mode
+                #constraint += [modeVar,False,1.0]
                 self.Constraints.append(constraint)
             # normilization constants
             normlist = []

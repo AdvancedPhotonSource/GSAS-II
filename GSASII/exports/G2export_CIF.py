@@ -423,7 +423,7 @@ def WriteCIFitem(fp, name, value=''):
                 fp.write(name+'\n')
             fp.write(';\n'+value+'\n')
             fp.write(';'+'\n')
-        elif " " in value:
+        elif " " in value or value.lower().startswith('data_'):
             if len(name)+len(value) > 65:
                 fp.write(name + '\n   ' + '"' + str(value) + '"'+'\n')
             else:

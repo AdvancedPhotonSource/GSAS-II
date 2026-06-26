@@ -1751,7 +1751,42 @@ for more information on the parameters supplied here.
     ]
     hist = gpx.add_powder_histogram(PathWrap('FAP.XRA'), fmthint='GSAS powder',
                                     iparams=inst_params)
-            
+
+Use Bilboa Website to Clean up Symmetry
+-----------------------------------------
+
+Periodically I come across CIFs that are in weird settings that
+GSAS-II cannot read directly, but fortunately the Bilbao
+"CIF to Standard Setting" (strtidy) is much more tolerant. Here is
+some code that reads in a CIF, calling strtidy if needed and then
+the transformed coordinates are written out. Note that the BCS_API_KEY
+needs to be supplied. See the
+`"Setup Access to the Bilbao Crystallographic Server" tutorial
+<https://advancedphotonsource.github.io/GSAS-II-tutorials/RegisterBilbao/RegisterBilbao.html>`_
+for information on how to obtain this. Note that you do not want to
+run this script on a very large number of files over a very short time
+and overload the BCS server. 
+
+.. code-block::  python
+
+    import os
+    import G2script as G2sc
+    os.environ.update({"BCS_API_KEY":"BCS_API_KEY_..."})
+    PathWrap = lambda fil: os.path.join('/Users/toby/Scratch/CIF_problems',fil)
+    files = [
+        'data_104906-ICSD_original.cif',
+        'data_260095-ICSD_original.cif',
+    for f in files:
+        gpx = G2sc.G2Project(newgpx='Junk.gpx') # create a new project
+        newname = f.replace('.cif','_rev.cif')
+        phase0 = gpx.add_phase(PathWrap(f),
+            phasename=os.path.split(f)[1],fmthint='CIF',
+            useNet=True,
+            )
+        phase0.export_CIF(newname)
+        print(f'file {newname} written')
+        del gpx  # gets written anyway, alas
+                                    
 .. _CommandlineInterface:
 
 GSASIIscriptable Command-line Interface

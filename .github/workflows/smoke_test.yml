@@ -42,6 +42,17 @@ jobs:
           pixi-version: v0.39.5
           manifest-path: pixi/pixi.toml
 
+      # On macOS, the conda-forge cross-compiler (arm64-apple-darwin20.0.0-clang)
+      # requires SDKROOT/CONDA_BUILD_SYSROOT to link against libSystem.dylib.
+      # Without this, meson's C compiler sanity check fails on newer Xcode versions.
+      - name: Set macOS SDK paths
+        if: runner.os == 'macOS'
+        run: |
+          SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          echo "SDKROOT=$SDKROOT" >> $GITHUB_ENV
+          echo "CONDA_BUILD_SYSROOT=$SDKROOT" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+
       # run install to see if it works
       - name: Build
         # run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}

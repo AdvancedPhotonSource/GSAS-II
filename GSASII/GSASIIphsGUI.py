@@ -1555,10 +1555,7 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
     for i in range(4):
         val = testRBObj['rbObj']['OrientVec'][i]
-        if not i:    #in that BoxSizer from G2SpinWidget
-            BSI = G2frame.testRBObjSizers['OrientVecSiz'][i].GetChildren()[-2].GetWindow()
-        else:
-            BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]
+        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i+1]
         BSI.ChangeValue(val)
     
     
@@ -1573,8 +1570,8 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
     for i,sizer in enumerate(G2frame.testRBObjSizers.get('Xsizers',[])):
         sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
-    # if G2frame.testRBObjSizers.get('OnOrien') is None: return
-    # G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))
+    if G2frame.testRBObjSizers.get('OnOrien') is None: return
+    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))
 
 def GetReflData(G2frame,phaseName,reflNames):
     ReflData = {'RefList':[],'Type':''}
@@ -6851,11 +6848,11 @@ at one of the following locations:
                         RMCPdict[pName+label] = np.sum(Ycalc[1])/np.sum(Yobs[1])
                         print(' %s scale Ycalc/Yobs: %.4f'%(label,RMCPdict[pName+label]))
 #partials plots
-            Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
+            PLabels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
                 '_SQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) partials for '],
                 '_SQ2partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)-2','RMCP S(Q) partials for '],
                 '_FQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP F(Q) partials for ']}
-            for label in Labels:
+            for label in PLabels:
                 X = []
                 Partials = []
                 if len(files[label]):
@@ -6876,13 +6873,14 @@ at one of the following locations:
                         else:
                             XY = [[X.T,(DX*Y.T)*X.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
                     Names = [name for name in Names if 'Va' not in name]
-                    ylabel = Labels[label][1]
-                    if 'G(R)' in Labels[label][1]:
+                    ylabel = PLabels[label][1]
+                    if 'G(R)' in PLabels[label][1]:
                         if ifNeut:
-                            title = 'Neutron '+Labels[label][2]+pName
+                            title = 'Neutron '+PLabels[label][2]+pName
                         else:
-                            continue        #skip for now - x-ray partials are missing header record
-                            title = 'X-ray '+Labels[label][2].replace('G','g')+pName
+                            # continue        #skip for now - x-ray partials are missing header record
+                            # title = 'X-ray '+PLabels[label][2].replace('G','g')+pName
+                            title = 'X-ray partials for '+pName
                             ylabel = 'g(R)'
                         sumAtm = 0
                         BLtables = G2elem.GetBLtable(generalData)
@@ -6915,12 +6913,12 @@ at one of the following locations:
                             xy[1] *= bcorr[ixy]
                             xy[1] += Ymin
                         Xmax = np.searchsorted(Ysave[0][0],XY[0][0][-1])
-                        G2plt.PlotXY(G2frame,XY2=XY,XY=[Ysave[0][:,0:Xmax],],labelX=Labels[label][0],
+                        G2plt.PlotXY(G2frame,XY2=XY,XY=[Ysave[0][:,0:Xmax],],labelX=PLabels[label][0],
                             labelY=ylabel,newPlot=True,Title=title,
                             lines=False,names=[r'   $G(R)_{calc}$',]+Names[1:])
                     else:
-                        G2plt.PlotXY(G2frame,XY,labelX=Labels[label][0],
-                            labelY=ylabel,newPlot=True,Title=Labels[label][2]+pName,
+                        G2plt.PlotXY(G2frame,XY,labelX=PLabels[label][0],
+                            labelY=ylabel,newPlot=True,Title=PLabels[label][2]+pName,
                             lines=True,names=Names[1:])
 #chi**2 plot
             X = []
@@ -7708,12 +7706,8 @@ at one of the following locations:
         drawAtoms.SetColSize(colLabels.index('Style'),80)
         drawAtoms.SetColSize(colLabels.index('Color'),50)
         drawAtoms.SetRowLabelSize(45)
-        if 'phoenix' in wx.version():
-            drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
-            drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshDrawAtomGrid)
-        else:
-            drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGE)
-            drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshDrawAtomGrid)
+        drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
+        drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshDrawAtomGrid)
         drawAtoms.Unbind(wg.EVT_GRID_LABEL_LEFT_DCLICK)
         drawAtoms.Unbind(wg.EVT_GRID_CELL_LEFT_DCLICK)
         drawAtoms.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
@@ -10456,41 +10450,41 @@ at one of the following locations:
                 spnSelect.Deselect(spnSelect.GetSelection())
             except:
                 pass
-            # # define the parameters needed to drag the RB with the mouse
-            # data['testRBObj'] = {}
-            # rbType = 'Residue'
-            # data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
-            # rbId = data['RBModels'][rbType][prevResId]['RBId']
-            # RBdata = G2frame.GPXtree.GetItemPyData(
-            #     G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-            # data['testRBObj']['rbData'] = RBdata
-            # data['testRBObj']['rbType'] = rbType
-            # data['testRBObj']['rbAtTypes'] = RBdata[rbType][rbId]['rbTypes']
-            # data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
-            # data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
-            # data['testRBObj']['Sizers'] = {}
-            # data['testRBObj']['rbRef'] = RBData[rbType][rbId]['rbRef']
+            # define the parameters needed to drag the RB with the mouse
+            data['testRBObj'] = {}
+            rbType = 'Residue'
+            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
+            rbId = data['RBModels'][rbType][prevResId]['RBId']
+            RBdata = G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+            data['testRBObj']['rbData'] = RBdata
+            data['testRBObj']['rbType'] = rbType
+            data['testRBObj']['rbAtTypes'] = RBdata[rbType][rbId]['rbTypes']
+            data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
+            data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
+            data['testRBObj']['Sizers'] = {}
+            data['testRBObj']['rbRef'] = RBData[rbType][rbId]['rbRef']
 
-            # refType = []
-            # for ref in data['testRBObj']['rbRef'][:3]:
-            #     reftype = data['testRBObj']['rbAtTypes'][ref]
-            #     refType.append(reftype)
-            #     #refName.append(reftype+' '+str(rbRef[0]))
-            # atNames = [{},{},{}]
-            # AtNames = {}
-            # cx,ct,cs,cia = data['General']['AtomPtrs']
-            # for iatm,atom in enumerate(data['Atoms']):
-            #     AtNames[atom[ct-1]] = iatm
-            #     for i,reftype in enumerate(refType):
-            #         if atom[ct] == reftype:
-            #             atNames[i][atom[ct-1]] = iatm
-            # data['testRBObj']['atNames'] = atNames
-            # data['testRBObj']['AtNames'] = AtNames
-            # data['testRBObj']['torAtms'] = []
-            # # unclear why these torsion entries are being added to rbObj.
-            # for item in RBData[rbType][rbId].get('rbSeq',[]):
-            #     data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
-            #     data['testRBObj']['torAtms'].append([-1,-1,-1])
+            refType = []
+            for ref in data['testRBObj']['rbRef'][:3]:
+                reftype = data['testRBObj']['rbAtTypes'][ref]
+                refType.append(reftype)
+                #refName.append(reftype+' '+str(rbRef[0]))
+            atNames = [{},{},{}]
+            AtNames = {}
+            cx,ct,cs,cia = data['General']['AtomPtrs']
+            for iatm,atom in enumerate(data['Atoms']):
+                AtNames[atom[ct-1]] = iatm
+                for i,reftype in enumerate(refType):
+                    if atom[ct] == reftype:
+                        atNames[i][atom[ct-1]] = iatm
+            data['testRBObj']['atNames'] = atNames
+            data['testRBObj']['AtNames'] = AtNames
+            data['testRBObj']['torAtms'] = []
+            # unclear why these torsion entries are being added to rbObj.
+            for item in RBData[rbType][rbId].get('rbSeq',[]):
+                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
+                data['testRBObj']['torAtms'].append([-1,-1,-1])
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
 
         def OnSpnSelect(event):
@@ -10593,6 +10587,7 @@ at one of the following locations:
                 # patch
                 if 'AtomFrac' not in RBObj:
                     RBObj['AtomFrac'] = [1.0,False]
+                RBObj['fixOrig'] = False
                 #end patch
                 name = RBObj['RBname']+RBObj['numChain']
                 RBnames.append(name)
@@ -10624,6 +10619,7 @@ at one of the following locations:
                 # patch
                 if 'AtomFrac' not in RBObj:
                     RBObj['AtomFrac'] = [1.0,False]
+                RBObj['fixOrig'] = False
                 #end patch
                 RBnames.append(RBObj['RBname'])
             vecId = -1
@@ -10995,8 +10991,8 @@ at one of the following locations:
                     np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
                 azSlide.SetValue(int(10*rbObj['OrientVec'][0]))
-                # G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
-                #     int(10*rbObj['OrientVec'][0]))
+                G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
+                    int(10*rbObj['OrientVec'][0]))
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 UpdateTable()
 
@@ -11290,10 +11286,7 @@ of the crystal structure.
                     xmin=-1.5,xmax=1.5,typeHint=float,OnLeave=UpdateSytSym)
                 OriSizer.Add(origX,0,WACV)
                 Xsizers.append(origX)
-            try:
-                rbObj['fixOrig']
-            except:
-                rbObj['fixOrig'] = False
+            rbObj['fixOrig'] = rbObj.get('fixOrig',False)
             if rbType != 'Spin':
                 fixOrig = G2G.G2CheckBox(RigidBodies,'Lock',rbObj,'fixOrig')
                 OriSizer.Add(fixOrig,0,WACV,10)
@@ -11317,10 +11310,7 @@ of the crystal structure.
                 if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [180.,0.,0.,1.]
                 rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
                 rbObj['OrientVec'][1:] = np.inner(Bmat,V)
-                # OriSizer2.Add(wx.StaticText(RigidBodies,label='Orientation azimuth: '),0,WACV)
                 OrientVecSiz = []
-                # OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
-                #     xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
                 Orientvec = G2G.G2SpinWidget(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),typeHint=float,
                     label='Orientation azimuth: ',xmin=0.,xmax=360.,onChange=UpdateOrientation)
                 OrientVecSiz.append(Orientvec)

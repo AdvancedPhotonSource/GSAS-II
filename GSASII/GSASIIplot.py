@@ -7661,7 +7661,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if testRBObj['rbType'] != 'Spin':
                     RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
-                symAxis = testRBObj['symAxis']
+                symAxis = testRBObj.get('symAxis',None)
             Q0 = testRBObj['rbObj']['Orient'][0]
             Q = G2mth.QsymAxis(Q0,symAxis)
             RenderRBtriplet(testRBObj['rbObj']['Orig'][0],Q0,Q,Bmat)

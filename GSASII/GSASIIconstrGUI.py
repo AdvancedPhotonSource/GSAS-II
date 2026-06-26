@@ -1191,7 +1191,16 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         m = term[0]
                         if np.isclose(m,0): continue
                         #var = str(term[1])
+                        # if term[1] is None:  # use if constant encoded via var of None
+                        #     var,explain,note,warnmsg = 4*['']
+                        #     helptext += f'\n  constant value {m}'
+                        # else:
+                        #     var,explain,note,warnmsg = term[1].fmtVarByMode(seqmode,note,warnmsg)
+                        #     varMean = G2obj.fmtVarDescr(var)
+                        #     helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
                         var,explain,note,warnmsg = term[1].fmtVarByMode(seqmode,note,warnmsg)
+                        varMean = G2obj.fmtVarDescr(var)
+                        helptext += f'\n  {m:.5g} * {var}  ({varMean}'
                         #if '?' in var: badVar = True
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
@@ -1205,8 +1214,6 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                             eqString[-1] += '{:} '.format(var)
                         else:
                             eqString[-1] += '{:.3g}*{:} '.format(m,var)
-                        varMean = G2obj.fmtVarDescr(var)
-                        helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
                     # Add extra notes about this constraint (such as from ISODISTORT)
                     if '_Explain' in data:
                         hlptxt = None
@@ -4365,6 +4372,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     Phase['ISODISTORT'] is defined. 
 
     '''
+    savedAtoms = {}
     def showChange(*args):
         '''Respond to data entry (slider or typed value)
         '''
@@ -4383,13 +4391,18 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     def changeDrawAtoms():
         '''Update the values on the Draw Atoms listing and plot them
         '''
+        if 'atoms' not in savedAtoms: savedAtoms['atoms'] = copy.copy(data['Atoms'])
         atomData = data['Atoms']
         cx,ct,cs,ci = data['General']['AtomPtrs']
         for i,atom in enumerate(atomData):
             a = copy.deepcopy(atom)
-            for j,XYZ in enumerate(['x','y','z','frac']): # update coordinates from parmDict
+            for j,XYZ in enumerate(['x','y','z']): # update coordinates from parmDict
                 key = f"{data['pId']}::A{XYZ}:{i}"
-                a[cx+j] = float(parmDict[key])
+                dkey = f"{data['pId']}::dA{XYZ}:{i}"
+                if parmDict[dkey] != 0:
+                    a[cx+j] = savedAtoms['atoms'][i][cx+j] + float(parmDict[dkey])
+            key = f"{data['pId']}::Afrac:{i}"
+            a[cx+3] = float(parmDict[key])
             if data['General']['Type'] == 'magnetic': # update moments too
                 for j,XYZ in enumerate('xyz'):
                     key = f"{data['pId']}::AM{XYZ}:{i}"
@@ -4415,9 +4428,13 @@ def ShowIsoDistortCalc(G2frame,phase=None):
         atomData = data['Atoms']
         cx,ct,cs,ci = data['General']['AtomPtrs']
         for i,atom in enumerate(atomData):
-            for j,XYZ in enumerate(['x','y','z','frac']): # update coordinates from parmDict
+            for j,XYZ in enumerate(['x','y','z']): # update coordinates from parmDict
                 key = f"{data['pId']}::A{XYZ}:{i}"
-                atom[cx+j] = float(parmDict[key])
+                dkey = f"{data['pId']}::dA{XYZ}:{i}"
+                if parmDict[dkey] != 0:
+                    atom[cx+j] += float(parmDict[dkey])
+            key = f"{data['pId']}::Afrac:{i}"
+            atom[cx+3] = float(parmDict[key])
             if data['General']['Type'] == 'magnetic': # update moments too
                 for j,XYZ in enumerate('xyz'):
                     key = f"{data['pId']}::AM{XYZ}:{i}"

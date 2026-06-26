@@ -785,23 +785,41 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
         and  _iso_magneticmode... are processed. 
         Not yet processed: _iso_rotationalmode... & _iso_strainmode...
         '''
-        def fmtEqn(i,head,l,var,k):
-            'format a section of a row of variables and multipliers'
-            if np.isclose(k,0): return head,l
-            if len(head) + len(l) > 65:
-                print(head+l)
-                head = 20*' '
-                l = ''
-            if k < 0 and i > 0:
-                l += ' - '
-                k = -k
-            elif i > 0:
-                l += ' + '
-            if k == 1:
-                l += '%s ' % str(var)
-            else:
-                l += '%.3f * %s' % (k,str(var))
-            return head,l
+        # def fmtEqn(i,head,l,var,k):
+        #     'format a section of a row of variables and multipliers'
+        #     if np.isclose(k,0): return head,l
+        #     if len(head) + len(l) > 65:
+        #         print(head+l)
+        #         head = 20*' '
+        #         l = ''
+        #     if k < 0 and i > 0:
+        #         l += ' - '
+        #         k = -k
+        #     elif i > 0:
+        #         l += ' + '
+        #     if k == 1:
+        #         l += '%s ' % str(var)
+        #     else:
+        #         l += '%.3f * %s' % (k,str(var))
+        #     return head,l
+        
+        # def fmtConstr(head,l,var,k):
+        #     'format a section of a row of variables and multipliers'
+        #     if np.isclose(k,0): return head,l
+        #     if len(head) + len(l) > 65:
+        #         print(head+l)
+        #         head = 20*' '
+        #         l = ''
+        #     if k < 0 and l:
+        #         l += ' - '
+        #         k = -k
+        #     elif l:
+        #         l += ' + '
+        #     if k == 1:
+        #         l += '%s ' % str(var)
+        #     else:
+        #         l += '%.3f * %s' % (k,str(var))
+        #     return head,l
 
         def ISOreadMagModes():
             '''Read in the ISODISTORT magnetic modes'''
@@ -918,13 +936,15 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 magneticmodematrix[int(row)-1,int(col)-1] = float(val)
             # Invert to get mapping of atom displacements to modes
             Var2ModeMatrix = np.linalg.inv(magneticmodematrix)
+            latDict = dict(zip(('AMx', 'AMy', 'AMz'),self.Phase['General']['Cell'][1:4]))
             # create the constraints
             modeVarList = []
             for i,(row,norm) in enumerate(zip(Var2ModeMatrix,normlist)):
                 constraint = []
                 for j,(lbl,k) in enumerate(zip(magVarLbl,row)):
                     if k == 0: continue
-                    constraint.append([k/norm,G2varObj[j]])
+                    latNorm = latDict[G2varObj[j].name]
+                    constraint.append([k/(latNorm*norm),G2varObj[j]])
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmodelist[i],None))
                 modeVarList.append(modeVar)
@@ -961,147 +981,35 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
             explainMode(modelist,shortmodelist)      # make explanation dictionary
 
             #=== Debug: regenerate input =======================================
-            if debug:
-                print('\n' + 70*'=')
-                print('ISO modes from Iso coordinate vars (using Var2ModeMatrix, IsoVarList, G2VarList & G2ModeList)' )
-                for i,row in enumerate(self.Phase['ISODISTORT']['Var2ModeMatrix']):
-                    norm = self.Phase['ISODISTORT']['NormList'][i]
-                    head = '  ' + str(self.Phase['ISODISTORT']['G2MagModeList'][i]) + ' = ('
-                    line = ''
-                    for j,(lbl,k) in enumerate(zip(magVarLbl,row)):
-                        var = self.Phase['ISODISTORT']['MagVarList'][j]
-                        head,line = fmtEqn(j,head,line,var,k)
-                    print(head+line+') / {:.3g}'.format(norm))
-                    head = '              = '
-                    line = ''
-                    for j,(lbl,k) in enumerate(zip(magVarLbl,row)):
-                        var = self.Phase['ISODISTORT']['MagVarList'][j]
-                        head,line = fmtEqn(j,head,line,var,k/norm)
-                    print(head+line)
-                print('\nConstraints')
-                for c in self.Constraints:
-                    if type(c) is dict: continue
-                    if c[-1] != 'f': continue
-                    line = ''
-                    head = '  ' + str(c[-3]) + ' = '
-                    for j,(k,var) in enumerate(c[:-3]):
-                        head,line = fmtEqn(j,head,line,var,k)
-                    print(head+line)
-
-                # Get the ISODISTORT offset values
-                coordVarDelta = {}
-                for lbl,val in zip(
-                    blk.get('_iso_deltamoment_label'),
-                    blk.get('_iso_deltamoment_value'),):
-                    coordVarDelta[lbl] = float(val)
-                modeVarDelta = {}
-                for lbl,val in zip(
-                    blk.get('_iso_magneticmode_label'),
-                    blk.get('_iso_magneticmode_value'),):
-                    modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
-
-                print('\n' + 70*'=')
-                print('Confirming inverse mode relations computed from displacement values',
-                          '\nusing Var2ModeMatrix, NormList, MagVarList')
-                # compute the mode values from the reported coordinate deltas
-                for i,(row,n) in enumerate(zip(self.Phase['ISODISTORT']['Var2ModeMatrix'],
-                                               self.Phase['ISODISTORT']['NormList'])):
-                    line = ''
-                    print(str(self.Phase['ISODISTORT']['MagModeList'][i])+' = ')
-                    head = '  = ('
-                    for j,(lbl,k) in enumerate(zip(magVarLbl,row)):
-                        head,line = fmtEqn(j,head,line,lbl,k)
-                    print(head+line+') / '+('%.3f'%n))
-                    line = ''
-                    head = '  = ('
-                    vsum = 0.
-                    for j,(lbl,k) in enumerate(zip(magVarLbl,row)):
-                        val = "{:3g}".format(coordVarDelta[lbl])
-                        head,line = fmtEqn(j,head,line,val,k)
-                        vsum += coordVarDelta[lbl] * k
-                    print(head+line+') / '+('%.3f'%n))
-                    fileval = modeVarDelta[self.Phase['ISODISTORT']['MagModeList'][i]]
-                    print("{} = {:4g} (value read from CIF = {:4g})\n".format(
-                        self.Phase['ISODISTORT']['MagModeList'][i], vsum, fileval))
-
-                print( 70*'=')
-                print('Direct displacement relations computed from ISO modes in CIF',
-                          '\nusing Mode2VarMatrix, NormList, MagModeList, IsoVarList',)
-                # compute the coordinate displacements from the reported mode values
-                for lbl,row in zip(self.Phase['ISODISTORT']['MagVarList'],
-                                   self.Phase['ISODISTORT']['Mode2VarMatrix']):
-                    l = ''
-                    s = 0.0
-                    head = lbl+' ='
-                    for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
-                        if k == 0: continue
-                        if len(l) > 65:
-                            print(head,l)
-                            head = 20*' '
-                            l = ''
-                        l1 = ''
-                        k1 = k
-                        if j > 0 and k < 0:
-                            k1 = -k
-                            l1 = ' - '
-                        elif j > 0:
-                            l1 += ' + '
-                        l += '{:} {:3g} * {:4g} * {:}'.format(
-                            l1, k1, n, self.Phase['ISODISTORT']['MagModeList'][j])
-
-                        s += n * modeVarDelta[self.Phase['ISODISTORT']['MagModeList'][j]] * k
-                    print(head,l)
-                    print(lbl,'=',s)
-                    print(lbl,'==>',str(self.Phase['ISODISTORT']['G2VarList'][i]),'\n')
-                DeltaCoords = {}
-                for i,lbl,row in zip(range(len(magVarLbl)),magVarLbl,magneticmodematrix):
-                    s = 0.0
-                    for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
-                        s += k * n * modeVarDelta[self.Phase['ISODISTORT']['MagModeList'][j]]
-                    at,d = lbl.rsplit('_',1)
-                    if at not in DeltaCoords:
-                        DeltaCoords[at] = [0,0,0]
-                    if d == 'dx':
-                        DeltaCoords[at][0] = s
-                    elif d == 'dy':
-                        DeltaCoords[at][1] = s
-                    elif d == 'dz':
-                        DeltaCoords[at][2] = s
-                    #else:
-                    #    print('unexpected',d)
-
-                print( 70*'=')
-                print('Moment checks')
-                print("\nMoments computed from ISO mode values, as above")
-                for at in sorted(DeltaCoords):
-                    s = at
-                    for i in range(3):
-                        s += '  '
-                        s += str(ParentMagVals[at][i]+DeltaCoords[at][i])
-                    print(s)
-
-                # determine the coordinate delta values from deviations from the parent structure
-                print("\nMoment values read directly from CIF")
-                for lbl,mx,my,mz in zip(
-                        blk.get('_atom_site_moment.label'),
-                        blk.get('_atom_site_moment.crystalaxis_x'),
-                        blk.get('_atom_site_moment.crystalaxis_y'),
-                        blk.get('_atom_site_moment.crystalaxis_z'),
-                        ):
-                    print( lbl,mx,my,mz)
-
-                print('\n' + 70*'=')
-                print("G2 short name ==> ISODISTORT full name",
-                          " (from MagModeList and G2MagModeList)")
-                for mode,G2mode in zip(self.Phase['ISODISTORT']['MagModeList'],
-                                       self.Phase['ISODISTORT']['G2MagModeList']):
-                    print('{} ==> {}'.format(str(G2mode), mode))
-                print('\nConstraint help dict info')
-                for i in self.Constraints:
-                    if type(i) is dict:
-                        for key in i:
-                            print('\t',key,':',i[key])
-                print( 70*'=')
+            # if debug:
+            #     print('\n' + 70*'=')
+            #     print('ISO modes from Iso coordinate vars (using Var2ModeMatrix, IsoVarList, G2VarList & G2ModeList)' )
+            #     latDict = dict(zip(('AMx', 'AMy', 'AMz'),self.Phase['General']['Cell'][1:4]))
+            #     for i,row in enumerate(self.Phase['ISODISTORT']['Var2ModeMatrix']):
+            #         norm = self.Phase['ISODISTORT']['NormList'][i]
+            #         head = '  ' + str(self.Phase['ISODISTORT']['G2MagModeList'][i]) + ' = ('
+            #         line = ''
+            #         for j,(lbl,k) in enumerate(zip(magVarLbl,row)):
+            #             var = self.Phase['ISODISTORT']['MagVarList'][j]
+            #             lnorm = latDict[self.Phase['ISODISTORT']['G2VarList'][j].name]
+            #             head,line = fmtConstr(head,line,var,k/lnorm)
+            #         print(f'{head}{line}) / {norm:.3g}')
+            #         head = '              = '
+            #         line = ''
+            #         for j,(lbl,k) in enumerate(zip(magVarLbl,row)):
+            #             var = self.Phase['ISODISTORT']['MagVarList'][j]
+            #             lnorm = latDict[self.Phase['ISODISTORT']['G2VarList'][j].name]
+            #             head,line = fmtConstr(head,line,var,k/(lnorm*norm))
+            #         print(head+line)
+            #     print('\nConstraints')
+            #     for c in self.Constraints:
+            #         if type(c) is dict: continue
+            #         if c[-1] != 'f': continue
+            #         line = ''
+            #         head = '  ' + str(c[-3]) + ' = '
+            #         for j,(k,var) in enumerate(c[:-3]):
+            #             head,line = fmtConstr(head,line,var,k)
+            #         print(head+line)
 
         def ISOreadDisplModes():
             '''Read in the ISODISTORT displacement modes'''
@@ -1147,7 +1055,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 if '+' in exp:
                     val = exp.split('+')[0].strip()
                     val = G2fil.FormulaEval(val)
-                elif '-' in exp:
+                elif ' - ' in exp:
                     val = exp.split('-')[0].strip()
                     val = G2fil.FormulaEval(val)
                 else:
@@ -1253,144 +1161,144 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
             explainMode(modelist,shortmodelist)      # make explanation dictionary
 
             #=== Debug: regenerate input =======================================
-            if debug:
-                print('\n' + 70*'=')
-                print('ISO modes from Iso coordinate vars (using Var2ModeMatrix, IsoVarList, G2VarList & G2ModeList)' )
-                for i,row in enumerate(self.Phase['ISODISTORT']['Var2ModeMatrix']):
-                    norm = self.Phase['ISODISTORT']['NormList'][i]
-                    head = '  ' + str(self.Phase['ISODISTORT']['G2ModeList'][i]) + ' = ('
-                    line = ''
-                    for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                        var = self.Phase['ISODISTORT']['IsoVarList'][j]
-                        head,line = fmtEqn(j,head,line,var,k)
-                    print(head+line+') / {:.3g}'.format(norm))
-                    head = '              = '
-                    line = ''
-                    for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                        var = self.Phase['ISODISTORT']['IsoVarList'][j]
-                        head,line = fmtEqn(j,head,line,var,k/norm)
-                    print(head+line)
-                print('\nConstraints')
-                for c in self.Constraints:
-                    if type(c) is dict: continue
-                    if c[-1] != 'f': continue
-                    line = ''
-                    head = '  ' + str(c[-3]) + ' = '
-                    for j,(k,var) in enumerate(c[:-3]):
-                        head,line = fmtEqn(j,head,line,var,k)
-                    print(head+line)
+            # if debug:
+            #     print('\n' + 70*'=')
+            #     print('ISO modes from Iso coordinate vars (using Var2ModeMatrix, IsoVarList, G2VarList & G2ModeList)' )
+            #     for i,row in enumerate(self.Phase['ISODISTORT']['Var2ModeMatrix']):
+            #         norm = self.Phase['ISODISTORT']['NormList'][i]
+            #         head = '  ' + str(self.Phase['ISODISTORT']['G2ModeList'][i]) + ' = ('
+            #         line = ''
+            #         for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+            #             var = self.Phase['ISODISTORT']['IsoVarList'][j]
+            #             head,line = fmtEqn(j,head,line,var,k)
+            #         print(head+line+') / {:.3g}'.format(norm))
+            #         head = '              = '
+            #         line = ''
+            #         for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+            #             var = self.Phase['ISODISTORT']['IsoVarList'][j]
+            #             head,line = fmtEqn(j,head,line,var,k/norm)
+            #         print(head+line)
+            #     print('\nConstraints')
+            #     for c in self.Constraints:
+            #         if type(c) is dict: continue
+            #         if c[-1] != 'f': continue
+            #         line = ''
+            #         head = '  ' + str(c[-3]) + ' = '
+            #         for j,(k,var) in enumerate(c[:-3]):
+            #             head,line = fmtEqn(j,head,line,var,k)
+            #         print(head+line)
 
-                # Get the ISODISTORT offset values
-                coordVarDelta = {}
-                for lbl,val in zip(
-                    blk.get('_iso_deltacoordinate_label'),
-                    blk.get('_iso_deltacoordinate_value'),):
-                    coordVarDelta[lbl] = float(val)
-                modeVarDelta = {}
-                for lbl,val in zip(
-                    blk.get('_iso_displacivemode_label'),
-                    blk.get('_iso_displacivemode_value'),):
-                    modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
+            #     # Get the ISODISTORT offset values
+            #     coordVarDelta = {}
+            #     for lbl,val in zip(
+            #         blk.get('_iso_deltacoordinate_label'),
+            #         blk.get('_iso_deltacoordinate_value'),):
+            #         coordVarDelta[lbl] = float(val)
+            #     modeVarDelta = {}
+            #     for lbl,val in zip(
+            #         blk.get('_iso_displacivemode_label'),
+            #         blk.get('_iso_displacivemode_value'),):
+            #         modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
 
-                print('\n' + 70*'=')
-                print('Confirming inverse mode relations computed from displacement values',
-                          '\nusing Var2ModeMatrix, NormList, IsoVarList')
-                # compute the mode values from the reported coordinate deltas
-                for i,(row,n) in enumerate(zip(self.Phase['ISODISTORT']['Var2ModeMatrix'],
-                                               self.Phase['ISODISTORT']['NormList'])):
-                    line = ''
-                    print(str(self.Phase['ISODISTORT']['IsoModeList'][i])+' = ')
-                    head = '  = ('
-                    for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                        head,line = fmtEqn(j,head,line,lbl,k)
-                    print(head+line+') / '+('%.3f'%n))
-                    line = ''
-                    head = '  = ('
-                    vsum = 0.
-                    for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                        val = "{:3g}".format(coordVarDelta[lbl])
-                        head,line = fmtEqn(j,head,line,val,k)
-                        vsum += coordVarDelta[lbl] * k
-                    print(head+line+') / '+('%.3f'%n))
-                    fileval = modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][i]]
-                    print("{} = {:4g} (value read from CIF = {:4g})\n".format(
-                        self.Phase['ISODISTORT']['IsoModeList'][i], vsum, fileval))
+            #     print('\n' + 70*'=')
+            #     print('Confirming inverse mode relations computed from displacement values',
+            #               '\nusing Var2ModeMatrix, NormList, IsoVarList')
+            #     # compute the mode values from the reported coordinate deltas
+            #     for i,(row,n) in enumerate(zip(self.Phase['ISODISTORT']['Var2ModeMatrix'],
+            #                                    self.Phase['ISODISTORT']['NormList'])):
+            #         line = ''
+            #         print(str(self.Phase['ISODISTORT']['IsoModeList'][i])+' = ')
+            #         head = '  = ('
+            #         for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+            #             head,line = fmtEqn(j,head,line,lbl,k)
+            #         print(head+line+') / '+('%.3f'%n))
+            #         line = ''
+            #         head = '  = ('
+            #         vsum = 0.
+            #         for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+            #             val = "{:3g}".format(coordVarDelta[lbl])
+            #             head,line = fmtEqn(j,head,line,val,k)
+            #             vsum += coordVarDelta[lbl] * k
+            #         print(head+line+') / '+('%.3f'%n))
+            #         fileval = modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][i]]
+            #         print("{} = {:4g} (value read from CIF = {:4g})\n".format(
+            #             self.Phase['ISODISTORT']['IsoModeList'][i], vsum, fileval))
 
-                print( 70*'=')
-                print('Direct displacement relations computed from ISO modes in CIF',
-                          '\nusing Mode2VarMatrix, NormList, IsoModeList, IsoVarList',)
-                # compute the coordinate displacements from the reported mode values
-                for lbl,row in zip(self.Phase['ISODISTORT']['IsoVarList'],
-                                   self.Phase['ISODISTORT']['Mode2VarMatrix']):
-                    l = ''
-                    s = 0.0
-                    head = lbl+' ='
-                    for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
-                        if k == 0: continue
-                        if len(l) > 65:
-                            print(head,l)
-                            head = 20*' '
-                            l = ''
-                        l1 = ''
-                        k1 = k
-                        if j > 0 and k < 0:
-                            k1 = -k
-                            l1 = ' - '
-                        elif j > 0:
-                            l1 += ' + '
-                        l += '{:} {:3g} * {:4g} * {:}'.format(
-                            l1, k1, n, self.Phase['ISODISTORT']['IsoModeList'][j])
+            #     print( 70*'=')
+            #     print('Direct displacement relations computed from ISO modes in CIF',
+            #               '\nusing Mode2VarMatrix, NormList, IsoModeList, IsoVarList',)
+            #     # compute the coordinate displacements from the reported mode values
+            #     for lbl,row in zip(self.Phase['ISODISTORT']['IsoVarList'],
+            #                        self.Phase['ISODISTORT']['Mode2VarMatrix']):
+            #         l = ''
+            #         s = 0.0
+            #         head = lbl+' ='
+            #         for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
+            #             if k == 0: continue
+            #             if len(l) > 65:
+            #                 print(head,l)
+            #                 head = 20*' '
+            #                 l = ''
+            #             l1 = ''
+            #             k1 = k
+            #             if j > 0 and k < 0:
+            #                 k1 = -k
+            #                 l1 = ' - '
+            #             elif j > 0:
+            #                 l1 += ' + '
+            #             l += '{:} {:3g} * {:4g} * {:}'.format(
+            #                 l1, k1, n, self.Phase['ISODISTORT']['IsoModeList'][j])
 
-                        s += n * modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][j]] * k
-                    print(head,l)
-                    print(lbl,'=',s)
-                    print(lbl,'==>',str(self.Phase['ISODISTORT']['G2VarList'][i]),'\n')
-                DeltaCoords = {}
-                for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix):
-                    s = 0.0
-                    for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
-                        s += k * n * modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][j]]
-                    at,d = lbl.rsplit('_',1)
-                    if at not in DeltaCoords:
-                        DeltaCoords[at] = [0,0,0]
-                    if d == 'dx':
-                        DeltaCoords[at][0] = s
-                    elif d == 'dy':
-                        DeltaCoords[at][1] = s
-                    elif d == 'dz':
-                        DeltaCoords[at][2] = s
-                    #else:
-                    #    print('unexpected',d)
+            #             s += n * modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][j]] * k
+            #         print(head,l)
+            #         print(lbl,'=',s)
+            #         print(lbl,'==>',str(self.Phase['ISODISTORT']['G2VarList'][i]),'\n')
+            #     DeltaCoords = {}
+            #     for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix):
+            #         s = 0.0
+            #         for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
+            #             s += k * n * modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][j]]
+            #         at,d = lbl.rsplit('_',1)
+            #         if at not in DeltaCoords:
+            #             DeltaCoords[at] = [0,0,0]
+            #         if d == 'dx':
+            #             DeltaCoords[at][0] = s
+            #         elif d == 'dy':
+            #             DeltaCoords[at][1] = s
+            #         elif d == 'dz':
+            #             DeltaCoords[at][2] = s
+            #         #else:
+            #         #    print('unexpected',d)
 
-                print( 70*'=')
-                print('Coordinate checks')
-                print("\nxyz's Computed from ISO mode values, as above")
-                for at in sorted(DeltaCoords):
-                    s = at
-                    for i in range(3):
-                        s += '  '
-                        s += str(ParentCoordinates[at][i]+DeltaCoords[at][i])
-                    print(s)
+            #     print( 70*'=')
+            #     print('Coordinate checks')
+            #     print("\nxyz's Computed from ISO mode values, as above")
+            #     for at in sorted(DeltaCoords):
+            #         s = at
+            #         for i in range(3):
+            #             s += '  '
+            #             s += str(ParentCoordinates[at][i]+DeltaCoords[at][i])
+            #         print(s)
 
-                # determine the coordinate delta values from deviations from the parent structure
-                print("\nxyz Values read directly from CIF")
-                for atmline in self.Phase['Atoms']:
-                    lbl = atmline[0]
-                    x,y,z = atmline[3:6]
-                    print( lbl,x,y,z)
+            #     # determine the coordinate delta values from deviations from the parent structure
+            #     print("\nxyz Values read directly from CIF")
+            #     for atmline in self.Phase['Atoms']:
+            #         lbl = atmline[0]
+            #         x,y,z = atmline[3:6]
+            #         print( lbl,x,y,z)
 
-                print('\n' + 70*'=')
-                print("G2 short name ==> ISODISTORT full name",
-                          " (from IsoModeList and G2ModeList)")
-                for mode,G2mode in zip(self.Phase['ISODISTORT']['IsoModeList'],
-                                       self.Phase['ISODISTORT']['G2ModeList']):
-                    print('{} ==> {}'.format(str(G2mode), mode))
-                print('\nConstraint help dict info')
-                for i in self.Constraints:
-                    if type(i) is dict:
-                        for key in i:
-                            print('\t',key,':',i[key])
-                print( 70*'=')
+            #     print('\n' + 70*'=')
+            #     print("G2 short name ==> ISODISTORT full name",
+            #               " (from IsoModeList and G2ModeList)")
+            #     for mode,G2mode in zip(self.Phase['ISODISTORT']['IsoModeList'],
+            #                            self.Phase['ISODISTORT']['G2ModeList']):
+            #         print('{} ==> {}'.format(str(G2mode), mode))
+            #     print('\nConstraint help dict info')
+            #     for i in self.Constraints:
+            #         if type(i) is dict:
+            #             for key in i:
+            #                 print('\t',key,':',i[key])
+            #     print( 70*'=')
 
         def ISOreadOccModes():
             '''Read in the ISODISTORT occupancy modes'''
@@ -1483,9 +1391,11 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
             # create the constraints
             modeVarList = []
             for i,row in enumerate(occupancymodeInvmatrix):
+                #constraint = [(1,None)] # place a constant 1 into the expression
                 constraint = []
                 for j,(lbl,k) in enumerate(zip(occVarLbl,row)):
                     if k == 0: continue
+                    #constraint.append([-k,G2varObj[j]])
                     constraint.append([k,G2varObj[j]])
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmodelist[i],None))
@@ -1521,103 +1431,103 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
             explainMode(modelist,shortmodelist)      # make explanation dictionary
 
             #=== Debug: regenerate input =======================================
-            if debug:
-                # coordinate items
-                G2varObj = self.Phase['ISODISTORT']['G2OccVarList']
-                # mode items
-                modelist = self.Phase['ISODISTORT']['OccModeList']
-                modeVarList = self.Phase['ISODISTORT']['G2OccModeList']
-                normlist = self.Phase['ISODISTORT']['OccNormList']
-                print('\n' + 70*'=')
-                print( 70*'=')
-                print('\nVar2OccMatrix' ,'OccVarList' )
-                for i,row in enumerate(occupancymodeInvmatrix):
-                    l = ''
-                    for j,(lbl,k) in enumerate(zip(occVarLbl,row)):
-                        if k == 0: continue
-                        if l: l += ' + '
-                        #l += lbl+' * '+str(k)
-                        l += str(G2varObj[j])+' * '+str(k)
-                    print( str(i) + ': '+str(modeVarList[i])+' = '+l)
+            # if debug:
+            #     # coordinate items
+            #     G2varObj = self.Phase['ISODISTORT']['G2OccVarList']
+            #     # mode items
+            #     modelist = self.Phase['ISODISTORT']['OccModeList']
+            #     modeVarList = self.Phase['ISODISTORT']['G2OccModeList']
+            #     normlist = self.Phase['ISODISTORT']['OccNormList']
+            #     print('\n' + 70*'=')
+            #     print( 70*'=')
+            #     print('\nVar2OccMatrix' ,'OccVarList' )
+            #     for i,row in enumerate(occupancymodeInvmatrix):
+            #         l = ''
+            #         for j,(lbl,k) in enumerate(zip(occVarLbl,row)):
+            #             if k == 0: continue
+            #             if l: l += ' + '
+            #             #l += lbl+' * '+str(k)
+            #             l += str(G2varObj[j])+' * '+str(k)
+            #         print( str(i) + ': '+str(modeVarList[i])+' = '+l)
 
-                # Get the ISODISTORT offset values
-                occVarDelta = {}
-                for lbl,val in zip(
-                    blk.get('_iso_deltaoccupancy_label'),
-                    blk.get('_iso_deltaoccupancy_value'),):
-                    occVarDelta[lbl] = float(val)
-                modeVarDelta = {}
-                for lbl,val in zip(
-                    blk.get('_iso_occupancymode_label'),
-                    blk.get('_iso_occupancymode_value'),):
-                    modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
+            #     # Get the ISODISTORT offset values
+            #     occVarDelta = {}
+            #     for lbl,val in zip(
+            #         blk.get('_iso_deltaoccupancy_label'),
+            #         blk.get('_iso_deltaoccupancy_value'),):
+            #         occVarDelta[lbl] = float(val)
+            #     modeVarDelta = {}
+            #     for lbl,val in zip(
+            #         blk.get('_iso_occupancymode_label'),
+            #         blk.get('_iso_occupancymode_value'),):
+            #         modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
 
-                print( 70*'=')
-                print('\nInverse relations using Var2OccModeMatrix, OccNormList, OccVarList')
-                # compute the mode values from the reported coordinate deltas
-                for i,(row,n) in enumerate(zip(occupancymodeInvmatrix,normlist)):
-                    l = ''
-                    for lbl,k in zip(occVarLbl,row):
-                        if k == 0: continue
-                        if l: l += ' + '
-                        l += lbl+' * '+str(k)
-                    print('a'+str(i)+' = '+str(modeVarList[i])+' = ('+l+')/'+str(n))
-                print('\nCalculation checks\n')
-                for i,(row,n) in enumerate(zip(occupancymodeInvmatrix,normlist)):
-                    #l = ''
-                    sl = ''
-                    s = 0.
-                    for lbl,k in zip(occVarLbl,row):
-                        if k == 0: continue
-                        #if l: l += ' + '
-                        #l += lbl+' * '+str(k)
-                        if sl: sl += ' + '
-                        sl += str(occVarDelta[lbl])+' * '+str(k)
-                        s += occVarDelta[lbl] * k
-                    print(str(modeVarList[i]),'=','('+sl+') / ',n,'=',s/n)
-                    print(' ?= ',modeVarDelta[modelist[i]])
-                    print()
+            #     print( 70*'=')
+            #     print('\nInverse relations using Var2OccModeMatrix, OccNormList, OccVarList')
+            #     # compute the mode values from the reported coordinate deltas
+            #     for i,(row,n) in enumerate(zip(occupancymodeInvmatrix,normlist)):
+            #         l = ''
+            #         for lbl,k in zip(occVarLbl,row):
+            #             if k == 0: continue
+            #             if l: l += ' + '
+            #             l += lbl+' * '+str(k)
+            #         print('a'+str(i)+' = '+str(modeVarList[i])+' = ('+l+')/'+str(n))
+            #     print('\nCalculation checks\n')
+            #     for i,(row,n) in enumerate(zip(occupancymodeInvmatrix,normlist)):
+            #         #l = ''
+            #         sl = ''
+            #         s = 0.
+            #         for lbl,k in zip(occVarLbl,row):
+            #             if k == 0: continue
+            #             #if l: l += ' + '
+            #             #l += lbl+' * '+str(k)
+            #             if sl: sl += ' + '
+            #             sl += str(occVarDelta[lbl])+' * '+str(k)
+            #             s += occVarDelta[lbl] * k
+            #         print(str(modeVarList[i]),'=','('+sl+') / ',n,'=',s/n)
+            #         print(' ?= ',modeVarDelta[modelist[i]])
+            #         print()
 
-                print( 70*'=')
-                print('\nDirect relations using Occ2VarMatrix, OccNormList, OccVarList')
-                # compute the coordinate displacements from the reported mode values
-                Occ = {}
-                for i,lbl,row in zip(range(len(occVarLbl)),occVarLbl,occupancymodematrix):
-                    l = ''
-                    s = 0.0
-                    for j,(k,n) in enumerate(zip(row,normlist)):
-                        if k == 0: continue
-                        if l: l += ' + '
-                        l += str(n)+' * '+str(modeVarList[j])+' * '+str(k)
-                        s += n * modeVarDelta[modelist[j]] * k
-                    print( lbl,'=',str(G2varObj[i]),'=',l,'=',s,'\n')
-                    j = lbl.split('_')[0]
-                    Occ[j] = ParentOcc[j]+s
+            #     print( 70*'=')
+            #     print('\nDirect relations using Occ2VarMatrix, OccNormList, OccVarList')
+            #     # compute the coordinate displacements from the reported mode values
+            #     Occ = {}
+            #     for i,lbl,row in zip(range(len(occVarLbl)),occVarLbl,occupancymodematrix):
+            #         l = ''
+            #         s = 0.0
+            #         for j,(k,n) in enumerate(zip(row,normlist)):
+            #             if k == 0: continue
+            #             if l: l += ' + '
+            #             l += str(n)+' * '+str(modeVarList[j])+' * '+str(k)
+            #             s += n * modeVarDelta[modelist[j]] * k
+            #         print( lbl,'=',str(G2varObj[i]),'=',l,'=',s,'\n')
+            #         j = lbl.split('_')[0]
+            #         Occ[j] = ParentOcc[j]+s
 
-                # determine the coordinate delta values from deviations from the parent structure
-                print('\nOccupancy from CIF vs computed')
-                for atmline in self.Phase['Atoms']:
-                    lbl = atmline[0]
-                    if lbl in Occ: print( lbl,atmline[6],Occ[lbl])
+            #     # determine the coordinate delta values from deviations from the parent structure
+            #     print('\nOccupancy from CIF vs computed')
+            #     for atmline in self.Phase['Atoms']:
+            #         lbl = atmline[0]
+            #         if lbl in Occ: print( lbl,atmline[6],Occ[lbl])
 
-                print( 70*'=')
-                print('\nGenerated constraints')
-                for i in self.Constraints:
-                    if type(i) is dict:
-                        print('\nconstraint help dict')
-                        for key in i:
-                            print('\t',key,':',i[key])
-                    elif i[-1] == 'f':
-                        print('\n\t',i[-3],' =')
-                        for m,j in i[:-3]:
-                            print('\t\t+',m,' * ',j,'   ',repr(j))
-                    else:
-                        print('  unexpected: ',repr(i))
-                print("\nG2name ==> ISODISTORT full name",
-                          ".Phase['ISODISTORT']['OccModeList']",
-                          ".Phase['ISODISTORT']['G2OccModeList']")
-                for mode,G2mode in zip(modelist,modeVarList):
-                    print("  ?::"+str(G2mode),' ==>', mode)
+            #     print( 70*'=')
+            #     print('\nGenerated constraints')
+            #     for i in self.Constraints:
+            #         if type(i) is dict:
+            #             print('\nconstraint help dict')
+            #             for key in i:
+            #                 print('\t',key,':',i[key])
+            #         elif i[-1] == 'f':
+            #             print('\n\t',i[-3],' =')
+            #             for m,j in i[:-3]:
+            #                 print('\t\t+',m,' * ',j,'   ',repr(j))
+            #         else:
+            #             print('  unexpected: ',repr(i))
+            #     print("\nG2name ==> ISODISTORT full name",
+            #               ".Phase['ISODISTORT']['OccModeList']",
+            #               ".Phase['ISODISTORT']['G2OccModeList']")
+            #     for mode,G2mode in zip(modelist,modeVarList):
+            #         print("  ?::"+str(G2mode),' ==>', mode)
                 
         def explainMode(modelist,shortmodelist):
             explanation = {}
@@ -1714,7 +1624,7 @@ def parse_parent2mag(s):
     exprs = [x.strip() for x in expr_part.split(",")]
     if len(exprs) != 3:
         raise ValueError(f"Expected 3 expressions, got {len(exprs)}")
-    vec = [float(x.strip()) for x in vec_part.split(",")]
+    vec = [float(eval(x.strip())) for x in vec_part.split(",")]
     if len(vec) != 3:
         raise ValueError(f"Expected 3 vector entries, got {len(vec)}")
     matrix = [parse_expr(expr) for expr in exprs]

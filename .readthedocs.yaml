@@ -8,7 +8,6 @@ build:
   os: "ubuntu-lts-latest"
   tools:
     python: "miniforge3-latest"
-    #python: "miniforge3-25.11"
 
 conda:
   environment: docs/environment.yml

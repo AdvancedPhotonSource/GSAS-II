@@ -4570,18 +4570,18 @@ If you continue from this point, it is quite likely that all intensity computati
                 if data:
                     for item in self.Refine: item.Enable(True)
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
-        if phaseId: # show all phases
+        if phaseId: # always show all phases
             self.GPXtree.Expand(phaseId)
-        if seqId:
+        if seqId: # open on sequential if present
             self.EnablePlot = True
             SelectDataTreeItem(self,seqId)
             self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
-        elif Id:
+        elif Id: # otherwise open on 1st histogram
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
-        elif phaseId:
+        elif phaseId and self.GPXtree.GetChildrenCount(phaseId) > 0: # otherwise, 1st phase
             Id = phaseId
             # open 1st phase
             Id, unused = self.GPXtree.GetFirstChild(phaseId)

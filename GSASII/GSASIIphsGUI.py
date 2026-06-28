@@ -9913,6 +9913,8 @@ at one of the following locations:
                 atXYZ = Atom[cx:cx+3]
                 Sytsym,Mult = G2spc.SytSym(atXYZ,SGData)[:2]
                 Name = Atom[ct-1]
+                A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
+                ApplyAV(A,V)
             topSizer.Add(wx.StaticText(RigidBodies,-1,
                 'Rotation angle (deg)\n&& Orient. vector (frac)'),0,WACV)
             Indx['Orien'] = {}
@@ -10665,6 +10667,8 @@ at one of the following locations:
             spnSelect.Bind(wx.EVT_LISTBOX,OnSpnSelect)
             spnSizer.Add(spnSelect,0)
             rbSizer.Add(spnSizer)
+            data['Drawing']['Atoms'] = []
+            UpdateDrawAtoms(G2frame,data)
         try:
             rbObj['showAxes'] = rbObj.get('showAxes',False)
             G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','OrientVec','symAxis','showAxes']}

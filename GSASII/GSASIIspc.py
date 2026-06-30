@@ -2202,7 +2202,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
         inv = 1
     SpnFlp = SGData.get('SpnFlp',[])
     spnflp = []
-    X = np.array(XYZ)
+    X = np.round(np.array(XYZ),6)
     mj = 0
     for ic,cen in enumerate(icen):
         C = np.array(cen)
@@ -2223,10 +2223,12 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 else:
                     newX = XT
                 if All:
-                    if np.allclose(newX,X,atol=0.0002):     #do we want %1. here?
+                    newX = np.round(newX,6)
+#                    if np.sqrt(np.sum(np.round(newX%1.,6)**2-np.round(X%1.,6)**2)) < 1.e-6:
+                    if np.allclose(newX,X,atol=2.e-5):     #do we want %1. here?
                         idup = False
                 else:
-                    if True in [np.allclose(newX%1.,oldX%1.,atol=0.0002) for oldX in XYZEquiv]:
+                    if True in [np.allclose(newX%1.,oldX%1.,atol=2.e-5) for oldX in XYZEquiv]:
                         idup = False
                 if All or idup:
                     XYZEquiv.append(newX)

@@ -9806,6 +9806,7 @@ at one of the following locations:
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
                     data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
+                    data['Atoms'][AtLookUp[Id]][cs,cs+2] = G2spc.SytSym(newXYZ[i],SGData)[:2]
                 data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(G2frame,data)
@@ -9824,6 +9825,7 @@ at one of the following locations:
                         maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
                     for i,Id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                        data['Atoms'][AtLookUp[Id]][cs:cs+2] = G2spc.SytSym(newXYZ[i],SGData)[:2]
                         if Uout[i][0] == 'I':
                             data['Atoms'][AtLookUp[Id]][cia+1] = Uout[i][1]
                         else:

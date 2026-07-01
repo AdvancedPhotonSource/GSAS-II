@@ -1560,11 +1560,11 @@ def UpdatePeakGrid(G2frame, data):
         cRef = G2G.G2CheckBox(G2frame.dataWindow,'ref',data['LaueFringe'],'clat-ref')
         prmSizer.Add(cRef,0,WACV)
         prmSizer.Add((15,-1))
-        siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'lmin','l min')
+        siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'lmin','l min')[0]
         prmSizer.Add(siz,0,WACV)
         prmSizer.Add((15,-1))
         siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'ncell','Laue ncell',
-            onChange=RefreshPeakGrid,onChangeArgs=[None])
+            onChange=RefreshPeakGrid,onChangeArgs=[None])[0]
         prmSizer.Add(siz,0,WACV)
         # prmSizer.Add((15,-1))
         # prmSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)

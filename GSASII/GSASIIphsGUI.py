@@ -1546,7 +1546,7 @@ def SetDrawingDefaults(drawingData):
     for key in defaultDrawing:
         if key not in drawingData: drawingData[key] = defaultDrawing[key]
 
-def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
+def updateAddRBorientText(G2frame,testRBObj,Bmat):
     '''Update all origin/orientation text on the Add RB panel or
     on main RB Models page in response to Alt+mouse movement
     '''
@@ -1555,18 +1555,22 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
     for i in range(4):
         val = testRBObj['rbObj']['OrientVec'][i]
-        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i+1]
+        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]
         BSI.ChangeValue(val)
-    
-    
-    # for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
-    #     if not ifSlide: #skip spin button
-    #         G2frame.testRBObjSizers['OrientVecSiz'][i+1].ChangeValue(val)
-    #     else:
-    #         G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
-    if ifSlide: #from the addRB GUI
+    if len(G2frame.testRBObjSizers['OrientVecSiz']) > 4:
         G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
+            
+    # if 'Spin' in str(G2frame.testRBObjSizers['OrientVecSiz'][0]):
+    #     for i in range(4):
+    #         val = testRBObj['rbObj']['OrientVec'][i]
+    #         BSI = G2frame.testRBObjSizers['OrientVecSiz'][i+1]
+    #         BSI.ChangeValue(val)
+    # else:  #from the Add RB GUI
+    #     for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
+    #         G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
+    #     G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+    #         int(10*testRBObj['rbObj']['OrientVec'][0]))
     for i,sizer in enumerate(G2frame.testRBObjSizers.get('Xsizers',[])):
         sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
@@ -9931,7 +9935,7 @@ at one of the following locations:
                     Ang.SetValue(0)
                     Ang.SetRange(-1,1)
                     Ang.Bind(wx.EVT_SPIN, OnAng)
-                    OrientVecSiz.append(Ang)
+#                    OrientVecSiz.append(Ang)
                     topSizer.Add(Ang,0,WACV)
                 orien = G2G.ValidatedTxtCtrl(RigidBodies,Orien,ix,nDig=(8,dp),
                     typeHint=float,OnLeave=OnOrien,xmin=xmin,xmax=xmax,size=(70,-1))
@@ -10978,7 +10982,7 @@ at one of the following locations:
                 for i in range(4):
                     val = rbObj['OrientVec'][i]
                     if not i:    #in that BoxSizer from G2SpinWidget
-                        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i].GetChildren()[-2].GetWindow()
+                        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]    #.GetChildren()[-2].GetWindow()
                     else:
                         BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]
                     BSI.ChangeValue(val)
@@ -11317,14 +11321,14 @@ of the crystal structure.
                 rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
                 rbObj['OrientVec'][1:] = np.inner(Bmat,V)
                 OrientVecSiz = []
-                Orientvec = G2G.G2SpinWidget(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),typeHint=float,
+                Orientvec,orientVal = G2G.G2SpinWidget(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),typeHint=float,
                     label='Orientation azimuth: ',xmin=0.,xmax=360.,onChange=UpdateOrientation)
-                OrientVecSiz.append(Orientvec)
-                OriSizer2.Add(OrientVecSiz[-1],0,WACV)
+                OrientVecSiz.append(orientVal)
+                OriSizer2.Add(Orientvec,0,WACV)
                 azSlide = G2G.G2Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25),
                     minValue=0,maxValue=3600,value=int(10*rbObj['OrientVec'][0]))
                 azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
-                OriSizer2.Add(azSlide,0,WACV)
+                OriSizer2.Add(azSlide)
                 mainSizer.Add(OriSizer2)
                 OriSizer3 = wx.BoxSizer(wx.HORIZONTAL)
                 OriSizer3.Add(wx.StaticText(RigidBodies,label='Orientation vector'),0,WACV)
@@ -11347,7 +11351,7 @@ of the crystal structure.
                     symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
                     OriSizer4.Add(symRadioSet)
                 else:
-                    OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis is z'),0, WACV)
+                    OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis is z; '),0, WACV)
                 Invert = G2G.G2CheckBox(RigidBodies,'Invert',rbObj,'Invert',OnInvert)
                 OriSizer4.Add(Invert,0,WACV)
                 mainSizer.Add(OriSizer4)

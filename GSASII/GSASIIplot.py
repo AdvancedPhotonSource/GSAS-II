@@ -6473,7 +6473,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
-                G2phG.updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=False)
+                G2phG.updateAddRBorientText(G2frame,testRBObj,Bmat)
         if pageCallback:
             try:
                 pageCallback()

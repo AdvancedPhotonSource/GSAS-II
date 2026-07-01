@@ -1130,7 +1130,7 @@ def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,nDig=None,
 
     :param int size: size of TextCtrl in pixels. Defaults to (50,25).
 
-    :returns: returns a wx.BoxSizer containing the widgets
+    :returns: returns a wx.BoxSizer containing the widgets and the value entry widget
     '''
 
     def _onSpin(event):
@@ -1160,7 +1160,7 @@ def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,nDig=None,
                 xmin=xmin,xmax=xmax,typeHint=typeHint,size=size)
     hSizer.Add(vEntry,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
     hSizer.Add(spin,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    return hSizer
+    return hSizer,vEntry
 
 ################################################################################
 def HorizontalLine(sizer,parent):

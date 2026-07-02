@@ -84,6 +84,7 @@ atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 sqt2 = np.sqrt(2.)
 sqt3 = np.sqrt(3.)
+forpi = 4.*np.pi
 
 # previous rigid body selections
 prevResId = None
@@ -10530,7 +10531,7 @@ at one of the following locations:
             elif rbType == 'Spin':
                 text = ''
                 for ish,pMax in enumerate(rbObj.get('Pmax',[])):
-                    text += 'Shell %d: Pmax %.3f Pmin %.3f '%(ish,pMax,rbObj['Pmin'][ish])
+                    text += ('Shell %d: 4'+chr(0x03c0)+'*Pmax=%.3f, 4'+chr(0x03c0)+'*Pmin=%.3f ')%(ish,forpi*pMax,forpi*rbObj['Pmin'][ish])
                 G2frame.GetStatusBar().SetStatusText(text,1)
                 G2frame.selectRB = {item:rbObj[item] for item in ['Orient','symAxis','showAxes']}
                 G2frame.selectRB['Orig'] = [data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3],False]

@@ -789,6 +789,22 @@ class GSASII(wx.Frame):
     :param parent: reference to parent application
 
     '''
+    def set_console_title(self,title: str):
+        """
+        Sets the console/terminal window title.
+        Works on Windows, Linux, and macOS terminals that support ANSI escape codes.
+        """
+        if not isinstance(title, str):
+            raise TypeError("Title must be a string.")
+
+        if sys.platform == "win32":
+            # Windows-specific method
+            os.system(f"title {title}")
+        else:
+            # ANSI escape sequence for Unix-like systems
+            sys.stdout.write(f"\33]0;{title}\a")
+            sys.stdout.flush()
+
     def _Add_FileMenuItems(self, parent):
         '''Add items to File menu
         '''
@@ -4501,6 +4517,8 @@ If you continue from this point, it is quite likely that all intensity computati
         self.init_vars()
         try:
             self.StartProject()         #open the file if possible
+            self.set_console_title('GSAS-II project file: '+self.GSASprojectfile)
+
         except:
             print ('\nError opening file '+filename)
             import traceback
@@ -4549,6 +4567,7 @@ If you continue from this point, it is quite likely that all intensity computati
         seqId = None
         G2IO.ProjFileOpen(self)
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
+        self.set_console_title('GSAS-II project file: '+self.GSASprojectfile)
         self.GPXtree.Expand(self.root)
         self.HKL = np.array([])
         self.Extinct = []

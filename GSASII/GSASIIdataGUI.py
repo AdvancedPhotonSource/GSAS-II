@@ -4733,6 +4733,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 config = G2G.GetConfigValsDocs()
                 GSASIIpath.addPrevGPX(self.GSASprojectfile,config)  # add new name
                 G2G.SaveConfigVars(config)
+                self.set_console_title('GSAS-II project file: '+self.GSASprojectfile)
                 return True
             else:
                 return False

@@ -4181,7 +4181,7 @@ def findOffset(SGData,A,Fhkl):
 
     '''
     if SGData['SpGrp'] == 'P 1':
-        return [0,0,0]
+        return [0,0,0],' No offset calculated'
     hklShape = Fhkl.shape
     hklHalf = np.array(hklShape)//2
     sortHKL = np.argsort(Fhkl.flatten())
@@ -6062,9 +6062,9 @@ def normQ(QA):
     ''' get length of quaternion & normalize it
         q=r+ai+bj+ck
     '''
-    if QA[0] < 0:
-        QA[0] %= -1 
-    else:
+    if QA[0] < -1.:
+        QA[0] %= -1. 
+    elif QA[0] > 1.:
         QA[0] %= 1.
     n = np.sqrt(np.sum(np.array(QA)**2))
     return QA/n
@@ -6120,10 +6120,10 @@ def AV2Q(A,V):
     '''
     Q = np.zeros(4)
     d = nl.norm(np.array(V))
+    if not A:       #==0.
+        A = 2.*np.pi
     if d:
         V = V/d
-        if not A:       #==0.
-            A = 2.*np.pi
         p = A/2.
         Q[0] = np.cos(p)
         Q[1:4] = V*np.sin(p)

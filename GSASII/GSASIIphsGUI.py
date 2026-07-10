@@ -1557,7 +1557,10 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
     for i in range(4):
         val = testRBObj['rbObj']['OrientVec'][i]
         BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]
-        BSI.ChangeValue(val)
+        try:
+            BSI.ChangeValue(val)
+        except:
+            pass
     if len(G2frame.testRBObjSizers['OrientVecSiz']) > 4:
         G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
@@ -9854,7 +9857,10 @@ at one of the following locations:
                 an optional keyword arg is provided with the mode to draw atoms
                 (lines, ball & sticks,...)
                 '''
-                orient = [float(Indx['Orien'][i].GetValue()) for i in range(4)]
+                try:
+                    orient = [float(Indx['Orien'][i].GetValue()) for i in range(4)]
+                except:
+                    return
                 A = orient[0]
                 V = np.inner(Amat,orient[1:]) # normalized in AVdeg2Q
                 try:
@@ -10301,9 +10307,9 @@ at one of the following locations:
             topLine.Add(wx.StaticText(RigidBodies,-1,
                 '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
             try:
-                varname = str(data['pId'])+'::RBRxxx:'+resVarLookup[resIndx]
+                varname = str(data['pId'])+'::RBRxx:'+resVarLookup[resIndx]
             except:  # happens when phase has no histograms
-                varname = '?::RBRxxx:'+resVarLookup[resIndx]
+                varname = '?::RBRxx:'+resVarLookup[resIndx]
             topLine.Add(wx.StaticText(RigidBodies,-1,
                     '  (variables '+varname+')'),0,WACV)
             resrbSizer.Add(topLine)
@@ -10995,8 +11001,11 @@ at one of the following locations:
                     np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
                 azSlide.SetValue(int(10*rbObj['OrientVec'][0]))
-                G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
-                    int(10*rbObj['OrientVec'][0]))
+                try:
+                    G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
+                        int(10*rbObj['OrientVec'][0]))
+                except:
+                    pass
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 UpdateTable()
 
@@ -11044,9 +11053,10 @@ at one of the following locations:
                     return {}
                 return selDict
 
-            def getDeltaXYZ(selDict,data,rbObj):
+            def getDeltaXYZ(selDict,data,rbObj,ortho=True):
                 '''Evaluate the RB position & return the difference between the coordinates
-                and RB coordinates with origin and orientation from data['testRBObj']
+                and RB coordinates using origin and orientation from data['testRBObj'].
+                returns orthogonal coordinates unless ortho=False
                 '''
                 Amat,Bmat = G2lat.cell2AB(data['General']['Cell'][1:7])
                 rbXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,data['testRBObj']['rbData'],data['testRBObj']['rbType'])[0]
@@ -11054,25 +11064,49 @@ at one of the following locations:
                 deltaList = []
                 for i in selDict:
                     if selDict[i] is None: continue
-                    deltaList.append(phaseXYZ[selDict[i]]-rbXYZ[i])
+                    XYZf = phaseXYZ[selDict[i]]-rbXYZ[i] # fractional 
+                    if ortho:
+                        XYZo = np.inner(Amat,XYZf) # orthogonal
+                        deltaList.append(XYZo)
+                    else:
+                        deltaList.append(XYZf)
                 return np.array(deltaList)
 
             def objectiveDeltaPos(vals,selDict,data,rbObj_in):
                 '''Objective function for minimization.
                 Returns a list of distances between atom positions and
-                located rigid body positions
+                located rigid body positions. Generates the 4th quaterian from 
+                the 1st three. 
 
-                :param list vals: a 4 or 7 element array with 4 quaterian values
-                   or 4 quaterian values followed by 3 origin (x,y,z) values
+                :param list vals: a 3 or 6 element array with 3 (of 4) 
+                  quaterian values or 3 quaterian values followed by 3 
+                  origin (x,y,z) values
 
-                :returns: the 3*n distances between the n selected atoms
+                :returns: the 3*n distances between the n selected atoms 
+                  in orthogonal coordinates
                 '''
                 rbObj = copy.deepcopy(rbObj_in)
-                rbObj['Orient'][0][:] = G2mth.normQ(vals[:4])
-                if len(vals) == 7:
-                    rbObj['Orig'][0][:] = vals[4:]
-                #print(np.sqrt(sum(getDeltaXYZ(selDict,data,rbObj).flatten()**2)))
+                rbObj['Orient'][0][:] = quat3to4(vals[:3])
+                if len(vals) == 6:
+                    rbObj['Orig'][0][:] = vals[3:]
+                elif len(vals) != 3:
+                    raise Exception('Wrong use of objectiveDeltaPos')
                 return getDeltaXYZ(selDict,data,rbObj).flatten()
+
+            def quat3to4(vals):
+                '''Derive the 4th value for a quaternion from the 1st three
+                making sure to use normalization etc. 
+                
+                :param list vals: a 3 element list or array with the 1st 
+                  three quaterion terms
+                :returns: a normalized 4 term quaterion
+                '''
+                s = sum(np.array(vals)**2)
+                if s < 1:
+                    q4 = np.sqrt(1 - s)
+                else:
+                    q4 = 0.
+                return G2mth.normQ(np.append(vals,q4))
 
             def onSetOrigin(event):
                 'Set Origin to best fit selected atoms'
@@ -11085,7 +11119,7 @@ at one of the following locations:
                     wx.MessageBox('No existing atoms were selected',caption='Select Atom(s)',
                                       style=wx.ICON_EXCLAMATION)
                     return
-                deltaList = getDeltaXYZ(selDict,data,rbObj)
+                deltaList = getDeltaXYZ(selDict,data,rbObj,ortho=False)
                 data['testRBObj']['rbObj']['Orig'][0] += deltaList.sum(axis=0)/len(deltaList)
                 for i,item in enumerate(Xsizers):
 #                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
@@ -11096,12 +11130,12 @@ at one of the following locations:
                 'Set Orientation to best fit selected atoms'
                 selDict = getSelectedAtoms()
                 if len(selDict) < 2:
-                    wx.MessageBox('At least two existing atoms must be selected',caption='Select Atoms',
+                    wx.MessageBox('At least two RB atoms must be assigned',caption='Assign Atoms',
                                       style=wx.ICON_EXCLAMATION)
                     return
-                vals = rbObj['Orient'][0][:] #+ rbObj['Orig'][0][:]
+                vals = rbObj['Orient'][0][:3] #+ rbObj['Orig'][0][:]
                 out = so.leastsq(objectiveDeltaPos,vals,(selDict,data,rbObj))
-                data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0])
+                data['testRBObj']['rbObj']['Orient'][0][:] = quat3to4(out[0])
                 updateAddRBorientText(G2frame,data['testRBObj'],Bmat)
                 UpdateTablePlot()
 
@@ -11113,13 +11147,13 @@ at one of the following locations:
                     return
                 selDict = getSelectedAtoms()
                 if len(selDict) < 3:
-                    wx.MessageBox('At least three existing atoms must be selected',caption='Select Atoms',
+                    wx.MessageBox('At least three RB atoms must be assigned',caption='Assign Atoms',
                                       style=wx.ICON_EXCLAMATION)
                     return
-                vals = np.concatenate((rbObj['Orient'][0], rbObj['Orig'][0]))
+                vals = np.concatenate((rbObj['Orient'][0][:3], rbObj['Orig'][0]))
                 out = so.leastsq(objectiveDeltaPos,vals,(selDict,data,rbObj))
-                data['testRBObj']['rbObj']['Orig'][0][:] = out[0][4:]
-                data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0][:4])
+                data['testRBObj']['rbObj']['Orig'][0][:] = out[0][3:]
+                data['testRBObj']['rbObj']['Orient'][0][:] = quat3to4(out[0][:3])
                 for i,item in enumerate(Xsizers):
 #                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
                     item.ChangeValue(data['testRBObj']['rbObj']['Orig'][0][i])

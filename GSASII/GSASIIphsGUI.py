@@ -4998,12 +4998,8 @@ to use these entries'''
             G2frame.GetStatusBar().SetStatusText('Warning: Atom positions must correspond to 2nd setting for the space group '+SGData['SpGrp'],1)
         if SGData['SGPolax']:
             G2frame.GetStatusBar().SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'],1)
-        if 'phoenix' in wx.version():
-            Atoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
-            Atoms.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeAtomCell)
-        else:
-            Atoms.Unbind(wg.EVT_GRID_CELL_CHANGE)
-            Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
+        Atoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
+        Atoms.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeAtomCell)
         Atoms.Unbind(wg.EVT_GRID_CELL_LEFT_DCLICK)
         Atoms.Unbind(wg.EVT_GRID_LABEL_LEFT_DCLICK)
         Atoms.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
@@ -10512,10 +10508,7 @@ at one of the following locations:
         def RepaintRBInfo(rbType,rbIndx,Scroll=0):
             oldFocus = wx.Window.FindFocus()
             try:
-                if 'phoenix' in wx.version():
-                    G2frame.bottomSizer.Clear(True)
-                else:
-                    G2frame.bottomSizer.DeleteWindows()
+                G2frame.bottomSizer.Clear(True)
             except:
                 return
             Indx.clear()
@@ -12133,10 +12126,7 @@ of the crystal structure.
 
         def RepaintRBInfo(rbId,Scroll=0):
             oldFocus = wx.Window.FindFocus()
-            if 'phoenix' in wx.version():
-                G2frame.bottomSizer.Clear(True)
-            else:
-                G2frame.bottomSizer.DeleteWindows()
+            G2frame.bottomSizer.Clear(True)
             Indx.clear()
             rbObj = data['MCSA']['Models'][rbId]
             G2frame.bottomSizer.Insert(0,rbSizer(rbObj))

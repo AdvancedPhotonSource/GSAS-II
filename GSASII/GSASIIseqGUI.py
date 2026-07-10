@@ -1809,10 +1809,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
             else:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
-    if 'phoenix' in wx.version():
-        G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-    else:
-        G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotLeftSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, PlotRightSelect)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8

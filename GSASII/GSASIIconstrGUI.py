@@ -3257,10 +3257,7 @@ create a Vector or Residue rigid body.
             vecTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             vecGrid = G2G.GSGrid(VectorRBDisplay)
             vecGrid.SetTable(vecTable, True)
-            if 'phoenix' in wx.version():
-                vecGrid.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeCell)
-            else:
-                vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
+            vecGrid.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeCell)
             if not imag:
                 vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             attr = wx.grid.GridCellAttr()
@@ -3681,10 +3678,7 @@ create a Vector or Residue rigid body.
             Indx[resGrid.GetId()] = rbid
             resList.append(resGrid)
             resGrid.SetTable(vecTable, True)
-            if 'phoenix' in wx.version():
-                resGrid.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeCell)
-            else:
-                resGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
+            resGrid.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeCell)
             resGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             for c in range(2,5):
                 attr = wx.grid.GridCellAttr()

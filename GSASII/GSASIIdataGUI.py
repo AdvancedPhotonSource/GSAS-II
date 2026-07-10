@@ -3336,10 +3336,7 @@ If you continue from this point, it is quite likely that all intensity computati
             img = self.Image.Scale(22, 22).ConvertToBitmap()
         else:
             img = self.Image.ConvertToBitmap()
-        if 'phoenix' in wx.version():
-            self.SetIcon(wx.Icon(img))
-        else:
-            self.SetIcon(wx.IconFromBitmap(img))
+        self.SetIcon(wx.Icon(img))
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
         self.GSASprojectfile = ''
         self.dirname = os.path.abspath(os.path.expanduser('~'))       #start in the users home directory by default; may be meaningless
@@ -6717,6 +6714,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         '''define all GSAS-II data window menus.
         NB: argument order conforms to both classic & phoenix variants for wx.
         Do not use argument= for these as the argument names are different for classic & phoenix
+        NB: GSAS-II now (7/10/2026) assumes phoenix variant wx only
         '''
 
 #### GSAS-II Menu items

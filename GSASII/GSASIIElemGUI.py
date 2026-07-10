@@ -91,10 +91,7 @@ class PickElement(wx.Dialog):
             El.Bind(wx.EVT_COMBOBOX,self.OnElButton)
 
         El.SetBackgroundColour(color)
-        if 'phoenix' in wx.version():
-            El.SetToolTip(tip)
-        else:
-            El.SetToolTipString(tip)
+        El.SetToolTip(tip)
 
     def OnElButton(self, event):
         if self.oneOnly:
@@ -283,10 +280,7 @@ class PickElements(wx.Dialog):
             pos=pos, size=wx.Size(32, 32), style=wx.RAISED_BORDER)
         El.SetBackgroundColour(color)
         El.SetLabel(name)
-        if 'phoenix' in wx.version():
-            El.SetToolTip(tip)
-        else:
-            El.SetToolTipString(tip)
+        El.SetToolTip(tip)
         El.Bind(wx.EVT_BUTTON, self.OnElButton)
 
     def OnElButton(self, event):

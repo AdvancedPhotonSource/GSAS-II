@@ -5408,10 +5408,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
         self.ValidatedControlsList = []
         # delete any only contents
         if self.vbox:
-            if 'phoenix' in wx.version():
-                self.vbox.Clear(True)
-            else:
-                self.vbox.DeleteWindows()
+            self.vbox.Clear(True)
             self.vbox = None
             self.Update()
         vbox = wx.BoxSizer(wx.VERTICAL)

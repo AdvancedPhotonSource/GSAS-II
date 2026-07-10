@@ -2572,10 +2572,7 @@ def UpdateMasks(G2frame,data):
         SpotGrid.SetColSize(1,80)
         for r in range(len(Spots)):
             SpotGrid.SetCellStyle(r,0,VERY_LIGHT_GREY,True)
-        if 'phoenix' in wx.version():
-            SpotGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnSpotChange)
-        else:
-            SpotGrid.Bind(wg.EVT_GRID_CELL_CHANGE, OnSpotChange)
+        SpotGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnSpotChange)
         mainSizer.Add(SpotGrid,0,)
     if Rings:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Ring masks')
@@ -3072,10 +3069,7 @@ def UpdateStressStrain(G2frame,data):
         for r in range(len(data['d-zero'])):
             for c in [2,5,6,7,9,10]:
                 StrainGrid.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-        if 'phoenix' in wx.version():
-            StrainGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnStrainChange)
-        else:
-            StrainGrid.Bind(wg.EVT_GRID_CELL_CHANGE, OnStrainChange)
+        StrainGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnStrainChange)
         StrainGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnSetCol)
         return StrainGrid
 # patches

@@ -63,10 +63,7 @@ try:
 except AttributeError:
     pass
 
-try:    #phoenix
-    wxValidator = wx.Validator
-except AttributeError:  #classic - i.e. old
-    wxValidator = wx.pyValidator
+wxValidator = wx.Validator
 
 #### Fixed definitions for wx Ids ################################################################################
 def Define_wxId(*args):
@@ -1679,10 +1676,7 @@ class ScrolledMultiEditor(wx.Dialog):
                                             parent=panel,colour=(255,255,200),size=wx.Size(30,23),
                                             style=wx.RAISED_BORDER)
                     but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
-                    if 'phoenix' in wx.version():
-                        but.SetToolTip('Press to copy adjacent value to all rows below')
-                    else:
-                        but.SetToolTipString('Press to copy adjacent value to all rows below')
+                    but.SetToolTip('Press to copy adjacent value to all rows below')
                     self.ButtonIndex[but] = i
                 subSizer.Add(but)
             # create the validated TextCrtl, store it and add it to the sizer
@@ -1955,21 +1949,13 @@ class G2MultiChoiceDialog(wx.Dialog):
 
     def _ShowSelections(self):
         'Show the selection state for displayed items'
-        if 'phoenix' in wx.version():
-            self.clb.SetCheckedItems(
-                [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
-            ) # Note anything previously checked will be cleared.
-        else:
-            self.clb.SetChecked(
-                [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
-            ) # Note anything previously checked will be cleared.
+        self.clb.SetCheckedItems(
+            [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
+        ) # Note anything previously checked will be cleared.
 
     def _SetAll(self,event):
         'Set all viewed choices on'
-        if 'phoenix' in wx.version():
-            self.clb.SetCheckedItems(range(0,len(self.filterlist),self.Stride))
-        else:
-            self.clb.SetChecked(range(0,len(self.filterlist),self.Stride))
+        self.clb.SetCheckedItems(range(0,len(self.filterlist),self.Stride))
         self.stride.SetValue('1')
         self.Stride = 1
 
@@ -2163,14 +2149,9 @@ class G2MultiChoiceWindow(wx.BoxSizer):
 
     def _ShowSelections(self):
         'Show the selection state for displayed items'
-        if 'phoenix' in wx.version():
-            self.clb.SetCheckedItems(
-                [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
-            ) # Note anything previously checked will be cleared.
-        else:
-            self.clb.SetChecked(
-                [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
-            ) # Note anything previously checked will be cleared.
+        self.clb.SetCheckedItems(
+            [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
+        ) # Note anything previously checked will be cleared.
         if self.OnChange:
             self.OnChange(self.GetSelections(),*self.OnChangeArgs)
         try:
@@ -2183,10 +2164,7 @@ class G2MultiChoiceWindow(wx.BoxSizer):
 
     def _SetAll(self,event):
         'Set all viewed choices on'
-        if 'phoenix' in wx.version():
-            self.clb.SetCheckedItems(range(0,len(self.filterlist),self.Stride))
-        else:
-            self.clb.SetChecked(range(0,len(self.filterlist),self.Stride))
+        self.clb.SetCheckedItems(range(0,len(self.filterlist),self.Stride))
         self.stride.SetValue('1')
         self.Stride = 1
         self.GetSelections() # record current selections
@@ -2424,10 +2402,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
 
     def OnChoice(event):
         'Respond when a parameter is selected in the Choice box'
-        if 'phoenix' in wx.version():
-            valSizer.Clear(True)
-        else:
-            valSizer.DeleteWindows()
+        valSizer.Clear(True)
         lbl = event.GetString()
         copyopts['currentsel'] = lbl
         i = labelLst.index(lbl)
@@ -5804,20 +5779,12 @@ class GSGrid(wg.Grid):
                 if event: event.Skip()
                 return
             if hinttext is None: hinttext = ''
-            if 'phoenix' in wx.version():
-                win.SetToolTip(hinttext)
-            else:
-                win.SetToolTipString(hinttext)
+            win.SetToolTip(hinttext)
             prev_rowcol[:] = [row,col,win]
             if event: event.Skip()
-        if 'phoenix' in wx.version():
-            self.GetGridWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
-            if colLblCallback: self.GetGridColLabelWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
-            if rowLblCallback: self.GetGridRowLabelWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
-        else:
-            wx.EVT_MOTION(self.GetGridWindow(), OnMouseMotion)
-            if colLblCallback: wx.EVT_MOTION(self.GetGridColLabelWindow(), OnMouseMotion)
-            if rowLblCallback: wx.EVT_MOTION(self.GetGridRowLabelWindow(), OnMouseMotion)
+        self.GetGridWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
+        if colLblCallback: self.GetGridColLabelWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
+        if rowLblCallback: self.GetGridRowLabelWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
 
     def setupPopup(self,lblList,callList):
         '''define a callback that creates a popup menu. The rows associated
@@ -6032,10 +5999,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
     an expression by +, * or / respectively.
     '''
     def __init__(self,grid):
-        if 'phoenix' in wx.version():
-            wg.GridCellEditor.__init__(self)
-        else:
-            wg.PyGridCellEditor.__init__(self)
+        wg.GridCellEditor.__init__(self)
 
     def Create(self, parent, id, evtHandler):
         self._tc = wx.TextCtrl(parent, id, "")
@@ -6048,11 +6012,8 @@ class GridFractionEditor(wg.PyGridCellEditor):
         self._tc.Bind(wx.EVT_CHAR, self.OnChar)
 
     def SetSize(self, rect):
-        if 'phoenix' in wx.version():
-            self._tc.SetSize(rect.x, rect.y, rect.width+2, rect.height+2,
-                               wx.SIZE_ALLOW_MINUS_ONE)
-        else:
-            self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,                                wx.SIZE_ALLOW_MINUS_ONE)
+        self._tc.SetSize(rect.x, rect.y, rect.width+2, rect.height+2,
+                           wx.SIZE_ALLOW_MINUS_ONE)
 
     def BeginEdit(self, row, col, grid):
         self.startValue = grid.GetTable().GetValue(row, col)
@@ -6336,10 +6297,7 @@ class MyHelp(wx.Menu):
 
     def OnHelpAbout(self, event):
         "Display an 'About GSAS-II' box"
-        try:
-            import wx.adv as wxadv  # AboutBox moved here in Phoenix
-        except:
-            wxadv = wx
+        import wx.adv as wxadv
         info = wxadv.AboutDialogInfo()
         info.Name = 'GSAS-II'
         info.SetVersion(GSASIIpath.getG2VersionInfo())
@@ -7235,10 +7193,7 @@ class SelectConfigSetting(wx.Dialog):
             self.vars['Contour_color'][1] = self.colSel.GetValue()
             self.OnChange(event)
 
-        if 'phoenix' in wx.version():
-            self.varsizer.Clear(True)
-        else:
-            self.varsizer.DeleteWindows()
+        self.varsizer.Clear(True)
         var = self.choice[0]
         showdef = True
         self.colorText = None
@@ -8628,10 +8583,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                     G2fil.G2Print("Warning: {} Reader failed to read {}"
                                       .format(rd.formatName,f))
                 Iparm1, Iparm2 = G2sc.load_iprms(Settings['instfile'],rd)
-                if 'phoenix' in wx.version():
-                    HistName = 'PWDR '+rd.idstring
-                else:
-                    HistName = 'PWDR '+G2obj.StripUnicode(rd.idstring,'_')
+                HistName = 'PWDR '+rd.idstring
                 # make new histogram names unique
                 HistName = G2obj.MakeUniqueLabel(HistName,Settings['ReadList'])
                 Settings['ReadList'].append(HistName)
@@ -8771,10 +8723,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 else:
                     G2fil.G2Print("Warning: {} Reader failed to read {}"
                                       .format(rd.formatName,f))
-                if 'phoenix' in wx.version():
-                    HistName = 'PDF  '+rd.idstring
-                else:
-                    HistName = 'PDF  '+G2obj.StripUnicode(rd.idstring,'_')
+                HistName = 'PDF  '+rd.idstring
                 HistName = G2obj.MakeUniqueLabel(HistName,Settings['ReadList'])
                 Settings['ReadList'].append(HistName)
                 # put into tree

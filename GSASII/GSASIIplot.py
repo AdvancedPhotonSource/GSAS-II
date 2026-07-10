@@ -233,10 +233,7 @@ class G2PlotMpl(_tabPlotWin):
         self.SetSizer(sizer)
 
     def SetToolTipString(self,text):
-        if 'phoenix' in wx.version():
-            return self.canvas.SetToolTip(text)
-        else:
-            return self.canvas.SetToolTipString(text)
+        return self.canvas.SetToolTip(text)
 
     def ToolBarDraw(self):
         try:
@@ -267,10 +264,7 @@ class G2PlotOgl(_tabPlotWin):
         self.SetSizer(sizer)
 
     def SetToolTipString(self,text):
-        if 'phoenix' in wx.version():
-            self.canvas.SetToolTip(wx.ToolTip(text))
-        else:
-            self.canvas.SetToolTipString(text)
+        self.canvas.SetToolTip(wx.ToolTip(text))
 
 class G2Plot3D(_tabPlotWin):
     'Creates a 3D Matplotlib plot in the GSAS-II graphics window'
@@ -288,10 +282,7 @@ class G2Plot3D(_tabPlotWin):
         self.SetSizer(sizer)
 
     def SetToolTipString(self,text):
-        if 'phoenix' in wx.version():
-            self.canvas.SetToolTip(wx.ToolTip(text))
-        else:
-            self.canvas.SetToolTipString(text)
+        self.canvas.SetToolTip(wx.ToolTip(text))
 
     def ToolBarDraw(self):
         try:
@@ -837,20 +828,11 @@ class GSASIItoolbar(Toolbar):
 def SetCursor(page):
     mode = page.toolbar.GetActive()
     if mode == 'Pan':
-        if 'phoenix' in wx.version():
-            page.canvas.Cursor = wx.Cursor(wx.CURSOR_SIZING)
-        else:
-            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_SIZING)
     elif mode == 'Zoom':
-        if 'phoenix' in wx.version():
-            page.canvas.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
-        else:
-            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
     else:
-        if 'phoenix' in wx.version():
-            page.canvas.Cursor = wx.Cursor(wx.CURSOR_CROSS)
-        else:
-            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_CROSS)
 
 def PlotFPAconvolutors(G2frame,NISTpk,conv2T=None,convI=None,convList=None):
     '''Plot the convolutions used for the current peak computed with

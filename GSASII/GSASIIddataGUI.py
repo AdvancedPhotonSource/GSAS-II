@@ -834,25 +834,18 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if oldFocus: wx.CallAfter(oldFocus.SetFocus)
 
     def RepaintHistogramInfo(Scroll=0):
-        if 'phoenix' in wx.version():
-            G2frame.bottomSizer.Clear(True)
-            # deal with case where this is called after another tree item has been selected
-            try:
-                DData.Shown
-            except RuntimeError:
-                if GSASIIpath.GetConfigValue('debug'):
-                    print('DBG: DData window deleted. Ignoring RepaintHistogramInfo, forcing redraw')
-                # Repaint called while DData window deleted, force redraw of entire window
-                from . import GSASIIdataGUI
-                G2frame.PickIdText = ''
-                wx.CallLater(100,GSASIIdataGUI.SelectDataTreeItem,G2frame,G2frame.GPXtree.Selection)
-                return
-        else:
-            # deal with case where this is called after another tree item has been selected
-            if DData.__class__ is  not wx._windows.ScrolledWindow:
-                # fix bug where this is called after the Window is deleted
-                return
-            G2frame.bottomSizer.DeleteWindows()
+        G2frame.bottomSizer.Clear(True)
+        # deal with case where this is called after another tree item has been selected
+        try:
+            DData.Shown
+        except RuntimeError:
+            if GSASIIpath.GetConfigValue('debug'):
+                print('DBG: DData window deleted. Ignoring RepaintHistogramInfo, forcing redraw')
+            # Repaint called while DData window deleted, force redraw of entire window
+            from . import GSASIIdataGUI
+            G2frame.PickIdText = ''
+            wx.CallLater(100,GSASIIdataGUI.SelectDataTreeItem,G2frame,G2frame.GPXtree.Selection)
+            return
         Indx.clear()
         G2frame.bottomSizer,LeBailMsg = ShowHistogramInfo()
         mainSizer.Add(G2frame.bottomSizer)

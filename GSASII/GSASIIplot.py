@@ -1311,13 +1311,13 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             XD = np.vstack((X,X,np.zeros_like(X)-Ymax/10.,Y-Z-Ymax/10.)).reshape((2,2,-1)).T
             lines = mplC.LineCollection(XY,color=colors[0])
             Plot.add_collection(lines)
-            lines = mplC.LineCollection(XZ,color=colors[1])
+            lines = mplC.LineCollection(XZ,color=colors[2])
             Plot.add_collection(lines)
-            lines = mplC.LineCollection(XD,color=colors[2])
+            lines = mplC.LineCollection(XD,color=colors[1])
             Plot.add_collection(lines)
         else:
             Plot.errorbar(X, Y, yerr=Z, fmt='.', color='b',picker=5)
-            Plot.plot(X, X, color='r')
+            Plot.plot(X, X, color='g')
 
         xylim = np.array([[np.min(X),np.max(X)],[np.min(Y-Z-Ymax/10.),np.max(np.concatenate((Y,Z)))]])
         dxylim = np.array([xylim[0][1]-xylim[0][0],xylim[1][1]-xylim[1][0]])/20.

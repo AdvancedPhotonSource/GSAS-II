@@ -1031,6 +1031,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
 
     if not G2frame.PatternId:
         return
+    if newPlot:
+        G2frame.G2plotNB.Delete('Structure Factors')
     Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     if not Title:
         Title = Name

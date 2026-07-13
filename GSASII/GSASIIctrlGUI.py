@@ -862,7 +862,8 @@ class NumberValidator(wxValidator):
             tc.SetInsertionPoint(ins) # put insertion point back
             return False
         else: # valid input
-            tc.SetBackgroundColour(tc.defaultBackgroundColor)
+            # tc.SetBackgroundColour(tc.defaultBackgroundColor)
+            tc.SetBackgroundColour((200,255,200))
             tc.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             tc.Refresh()
             return True
@@ -899,6 +900,7 @@ class NumberValidator(wxValidator):
                 self.CheckInput(True)
             else:
                 self.CheckInput(False)
+                tc.SetBackgroundColour(tc.defaultBackgroundColor)
             if event: event.Skip()
             return
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed

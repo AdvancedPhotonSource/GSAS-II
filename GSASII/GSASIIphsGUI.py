@@ -9746,6 +9746,23 @@ at one of the following locations:
         def ThermDataSizer(RBObj,rbType):
 
             def OnThermval(invalid,value,tc):
+                # update equivalent TL terms here
+                if 'T' in model[0]: #for 'T','TL' & 'TLS'
+                    np = tc.key
+                    vals =  tc.result
+                    cid = CSI[0][np%6]
+                    for i,tls in enumerate(TLSobj):
+                        if i <= np:
+                            continue
+                        if np < 6 and i > 5:
+                            break
+                        if cid == CSI[0][i%6]:
+                            newValue = value*CSI[1][i%6]
+                            try:
+                                tls.ChangeValue(newValue)
+                            except TypeError:
+                                tls.ChangeValue('%.4f'%newValue)
+                            model[1][i] = value*CSI[1][i%6]
                 Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[1]
                 Uout = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
                 cia = data['General']['AtomPtrs'][3]
@@ -9761,8 +9778,18 @@ at one of the following locations:
             def OnTLSRef(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
-                RBObj['ThermalMotion'][2][item] = Obj.GetValue()
+                ref = Obj.GetValue()
+                RBObj['ThermalMotion'][2][item] = ref
+                if item < 12:
+                    csid = CSI[0][item%6]
+                    for i,csi in enumerate(CSI[0]):
+                        if csi == csid:
+                            if item < 6:
+                                RBObj['ThermalMotion'][2][i] = ref
+                            else:
+                                RBObj['ThermalMotion'][2][i+6] = ref
 
+            SGData = data['General']['SGData']
             thermSizer = wx.FlexGridSizer(0,9,5,5)
             model = RBObj['ThermalMotion']
             #patch - remove 'None' as option
@@ -9778,15 +9805,25 @@ at one of the following locations:
                 names += ['L11','L22','L33','L12','L13','L23']
             if 'S' in model[0]:
                 names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
+            Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+            TLSobj = []
+            TLSref = []
+            CSI = G2spc.GetCSuinel(Sytsym)
             for i,name in enumerate(names):
                 thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,WACV)
-                thermVal = G2G.ValidatedTxtCtrl(RigidBodies,model[1],i,nDig=(8,4),OnLeave=OnThermval)
-                thermSizer.Add(thermVal)
-                Tcheck = wx.CheckBox(RigidBodies,-1,'Refine?')
-                Tcheck.Bind(wx.EVT_CHECKBOX,OnTLSRef)
-                Tcheck.SetValue(model[2][i])
-                Indx[Tcheck.GetId()] = i
-                thermSizer.Add(Tcheck,0,WACV)
+                if (np.any(CSI[0][i%6]) and CSI[0][i%6] not in CSI[0][:i%6]) or i > 11:
+                    thermVal = G2G.ValidatedTxtCtrl(RigidBodies,model[1],i,nDig=(8,4),OnLeave=OnThermval)
+                    thermSizer.Add(thermVal)
+                    Tcheck = wx.CheckBox(RigidBodies,-1,'Refine?')
+                    Tcheck.Bind(wx.EVT_CHECKBOX,OnTLSRef)
+                    Tcheck.SetValue(model[2][i])
+                    Indx[Tcheck.GetId()] = i
+                    thermSizer.Add(Tcheck,0,WACV)
+                else:
+                    thermVal = G2G.ReadOnlyTextCtrl(RigidBodies,value='%.4f'%(model[1][i]))
+                    thermSizer.Add(thermVal)
+                    thermSizer.Add((5,5),0)
+                TLSobj.append(thermVal)
             return thermSizer
 
         def LocationSizer(RBObj,rbType,rbId):
@@ -10539,6 +10576,8 @@ at one of the following locations:
             else: #Vector
                 G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+                #patch
+                rbObj['symAxis'] = rbObj.get('symAxis',[0,0,1])
                 G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','symAxis','showAxes']}
                 G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)

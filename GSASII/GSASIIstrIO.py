@@ -1056,7 +1056,6 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
             pFile.write(i)
         pFile.write('Orientation defined by: atom %s -> atom %s & atom %s -> atom %s\n'%
             (RBModel['rbRef'][0],RBModel['rbRef'][1],RBModel['rbRef'][0],RBModel['rbRef'][2]))
-
     if Print and pFile is None: raise Exception("specify pFile or Print=False")
     rbVary = []
     rbDict = {}
@@ -1556,22 +1555,52 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
 
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
+        SytSym = RB['SytSym']
+        CSI = G2spc.GetCSuinel(SytSym)
         tlstr = ['11','22','33','12','13','23']
         sstr = ['12','13','21','23','31','32','AA','BB']
         if 'T' in RB['ThermalMotion'][0]:
+            names = []
             pfxRB = pfx+'RB'+rbKey+'T'
             for i in range(6):
                 name = pfxRB+tlstr[i]+':'+str(iRB)+':'+rbid
+                names.append(name)
                 phaseDict[name] = RB['ThermalMotion'][1][i]
                 if RB['ThermalMotion'][2][i]:
                     phaseVary += [name,]
+            equivs = {1:[],2:[],3:[],4:[],5:[],6:[]}
+            for j in range(6):
+                if CSI[0][j] > 0:
+                    phaseVary.append(names[j])
+                    equivs[CSI[0][j]].append([names[j],CSI[1][j]])
+            for equiv in equivs:
+                if len(equivs[equiv]) > 1:
+                    name = equivs[equiv][0][0]
+                    coef = equivs[equiv][0][1]
+                    for eqv in equivs[equiv][1:]:
+                        eqv[1] /= coef
+                        G2mv.StoreEquivalence(name,(eqv,))
         if 'L' in RB['ThermalMotion'][0]:
+            names = []
             pfxRB = pfx+'RB'+rbKey+'L'
             for i in range(6):
                 name = pfxRB+tlstr[i]+':'+str(iRB)+':'+rbid
+                names.append(name)
                 phaseDict[name] = RB['ThermalMotion'][1][i+6]
                 if RB['ThermalMotion'][2][i+6]:
                     phaseVary += [name,]
+            equivs = {1:[],2:[],3:[],4:[],5:[],6:[]}
+            for j in range(6):
+                if CSI[0][j] > 0:
+                    phaseVary.append(names[j])
+                    equivs[CSI[0][j]].append([names[j],CSI[1][j]])
+            for equiv in equivs:
+                if len(equivs[equiv]) > 1:
+                    name = equivs[equiv][0][0]
+                    coef = equivs[equiv][0][1]
+                    for eqv in equivs[equiv][1:]:
+                        eqv[1] /= coef
+                        G2mv.StoreEquivalence(name,(eqv,))
         if 'S' in RB['ThermalMotion'][0]:
             pfxRB = pfx+'RB'+rbKey+'S'
             for i in range(8):
@@ -1584,6 +1613,16 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             phaseDict[name] = RB['ThermalMotion'][1][0]
             if RB['ThermalMotion'][2][0]:
                 phaseVary += [name,]
+
+                #         for equiv in equivs:
+                #             if len(equivs[equiv]) > 1:
+                #                 name = equivs[equiv][0][0]
+                #                 coef = equivs[equiv][0][1]
+                #                 for eqv in equivs[equiv][1:]:
+                #                     eqv[1] /= coef
+                #                     G2mv.StoreEquivalence(name,(eqv,))
+
+
 
     def MakeRBTorsions(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))

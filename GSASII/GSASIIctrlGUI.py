@@ -10459,7 +10459,7 @@ def ImportMsg(parent,msgs):
 
 def patch_condarc():
     '''Comment out any references to "file:" locations in the .condarc
-    file. These should not be there and cause problems.
+    file. These should not be there and they cause problems.
     '''
     rc = os.path.normpath(os.path.join(GSASIIpath.path2GSAS2,'..','..','.condarc'))
 
@@ -10493,9 +10493,9 @@ def SelectPkgInstall(event):
                 keylist.append(item)
     msg = 'Select package(s) to install'
     if GSASIIpath.condaTest():
-        msg += ' using conda'
+        msg += '. Installing using conda'
     else:
-        msg += ' using pip'
+        msg += '. Installing using pip'
     sel = MultiColMultiSelDlg(G2frame, 'Install packages?', msg,
                              [('package',120,0),('needed by',300,0)],
                              [i for i in choices.items()])
@@ -10507,8 +10507,6 @@ def SelectPkgInstall(event):
                     parent=G2frame)
     if GSASIIpath.condaTest():
         patch_condarc()
-        if not GSASIIpath.condaTest(True):
-            GSASIIpath.addCondaPkg()
         err = GSASIIpath.condaInstall(pkgs)
         if err:
             print(f'Error from conda: {err}')

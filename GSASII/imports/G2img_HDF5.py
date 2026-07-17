@@ -15,6 +15,17 @@ try:
     import h5py
 except ImportError:
     h5py = None
+    msg = 'HDF5 image reader skipped because HDF5 modules not installed.'
+    from .. import GSASIIfiles as G2fil
+    G2fil.ImportErrorMsg(msg,{'HDF5 file support':['hdf5','h5py']})
+if h5py:
+    try:
+        import hdf5plugin
+    except ImportError:
+        msg = 'HDF5 image reader: recommend installing hdf5plugin for compressed files.'
+        from .. import GSASIIfiles as G2fil
+        G2fil.ImportErrorMsg(msg,{'HDF5 compression support (recommended)':['hdf5plugin']})
+
 from .. import GSASIIobj as G2obj
 from .. import GSASIIfiles as G2fil
 from .. import GSASIIpath
@@ -142,7 +153,15 @@ class HDF5_Reader(G2obj.ImportImage):
                 fp.close()
                 return False
             readargs = {'imagenum':imagenum}
-        self.Data,self.Npix,self.Image = self.readDataset(fp,**readargs)
+        try:
+            self.Data,self.Npix,self.Image = self.readDataset(fp,**readargs)
+        except OSError as msg: # gets thrown by HDF5 for compressed files
+            if 'plugin' in str(msg):
+                self.errors = 'Unable to read image. This is likely because the\nhdf5plugin compression module is not installed'
+            else:
+                self.errors = f'Unable to read image. Error message:\n {msg}'
+            print(msg)
+            return False
         if quick:
             fp.close()
             if GSASIIpath.GetConfigValue('debug'): print(f'Read image {imagenum} from file {filename}')

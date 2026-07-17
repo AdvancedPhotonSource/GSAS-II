@@ -13985,32 +13985,35 @@ def checkPDFfit(G2frame):
     except:
         pass
 
+    G2G.G2MessageBox(G2frame,
+                'PDFfit2 Install needs update. The code used for this is out of date. Please install manually or request this be updated',
+                'PDFfit2 install not available')
     # Last effort: With conda we should be able to create a separate
     # Python in a separate environment
-    try:     # have conda. Can we access it programmatically?
-        import conda.cli.python_api
-        conda.cli.python_api
-    except:
-        G2G.G2MessageBox(G2frame,'You are running a directly installed Python. You will need to install PDFfit2 directly as well, preferably in a separate virtual environment.')
-        return
+    # try:     # have conda. Can we access it programmatically?
+    #     import conda.cli.python_api
+    #     conda.cli.python_api
+    # except:
+    #     G2G.G2MessageBox(G2frame,'You are running a directly installed Python. You will need to install PDFfit2 directly as well, preferably in a separate virtual environment.')
+    #     return
 
-    msg = ('Do you want to use conda to install PDFfit2 into a separate environment? '+
-               '\n\nIf successful, the pdffit2_exec configuration option will be set to the '+
-               'this new Python environment.')
-    dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-                                   style=wx.YES_NO|wx.ICON_QUESTION)
-    if dlg.ShowModal() != wx.ID_YES:
-        return False
-    try:
-        wx.BeginBusyCursor()
-        print('Preparing to create a conda environment. This may take a few minutes...')
-        # for now use the older diffpy version of pdffit:
-        #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.3.4 -c conda-forge -c diffpy
-        res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
-                    ['python', 'conda', 'gsl', 'diffpy.pdffit2>=1.4.3',
-                         '-c', 'conda-forge']) #  not needed , '-c', 'diffpy'])
-    finally:
-        wx.EndBusyCursor()
+    # msg = ('Do you want to use conda to install PDFfit2 into a separate environment? '+
+    #            '\n\nIf successful, the pdffit2_exec configuration option will be set to the '+
+    #            'this new Python environment.')
+    # dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
+    #                                style=wx.YES_NO|wx.ICON_QUESTION)
+    # if dlg.ShowModal() != wx.ID_YES:
+    #     return False
+    # try:
+    #     wx.BeginBusyCursor()
+    #     print('Preparing to create a conda environment. This may take a few minutes...')
+    #     # for now use the older diffpy version of pdffit:
+    #     #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.3.4 -c conda-forge -c diffpy
+    #     res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
+    #                 ['python', 'conda', 'gsl', 'diffpy.pdffit2>=1.4.3',
+    #                      '-c', 'conda-forge']) #  not needed , '-c', 'diffpy'])
+    # finally:
+    #     wx.EndBusyCursor()
     if os.path.exists(PDFpython) and is_exe(PDFpython):
         vars = G2G.GetConfigValsDocs()
         vars['pdffit2_exec'][1] = PDFpython

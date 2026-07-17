@@ -1570,48 +1570,102 @@ def findConda():
         return None
 
 def condaTest(requireAPI=False):
-    '''Returns True if it appears that Python is being run under Anaconda 
-    Python with conda present. Tests for conda environment vars and that 
+    '''Returns True if it appears that Python is being run with 
+    conda present. Tests for conda environment vars and that 
     the conda package is installed in the current environment.
+
+    This is imperfect testing, but hopefully does what is needed
 
     :returns: True, if running under Conda
     '''
-    if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]): return False
+    if not any([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]): return False
     if requireAPI:
-        # is the conda package available?
-        try:
-            import conda.cli.python_api
-            conda.cli.python_api
-        except:
-            print('You do not have the conda package installed in this environment',
-                  '\nConsider using the "conda install conda" command')
-            return False
+        print('condaTest(requireAPI=True) is obsolete')
+        # # is the conda package available?
+        # try:
+        #     import conda.cli
+        #     conda.cli
+        # except:
+        #     print('You do not have the conda package installed in this environment',
+        #           '\nConsider using the "conda install conda" command')
+        #     return False
 
     # There is no foolproof way to check if someone activates conda
     # but then calls a different Python using its path...
     # ...If we are in the base environment then the conda Python
     # should be the same path as the one currently being run:
-    if os.environ['CONDA_DEFAULT_ENV'] == 'base':
-        try:
-            if os.path.samefile(os.environ['CONDA_PYTHON_EXE'],
-                                sys.executable): return True
-        except:
-            return False
-
+    # if os.environ['CONDA_DEFAULT_ENV'] == 'base':
+    #     try:
+    #         if os.path.samefile(os.environ['CONDA_PYTHON_EXE'],
+    #                             sys.executable): return True
+    #     except:
+    #         pass
     # ...If not in the base environment, what we can do is check if the
     # python we are running in shares the beginning part of its path with
     # the one in the base installation:
-    dir1 = os.path.dirname(os.environ['CONDA_PYTHON_EXE'])
-    dir2 = os.path.dirname(sys.executable)
-    if sys.platform != "win32": # python in .../bin/..
-        dir1 = os.path.dirname(dir1)
-        dir2 = os.path.dirname(dir2)
-    return commonPath(dir1,dir2)
+    #dir1 = os.path.dirname(os.environ['CONDA_PYTHON_EXE'])
+    #dir2 = os.path.dirname(sys.executable)
+    #if sys.platform != "win32": # python in .../bin/..
+    #    dir1 = os.path.dirname(dir1)
+    #    dir2 = os.path.dirname(dir2)
+    #return commonPath(dir1,dir2)
+
+    # is the conda package available?
+    try:
+        import conda.cli
+        conda.cli
+    except:
+        return False
+    return True
+        
+# def condaInstall(packageList):
+#     '''Installs one or more packages using the anaconda conda package
+#     manager. Can be used to install multiple packages and optionally
+#     use channels.
+
+#     :param list packageList: a list of strings with name(s) of packages
+#       and optionally conda options.
+#       Examples::
+
+#        packageList=['gsl']
+#        packageList=['-c','conda-forge','wxpython']
+#        packageList=['numpy','scipy','matplotlib']
+
+#     :returns: None if the the command ran normally, or an error message
+#       if it did not.
+#     '''
+#     try:
+#         import conda.cli.python_api
+#     except:
+#         print('You do not have the conda package installed in this environment',
+#                   '\nConsider using the "conda install conda" command')
+#         return None
+#     try:
+#         print(f'Preparing to install package(s): {" ,".join(packageList)}'+
+#                   '\nThis can take a while')
+#         # the next line works, but the subsequent cli is considered more stable
+#         #conda.cli.main('install',  '-y', *packageList)
+#         # this is considered to be supported in the long term
+#         (out, err, rc) = conda.cli.python_api.run_command(
+#             conda.cli.python_api.Commands.INSTALL,packageList,
+# #            search_path=('conda-forge'),   # broken!
+# #    use_exception_handler=True#, stdout=sys.stdout,
+#             stderr=sys.stderr)
+#         #print('rc=',rc)
+#         print('Ran conda. output follows...')
+#         print(70*'='+'\n'+out+'\n'+70*'=')
+#         #print('err=',err)
+#         if rc != 0: return str(out)
+#     except Exception as msg:
+#         print(f"\nConda error occurred, see below\n{msg}")
+#         return "error occurred"
+#     return None
 
 def condaInstall(packageList):
     '''Installs one or more packages using the anaconda conda package
     manager. Can be used to install multiple packages and optionally
     use channels.
+    Copilot-generated replacement for obsoleted conda.api routine.
 
     :param list packageList: a list of strings with name(s) of packages
       and optionally conda options.
@@ -1621,34 +1675,45 @@ def condaInstall(packageList):
        packageList=['-c','conda-forge','wxpython']
        packageList=['numpy','scipy','matplotlib']
 
-    :returns: None if the the command ran normally, or an error message
+    :returns: None if the command ran normally, or an error message
       if it did not.
     '''
+    import os, shutil, subprocess, sys
+
     try:
-        import conda.cli.python_api
-    except:
-        print('You do not have the conda package installed in this environment',
-                  '\nConsider using the "conda install conda" command')
-        return None
-    try:
-        print(f'Preparing to install package(s): {" ,".join(packageList)}'+
-                  '\nThis can take a while')
-        # the next line works, but the subsequent cli is considered more stable
-        #conda.cli.main('install',  '-y', *packageList)
-        # this is considered to be supported in the long term
-        (out, err, rc) = conda.cli.python_api.run_command(
-            conda.cli.python_api.Commands.INSTALL,packageList,
-#            search_path=('conda-forge'),   # broken!
-#    use_exception_handler=True#, stdout=sys.stdout,
-            stderr=sys.stderr)
-        #print('rc=',rc)
-        print('Ran conda. output follows...')
-        print(70*'='+'\n'+out+'\n'+70*'=')
-        #print('err=',err)
-        if rc != 0: return str(out)
+        print(f'Preparing to install package(s): {" ,".join(packageList)}'
+              '\nThis can take a while')
+
+        conda_exe = os.environ.get("CONDA_EXE") or shutil.which("conda")
+        if conda_exe:
+            cmd = [conda_exe, "install", "-y", *packageList]  # <- auto-confirm
+        else:
+            cmd = [sys.executable, "-m", "conda", "install", "-y", *packageList]
+
+        # Stream output so user sees progress and we avoid "looks hung"
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+
+        lines = []
+        for line in proc.stdout:
+            print(line, end="")   # live progress
+            lines.append(line)
+
+        rc = proc.wait()
+        out = "".join(lines)
+
+        if rc != 0:
+            return out.strip() or f"conda install failed (exit code {rc})"
+
     except Exception as msg:
         print(f"\nConda error occurred, see below\n{msg}")
         return "error occurred"
+
     return None
 
 def fullsplit(fil,prev=None):
@@ -1665,18 +1730,18 @@ def fullsplit(fil,prev=None):
         return [i]+prev
     return out
 
-def commonPath(dir1,dir2):
-    '''Check if two directories share a path. Note that paths
-    are considered the same if either directory is a subdirectory
-    of the other, but not if they are in different subdirectories
-    /a/b/c shares a path with /a/b/c/d but /a/b/c/d and /a/b/c/e do not.
+# def commonPath(dir1,dir2):
+#     '''Check if two directories share a path. Note that paths
+#     are considered the same if either directory is a subdirectory
+#     of the other, but not if they are in different subdirectories
+#     /a/b/c shares a path with /a/b/c/d but /a/b/c/d and /a/b/c/e do not.
 
-    :returns: True if the paths are common
-    '''
+#     :returns: True if the paths are common
+#     '''
 
-    for i,j in zip(fullsplit(dir1),fullsplit(dir2)):
-        if i != j: return False
-    return True
+#     for i,j in zip(fullsplit(dir1),fullsplit(dir2)):
+#         if i != j: return False
+#     return True
 
 def pipInstall(packageList):
     '''Installs one or more packages using the pip package installer.
@@ -1706,107 +1771,110 @@ def pipInstall(packageList):
         return msg
     return None
 
-def condaEnvCreate(envname, packageList, force=False):
-    '''Create a Python interpreter in a new conda environment. Use this
-    when there is a potential conflict between packages and it would
-    be better to keep the packages separate (which is one of the reasons
-    conda supports environments). Note that conda should be run from the
-    base environment; this attempts to deal with issues if it is not.
+#
+# This is out of date. Needs a fix here and in GSASIIphsGUI.checkPDFfit()
+#
+# def condaEnvCreate(envname, packageList, force=False):
+#     '''Create a Python interpreter in a new conda environment. Use this
+#     when there is a potential conflict between packages and it would
+#     be better to keep the packages separate (which is one of the reasons
+#     conda supports environments). Note that conda should be run from the
+#     base environment; this attempts to deal with issues if it is not.
 
-    Currently, this is used only to install diffpy.PDFfit2.
+#     Currently, this is used only to install diffpy.PDFfit2.
 
-    :param str envname: the name of the environment to be created.
-      If the environment exists, it will be overwritten only if force is True.
-    :param list packageList: a list of conda install create command
-      options, such as::
+#     :param str envname: the name of the environment to be created.
+#       If the environment exists, it will be overwritten only if force is True.
+#     :param list packageList: a list of conda install create command
+#       options, such as::
 
-            ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
-                '-c', 'conda-forge', '-c', 'diffpy']
+#             ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
+#                 '-c', 'conda-forge', '-c', 'diffpy']
 
-    :param bool force: if False (default) an error will be generated
-      if an environment exists
+#     :param bool force: if False (default) an error will be generated
+#       if an environment exists
 
-    :returns: (status,msg) where status is True if an error occurs and
-      msg is a string with error information if status is True or the
-      location of the newly-created Python interpreter.
-    '''
-    if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV',
-                            'CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-        p = sys.exec_prefix
-    else:
-        # workaround for bug that avoids nesting packages if running from an
-        # environment (see https://github.com/conda/conda/issues/11493)
-        p = os.path.dirname(os.path.dirname(os.environ['CONDA_EXE']))
-    try:
-        import conda.cli.python_api
-    except:
-        return True,'conda package not available (in environment)'
-    if not os.path.exists(os.path.join(p,'envs')):
-        msg = ('Error derived installation path not found: '+
-                  os.path.join(p,'envs'))
-        print(msg)
-        return True,msg
-    newenv = os.path.join(p,'envs',envname)
-    if os.path.exists(newenv) and not force:
-        msg = 'path '+newenv+' already exists and force is not set, aborting'
-        print(msg)
-        return True,msg
-    pathList = ['-p',newenv]
-    try:
-        (out, err, rc) = conda.cli.python_api.run_command(
-            conda.cli.python_api.Commands.CREATE,
-            packageList + pathList,
-            use_exception_handler=True) # ,stdout=sys.stdout, stderr=sys.stderr)
-        print(out)
-        if rc != 0:
-            print(err)
-            return True,str(out+err)
-        if sys.platform == "win32":
-            newpython = os.path.join(newenv,'python.exe')
-        else:
-            newpython = os.path.join(newenv,'bin','python')
-        if os.path.exists(newpython):
-            return False,newpython
-        return True,'Unexpected, '+newpython+' not found'
-    except Exception as msg:
-        print("Error occurred, see below\n",msg)
-        return True,'Error: '+str(msg)
+#     :returns: (status,msg) where status is True if an error occurs and
+#       msg is a string with error information if status is True or the
+#       location of the newly-created Python interpreter.
+#     '''
+#     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV',
+#                             'CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
+#         p = sys.exec_prefix
+#     else:
+#         # workaround for bug that avoids nesting packages if running from an
+#         # environment (see https://github.com/conda/conda/issues/11493)
+#         p = os.path.dirname(os.path.dirname(os.environ['CONDA_EXE']))
+#     try:
+#         import conda.cli.python_api
+#     except:
+#         return True,'conda package not available (in environment)'
+#     if not os.path.exists(os.path.join(p,'envs')):
+#         msg = ('Error derived installation path not found: '+
+#                   os.path.join(p,'envs'))
+#         print(msg)
+#         return True,msg
+#     newenv = os.path.join(p,'envs',envname)
+#     if os.path.exists(newenv) and not force:
+#         msg = 'path '+newenv+' already exists and force is not set, aborting'
+#         print(msg)
+#         return True,msg
+#     pathList = ['-p',newenv]
+#     try:
+#         (out, err, rc) = conda.cli.python_api.run_command(
+#             conda.cli.python_api.Commands.CREATE,
+#             packageList + pathList,
+#             use_exception_handler=True) # ,stdout=sys.stdout, stderr=sys.stderr)
+#         print(out)
+#         if rc != 0:
+#             print(err)
+#             return True,str(out+err)
+#         if sys.platform == "win32":
+#             newpython = os.path.join(newenv,'python.exe')
+#         else:
+#             newpython = os.path.join(newenv,'bin','python')
+#         if os.path.exists(newpython):
+#             return False,newpython
+#         return True,'Unexpected, '+newpython+' not found'
+#     except Exception as msg:
+#         print("Error occurred, see below\n",msg)
+#         return True,'Error: '+str(msg)
 
-def addCondaPkg():
-    '''Install the conda API into the current conda environment using the
-    command line, so that the API can be used in the current Python interpreter
+# def addCondaPkg():
+#     '''Install the conda API into the current conda environment using the
+#     command line, so that the API can be used in the current Python interpreter
 
-    Attempts to do this without a shell failed on the Mac because it seems that
-    the environment was inherited; seems to work w/o shell on Windows.
-    '''
-    if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
-                        'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-        return None
-    #condaexe = os.environ['CONDA_EXE']
-    currenv = os.environ['CONDA_DEFAULT_ENV']
-    if sys.platform == "win32":
-        cmd = [os.environ['CONDA_EXE'],'install','conda','-n',currenv,'-y']
-        with subprocess.Popen(cmd,
-                         #stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         encoding='UTF-8') as p:
-            out,err = p.communicate()
-    else:
-        script = 'source ' + os.path.join(
-            os.path.dirname(os.environ['CONDA_PYTHON_EXE']),
-            'activate') + ' base; '
-        script += 'conda install conda -n '+currenv+' -y'
-        with subprocess.Popen(script,shell=True,env={},
-                         #stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         encoding='UTF-8') as p:
-            out,err = p.communicate()
+#     Attempts to do this without a shell failed on the Mac because it seems that
+#     the environment was inherited; seems to work w/o shell on Windows.
+#     '''
+#     if not any([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
+#                         'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
+#         return None
+#     #condaexe = os.environ['CONDA_EXE']
+#     currenv = os.environ['CONDA_DEFAULT_ENV']
+#     if sys.platform == "win32":
+#         cmd = [os.environ['CONDA_EXE'],'install','conda','-n',currenv,'-y']
+#         with subprocess.Popen(cmd,
+#                          #stdout=subprocess.PIPE,
+#                          stderr=subprocess.PIPE,
+#                          encoding='UTF-8') as p:
+#             out,err = p.communicate()
+#     else:
+#         script = 'source ' + os.path.join(
+#             os.path.dirname(os.environ['CONDA_PYTHON_EXE']),
+#             'activate') + ' base; '
+#         script += 'conda install conda -n '+currenv+' -y'
+#         with subprocess.Popen(script,shell=True,env={},
+#                          #stdout=subprocess.PIPE,
+#                          stderr=subprocess.PIPE,
+#                          encoding='UTF-8') as p:
+#             out,err = p.communicate()
     
-    if out is not None and GetConfigValue('debug'): print('Output from adding conda:\n',out)
-    if err and err is not None:
-        print('Note error/warning from running conda:\n',err)
-    if currenv == "base":
-        print('\nUnexpected action: adding conda to base environment???')
+#     if out is not None and GetConfigValue('debug'): print('Output from adding conda:\n',out)
+#     if err and err is not None:
+#         print('Note error/warning from running conda:\n',err)
+#     if currenv == "base":
+#         print('\nUnexpected action: adding conda to base environment???')
 #==============================================================================
 #==============================================================================
 # routines for reorg of GSAS-II directory layout

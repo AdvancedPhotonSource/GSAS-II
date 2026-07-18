@@ -227,7 +227,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         elif 'SASD' in data['type']:
             data['binType'] = 'log(q)'
     if 'varyList' not in data:
-        data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False}
+        data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False}# 'sag':False
     if data['DetDepth'] > 0.5:
         data['DetDepth'] /= data['distance']
     if 'setdist' not in data:
@@ -238,6 +238,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['det2theta'] = 0.0
     if 'orientation' not in data:
         data['orientation'] = 'horizontal'
+#    data['sag'] = data.get('sag',[0.0,False])
 #end patch
 
 # Menu items
@@ -529,6 +530,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 Data['rotation'] = np.mod(parmDict['phi'],360.0)
                 Data['tilt'] = parmDict['tilt']
                 Data['DetDepth'] = parmDict['dep']
+#                Data['sag'] = parmDict['sag']
                 #Data['chisq'] = chisq
                 N = len(Data['ellipses'])
                 Data['ellipses'] = []           #clear away individual ellipse fits
@@ -566,7 +568,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 vals = []
                 key = str(int(Data['setdist']))
                 # rename parameters in current row
-                origNames = [i for i in varList if key in i or i in ('tilt','phi','wave','deltaDist','dep')]
+                origNames = [i for i in varList if key in i or i in ('tilt','phi','wave','deltaDist','dep')]#'sag'
                 newNames = [i.replace(key,'') for i in origNames]
                 if 'wave' in newNames: 
                     newNames[newNames.index('wave')] = 'Wavelength'
@@ -653,7 +655,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,parent=G2frame)
             try:
                 pId = 0
-                oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.,'det2theta':0.}
+                oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.,'det2theta':0.}#'sag':0.0
                 oldMhash = 0
                 for icnt,item in enumerate(items):
                     dlgp.Raise()
@@ -665,7 +667,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
                     Data = G2frame.GPXtree.GetItemPyData(CId)
                     same = True
-                    for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta']:
+                    for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta']:#'sag'
                         if Data[item] != oldData[item]:
                             same = False
                     if (Data['center'][0] != oldData['center'][0] or
@@ -774,7 +776,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
                     'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList','orientation',
-                    'binType','SampleShape','PolaVal','SampleAbs','dark image','background image','Gain map']
+                    'binType','SampleShape','PolaVal','SampleAbs','dark image','background image','Gain map']#'sag'
         keyList.sort(key=lambda s: s.lower())
         keyText = [i+' = '+str(data[i]) for i in keyList]
         # sort both lists together, ordered by keyText
@@ -858,8 +860,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 G2frame,item,'Image Controls'))
             Npix,imagefile,imagetag = G2frame.GPXtree.GetImageLoc(item)
             filename = os.path.join(outdir,
-                                    os.path.splitext(os.path.split(imagefile)[1])[0]
-                                    + '.imctrl')
+                os.path.splitext(os.path.split(imagefile)[1])[0]+ '.imctrl')
             print('writing '+filename)
             G2fil.WriteControls(filename,data)
 
@@ -1220,7 +1221,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         Parms = {'dist':['Distance',(10,3),data,'distance'],'det-X':['Beam center X',(10,3),data['center'],0],
             'det-Y':['Beam center Y',(10,3),data['center'],1],'tilt':['Tilt angle*',(10,3),data,'tilt'],
             'phi':['Tilt rotation*',(10,2),data,'rotation'],'dep':['Penetration*',(10,4),data,'DetDepth'],
-            'wave':['Wavelength*',(10,6),data,'wavelength']}
+            'wave':['Wavelength*',(10,6),data,'wavelength']} #'sag':['Sag',(10.6),'sag']
         for name in Names:
             calSel = wx.CheckBox(parent=G2frame.dataWindow,label=Parms[name][0])
             calibSizer.Add(calSel,0,WACV)
@@ -1233,6 +1234,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             elif name == 'dep':
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Parms[name][2],
                     Parms[name][3],xmin=0.0,xmax=0.2,nDig=Parms[name][1],typeHint=float)
+            # elif name == 'sag':
+            #     calVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Parms[name][2],
+            #         Parms[name][3],xmin=-1.0,xmax=1.0,nDig=Parms[name][1],typeHint=float)
             else:
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Parms[name][2],
                     Parms[name][3],nDig=Parms[name][1],typeHint=float)

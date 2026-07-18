@@ -217,7 +217,7 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
 
     tth = 2.0*npasind(parms['wave']/(2.*dsp))
     phi0 = npatan2d(y-detY,x-detX)
-    dxy = peneCorr(dtth,parms['dep'],dist)
+    dxy = peneCorr(dtth,parms['dep'],dist)#+ sagCorr(x,y,parms['sag'],dist)
     stth = npsind(tth)
     cosb = npcosd(parms['tilt'])
     tanb = nptand(parms['tilt'])
@@ -278,8 +278,8 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         print (sigstr)
         
 
-    names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
-    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f']
+    names = ['dist','det-X','det-Y','tilt','phi','dep','wave']#'sag'
+    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f']#%12.4f'
     Fmt = dict(zip(names,fmt))
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)

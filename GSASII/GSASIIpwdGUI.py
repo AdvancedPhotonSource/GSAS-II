@@ -2639,9 +2639,9 @@ def UpdateInstrumentGrid(G2frame,data):
                 binwid = cw[np.searchsorted(xye[0],peak[0])]
                 if const:
                     if 'Debye' in Sample['Type']:
-                        shft -= const*(Sample['DisplaceX'][0]*npcosd(calcPos)+Sample['DisplaceY'][0]*npsind(calcPos))
+                        shft -= const*(Sample['DisplaceX'][0]*npcosd(calcPos)+Sample['DisplaceY'][0]*npsind(calcPos))-data['Zero'][1]
                     else:
-                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(calcPos/2.0)
+                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(calcPos/2.0)-data['Zero'][1]
                 XY.append([peak[-1],peak[0]-shft,binwid])
                 Sigs.append(IndexPeaks[1][ip])
         if len(XY):

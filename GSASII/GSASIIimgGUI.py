@@ -238,7 +238,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['det2theta'] = 0.0
     if 'orientation' not in data:
         data['orientation'] = 'horizontal'
-    if type(data['sag']) == list: del data['sag']
     data['sag'] = data.get('sag',0.0)
     if 'sag' not in data['varyList']:
         data['varyList'].update({'sag':False})

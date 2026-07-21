@@ -55,6 +55,14 @@ def peneCorr(tth,dep,dist):
     
     return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
 
+def sagCorr(x,y,tth,parms,xyLim):
+    ''' Correct 2theta for detector sag when highly tilted
+    something approximate? Seems to be a fold down vertical center.
+    
+    '''
+    dtth = 2.0*np.pi*(x/xyLim[0])*parms['sag']*nptand(tth/2.0)/parms['dist']
+    return dtth
+
 def GetTthP(x,y,parmDict,dist=None,detX=None,detY=None):
     '''Compute angle between detector normal & sample scattering ray vector
     For Multi-distance use, dist, detX & detY change for 
@@ -216,8 +224,10 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
         dtth = GetTthP(x,y,parmDict,dist,detX,detY)        #sample-detector ray wrt detector plane != 2-theta if tilted
 
     tth = 2.0*npasind(parms['wave']/(2.*dsp))
+    if not parmDict['xyLim'] is None:
+        tth -= sagCorr(x,y,tth,parms,parmDict['xyLim'])
     phi0 = npatan2d(y-detY,x-detX)
-    dxy = peneCorr(dtth,parms['dep'],dist)#+ sagCorr(x,y,parms['sag'],dist)
+    dxy = peneCorr(dtth,parms['dep'],dist)
     stth = npsind(tth)
     cosb = npcosd(parms['tilt'])
     tanb = nptand(parms['tilt'])
@@ -238,7 +248,7 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
     Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
     P = 2.*R0**2*zdis*npcosd(phi0-phi)
     Rcalc = (P+Q)/R
-    M = (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
+    M = (Robs-Rcalc)*25.        #25 wt scaling factor to make "chi**2" more reasonable
     if progressDlg: # keep track of GOF
         rms = np.sqrt((M**2).sum()/(25.*len(M)))
         if ellipseCalcRMS is None: ellipseCalcRMS = rms
@@ -278,8 +288,8 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         print (sigstr)
         
 
-    names = ['dist','det-X','det-Y','tilt','phi','dep','wave']#'sag'
-    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f']#%12.4f'
+    names = ['dist','det-X','det-Y','tilt','phi','dep','wave','sag']
+    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f','%12.4f']
     Fmt = dict(zip(names,fmt))
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
@@ -382,9 +392,8 @@ def FitMultiDist(rings,varyList,parmDict,keyArray,Print=True,covar=False,
     global ellipseCalcCount,ellipseCalcRMS
     ellipseCalcCount = 0
     ellipseCalcRMS = None
-    result = leastsq(ellipseCalcD,p0,
-                         args=(rings.T,varyList,parmDict,keyArray,progressDlg),
-                         full_output=True,ftol=1.e-8)
+    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict,keyArray,progressDlg),
+        full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])
@@ -879,8 +888,8 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     HKL = G2lat.sortHKLd(HKL,True,False)
     varyList = [item for item in data['varyList'] if data['varyList'][item]]
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
-        'setdist':data.get('setdist',data['distance']),
-        'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
+        'setdist':data.get('setdist',data['distance']),'tilt':data['tilt'],'phi':data['rotation'],
+        'wave':data['wavelength'],'dep':data['DetDepth'],'sag':data['sag']}
     Found = False
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)
@@ -916,6 +925,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     rings = np.concatenate((data['rings']),axis=0)
     if getRingsOnly:
         return rings,HKL
+    parmDict['xyLim'] = [data['size'][0]/scalex,data['size'][1]/scaley]
     [chisq,vals,sigList,covar] = FitDetector(rings,varyList,parmDict,True,True)
     data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']
@@ -923,6 +933,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     data['rotation'] = np.mod(parmDict['phi'],360.0)
     data['tilt'] = parmDict['tilt']
     data['DetDepth'] = parmDict['dep']
+    data['sag'] = parmDict['sag']
     data['chisq'] = chisq
     N = len(data['ellipses'])
     data['ellipses'] = []           #clear away individual ellipse fits
@@ -950,6 +961,7 @@ def ImageCalibrate(G2frame,data):
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
+    xyLim = [data['size'][0]/scalex,data['size'][1]/scaley]
     pixLimit = data['pixLimit']
     cutoff = data['cutoff']
     varyDict = data['varyList']
@@ -1059,7 +1071,7 @@ def ImageCalibrate(G2frame,data):
             G2fil.G2Print (fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1]))
             Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
-                'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}
+                'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0,'sag':0.0,'xyLim':xyLim}
             varyList = [item for item in varyDict if varyDict[item]]
             if len(Ringp) > 10:
                 chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)[0]
@@ -1098,7 +1110,7 @@ def ImageCalibrate(G2frame,data):
         G2plt.PlotImage(G2frame,newImage=True)
     if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
         data['DetDepth'] /= data['distance']
-    parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
+    parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],'sag':data['sag'],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     varyList = [item for item in varyDict if varyDict[item]]
     data['rings'] = []
@@ -1115,12 +1127,13 @@ def ImageCalibrate(G2frame,data):
             data['rings'].append(np.array(Ring))
             rings = np.concatenate((data['rings']),axis=0)
             if i:
-                chisq = FitDetector(rings,varyList,parmDict,False)[0]
+                chisq = FitDetector(rings,varyList,parmDict,False,False)[0]
                 data['distance'] = parmDict['dist']
                 data['center'] = [parmDict['det-X'],parmDict['det-Y']]
                 data['rotation'] = parmDict['phi']
                 data['tilt'] = parmDict['tilt']
                 data['DetDepth'] = parmDict['dep']
+                data['sag'] = parmDict['sag']
                 data['chisq'] = chisq
                 elcent,phi,radii = ellipse = GetEllipse(dsp,data)
                 if debug:   print (fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings)))

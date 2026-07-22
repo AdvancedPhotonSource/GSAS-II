@@ -667,6 +667,7 @@ def scanBilbaoPseudocell(page0):
     Obtains a set of cells and symmetry.
 
     :returns: formDict,csdict,rowdict where:
+
       * formDict: has the information to be submitted on the next form
       * csdict: is None
         searching on each row
@@ -704,11 +705,13 @@ def scanBilbaoMinsup(page0):
     Obtains a set of cells and symmetry.
 
     :returns: formDict,csdict,rowdict where:
+
       * formDict: has the information to be submitted on the next form
       * csdict: a dict of True/False values with the defaults for continued 
         searching on each row
       * rowdict: a dict with the information for each cell/sym that 
         was found. The contents of each row are list elements:
+
             HM symbol, sgnum, index, index i_k, TR mat, Trans Cell, WP valid, latt_valid
     '''
     csdict = {}   # supergroups w/default selection value
@@ -882,7 +885,7 @@ def BilbaoReSymSearch(key,result,maxdelta=2,pagelist=None):
     :func:`BilbaoSymSearch1`
 
     :returns: formDict,csdict,rowdict where formDict
-      will contain values to be used in the next call to Bilbao
+        will contain values to be used in the next call to Bilbao
         csdict will be used to select 
         which entries will be used in the next search and rowdict 
         contains possible supergroup settings.

@@ -1045,6 +1045,116 @@ def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
         for i,l in enumerate(rbAtoms):
             WriteCIFitem(fp,'   {:5d} {}'.format(i+1,l))
 
+def writeBondRestraints(fp,phase,bondList,phaseRestraintDict,
+                        seqParmDict={},cellList=[]):
+    General = phase['General']
+    if 'macro' in General['Type']:
+        print('Distance Restraint export in MM phase not yet supported')
+        return
+    Atoms = phase['Atoms']
+    cx,ct,cs,cia = General['AtomPtrs']
+    AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)
+    if cellList:
+        Amat = G2lat.cell2AB(cellList[:6])[0]
+    else:
+        Amat = G2lat.cell2AB(General['Cell'][1:7])[0]
+    SGData = General['SGData']
+    weight = phaseRestraintDict.get('Bond',{}).get('wtFactor',1.0)
+    if weight <= 0: return # restraints "turned off"
+    first = True
+    for i,[indx,ops,setp,esd] in enumerate(bondList):
+        try:
+            names = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+            XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+            if seqParmDict:  # sequential fit, update coordinates from refinement results
+                for k,aId in enumerate(indx):
+                    atNum = AtLookUp[aId]
+                    xyz = []
+                    for j,lab in enumerate(['x','y','z']):
+                        xyzkey = str(phase['pId'])+'::A'+ lab + ':' +str(atNum)
+                        xyz.append(seqParmDict.get(xyzkey,XYZ[k][j]))
+                    XYZ[k] = xyz
+            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+            calc = G2mth.getRestDist(XYZ,Amat)
+            if first:
+                first = False
+                WriteCIFitem(fp, '\n'.join([
+                    '\nloop_',
+                    '    _restr_distance_atom_site_label_1',
+                    '    _restr_distance_atom_site_label_2',
+                    #'    _restr_distance_site_symmetry_2', # this needs work to get right
+                    # as was done for distances & angles
+                    '    _restr_distance_target',
+                    '    _restr_distance_target_weight_param',
+                    '    _restr_distance_diff',
+                    #'    _restr_distance_details',
+                    ]))
+            s = '  '
+            s += PutInCol(names[0],6)
+            s += PutInCol(names[1],6)
+            s += PutInCol(G2mth.ValEsd(setp,-esd/5),10)
+            s += PutInCol(G2mth.ValEsd(esd/weight,-esd/5),10)
+            s += PutInCol(G2mth.ValEsd(calc-setp,-esd/5),10)
+            WriteCIFitem(fp, s)
+        except:
+            pass
+
+def writeAngleRestraints(fp,phase,angleList,phaseRestraintDict,
+                         seqParmDict={},cellList=[]):
+    General = phase['General']
+    if 'macro' in General['Type']:
+        print('Angle Restraint export in MM phase not yet supported')
+        return
+    Atoms = phase['Atoms']
+    cx,ct,cs,cia = General['AtomPtrs']
+    AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)
+    if cellList:
+        Amat = G2lat.cell2AB(cellList[:6])[0]
+    else:
+        Amat = G2lat.cell2AB(General['Cell'][1:7])[0]
+    SGData = General['SGData']
+    weight = phaseRestraintDict.get('Angle',{}).get('wtFactor',1.0)
+    if weight <= 0: return # restraints "turned off"
+    first = True
+    for i,[indx,ops,setp,esd] in enumerate(angleList):
+        try:
+            names = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+            XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+            if seqParmDict:  # sequential fit, update coordinates from refinement results
+                for k,aId in enumerate(indx):
+                    atNum = AtLookUp[aId]
+                    xyz = []
+                    for j,lab in enumerate(['x','y','z']):
+                        xyzkey = str(phase['pId'])+'::A'+ lab + ':' +str(atNum)
+                        xyz.append(seqParmDict.get(xyzkey,XYZ[k][j]))
+                    XYZ[k] = xyz
+            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+            calc = G2mth.getRestAngle(XYZ,Amat)
+            if first:
+                first = False
+                WriteCIFitem(fp, '\n'.join([
+                    '\nloop_',
+                    '    _restr_angle_atom_site_label_1',
+                    #'    _restr_angle_site_symmetry_1',
+                    '    _restr_angle_atom_site_label_2',
+                    '    _restr_angle_atom_site_label_3',
+                    #'    _restr_angle_site_symmetry_3',
+                    '    _restr_angle_target',
+                    '    _restr_angle_target_weight_param',
+                    '    _restr_angle_diff',
+                    #'    _restr_angle_details',
+                    ]))
+            s = '  '
+            s += PutInCol(names[0],6)
+            s += PutInCol(names[1],6)
+            s += PutInCol(names[2],6)
+            s += PutInCol(G2mth.ValEsd(setp,-esd/5),10)
+            s += PutInCol(G2mth.ValEsd(esd/weight,-esd/5),10)
+            s += PutInCol(G2mth.ValEsd(calc-setp,-esd/5),10)
+            WriteCIFitem(fp, s)
+        except:
+            pass
+
 # Refactored over here to allow access by GSASIIscriptable.py
 def MakeUniqueLabel(lbl, labellist):
     lbl = lbl.strip()
@@ -2420,6 +2530,20 @@ class ExportCIF(G2fil.ExportBaseclass):
                 print("Warning: no export for sequential "+str(phasedict['General']['Type'])+" coordinates implemented")
 #                raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
 
+            # write restraints
+            restraintDict = self.OverallParms.get('Restraints',{})
+            seqParmDict = self.seqData[histname]['parmDict']
+            if phasenam in restraintDict:
+                bondList = restraintDict[phasenam].get('Bond',{}).get('Bonds',[])
+                if bondList:
+                    writeBondRestraints(self.fp,phasedict,
+                                            bondList,restraintDict[phasenam],
+                                            seqParmDict,cellList)
+                angleList = restraintDict[phasenam].get('Angle',{}).get('Angles',[])
+                if angleList:
+                    writeAngleRestraints(self.fp,phasedict,
+                                             angleList,restraintDict[phasenam],
+                                             seqParmDict,cellList)
             if phasedict['General']['Type'] == 'nuclear':
                 WriteSeqDistances(phasenam,histname,phasedict,cellList,self.seqData)
 
@@ -2559,6 +2683,17 @@ class ExportCIF(G2fil.ExportBaseclass):
                 WriteAtomsMagnetic(self.fp, self.Phases[phasenam], phasenam,
                                   self.parmDict, self.sigDict, self.labellist)
 #                raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
+            # write restraints
+            restraintDict = self.OverallParms.get('Restraints',{})
+            if phasenam in restraintDict:
+                bondList = restraintDict[phasenam].get('Bond',{}).get('Bonds',[])
+                if bondList:
+                    writeBondRestraints(self.fp,self.Phases[phasenam],
+                                            bondList,restraintDict[phasenam])
+                angleList = restraintDict[phasenam].get('Angle',{}).get('Angles',[])
+                if angleList:
+                    writeAngleRestraints(self.fp,self.Phases[phasenam],
+                                            angleList,restraintDict[phasenam])
             keV = None
             if oneblock: # get xray wavelength
                 lamlist = []

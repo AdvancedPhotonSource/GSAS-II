@@ -220,11 +220,13 @@ optional packages are:
   (http://www.pythonware.com/products/pil/). This is used to read and
   save certain types of images.
   
-* h5py and hdf5: h5py is the HDF5 interface and hdf5 is the support package. These
+* h5py, hdf5plugin and hdf5: h5py is the HDF5 interface and hdf5
+  supplies the code that actually reads HDF5. These
   packages are (not surprisingly) required
   to import images from HDF5 files. If these libraries are not present,
   the HDF5 importers will not appear in the import menu and a
-  warning message appears on GSAS-II startup.
+  warning message appears on GSAS-II startup. The hdf5plugin package
+  is needed for GSAS-II to read compressed files. 
   
 * imageio is used to make movies. This is optional and is utilized for plotting
   superspace (modulated) structures.

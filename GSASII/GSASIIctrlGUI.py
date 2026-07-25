@@ -6265,6 +6265,9 @@ class MyHelp(wx.Menu):
         helpobj = self.Append(wx.ID_ANY,'Help on current data tree item\tF1',
                 'Access web page on selected item in tree')
         frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
+        helpobj = self.Append(wx.ID_ANY,'Help via LLM Docs Search',
+                    'Use LLM to search GSAS-II documentation')
+        frame.Bind(wx.EVT_MENU, LLMsearch, id=helpobj.GetId())
         helpobj = self.Append(wx.ID_ANY,'Citation information',
                 'Show papers that GSAS-II users may wish to cite')
         frame.Bind(wx.EVT_MENU, ShowCitations, id=helpobj.GetId())
@@ -10622,6 +10625,82 @@ def StringSearchTemplate(parent,title,prompt,start,help=None):
         val = valItem.GetValue()
         dlg.Destroy()
     return val
+
+def LLMsearch(event):
+    G2frame = event.GetEventObject().frame
+    while True:
+        res = GSASIIpath.testLLMquery()
+        if res: break
+        dlg = wx.MessageDialog(G2frame,
+                'Packages needed for this are not installed. '+
+                'Do you want to install the packages?',
+                'Install packages',wx.YES_NO | wx.ICON_QUESTION)
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result == wx.ID_NO: return
+        SelectPkgInstall(event)
+    age = GSASIIpath.ageLLMindex()
+
+    if age is None:
+        dlg = wx.MessageDialog(G2frame,
+                'You need the LLM index files. '+
+                'Do you want to download and install them?',
+                'Install index?',wx.YES_NO | wx.ICON_QUESTION)
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result == wx.ID_NO:
+            return
+        else:
+            pdlg = wx.ProgressDialog('Installing Index',
+                                     'Downloading and installing index files',100,
+                                    parent=G2frame,style = wx.PD_ELAPSED_TIME)
+            pdlg.CenterOnParent()
+            wx.GetApp().Yield()
+            GSASIIpath.getLLMindex()
+            pdlg.Destroy()
+            #wx.EndBusyCursor()
+    elif age > 15:
+        dlg = wx.MessageDialog(G2frame,
+                f'The LLM index files are {age:.1f} days old. '+
+                'You are recommended to update them. '+
+                'Do you want to download and update?',
+                'Install index?',wx.YES_NO | wx.ICON_QUESTION)
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result != wx.ID_NO:
+            pdlg = wx.ProgressDialog('Installing Index','Downloading and installing index files',100,
+            parent=G2frame,style = wx.PD_ELAPSED_TIME)
+            pdlg.CenterOnParent()
+            wx.GetApp().Yield()
+            GSASIIpath.getLLMindex()
+            pdlg.Destroy()
+            
+    wx.GetApp().Yield()
+    if res == "llama":
+        # create progress dialog in case the model will be downloaded
+        pdlg = wx.ProgressDialog('Installing llama model',
+                        'Downloading and installing llama model. '+
+                        'This is a >2 Gb download that will take a while. ',
+                        100,
+                        parent=G2frame,style = wx.PD_ELAPSED_TIME)
+        pdlg.CenterOnParent()
+        wx.GetApp().Yield()
+        GSASIIpath.setupLLama()
+        pdlg.Destroy()
+        wx.GetApp().Yield()
+    elif res == "ollama":
+        GSASIIpath.setupOllama()
+    else:
+        print('Unknown LLM',res)
+    if res:
+        import gsas_query.gui
+        gsas_query.gui.show_assistant(G2frame)
 
 def HistogramNameTemplate(exporter,stripChars):
     '''Dialog to obtain a string value for grouping histograms

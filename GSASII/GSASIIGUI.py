@@ -108,17 +108,6 @@ files, please reset or reinstall''')
     G2gd.GSASIImain(application) # start the GUI
     if sys.platform == "darwin":
         wx.CallLater(50,application.ClearStartup)
-    docquerygui=None
-    try:
-        import chromadb
-        import gsas_query
-        import docquerygui
-        #print(dir(docquerygui))
-    except Exception as msg:
-        print(f'docquerygui load failed\n{msg}')
-    #breakpoint()
-    if docquerygui:
-        docquerygui.show_assistant(application.GetMainTopWindow())        
     application.MainLoop()
 
 if __name__ == '__main__':

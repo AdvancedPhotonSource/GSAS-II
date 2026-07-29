@@ -2754,6 +2754,28 @@ def G2MessageBox(parent,msg,title='Error'):
     dlg.Destroy()
 
 ################################################################################
+class G2ModelessMessage(wx.Dialog):
+    '''Simple code to display an infomational message in a non-modal
+    window.
+    '''
+    def __init__(self, parent, message, title):
+        def onClose(event):
+            try:
+                self.Destroy()
+            except:
+                pass
+        super().__init__(parent, title=title, style=wx.DEFAULT_DIALOG_STYLE | wx.STAY_ON_TOP)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        text = wx.StaticText(self, label=message)
+        text.Wrap(400)
+        sizer.Add(text, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        close_btn = wx.Button(self, wx.ID_CLOSE, "Close")
+        sizer.Add(close_btn, 0, wx.BOTTOM | wx.ALIGN_CENTER, 15)
+        close_btn.Bind(wx.EVT_BUTTON, onClose)
+        self.Bind(wx.EVT_CLOSE, onClose)
+        self.SetSizerAndFit(sizer)
+        self.Show(True)
+################################################################################
 def findValsInNotebook(data,target):
     'Pull a string of values from saved values in the GSAS-II notebook'
     c = 0
@@ -6245,7 +6267,6 @@ class MyHelp(wx.Menu):
             helpobj = self.Append(wx.ID_ANY,'Switch to/from branch',
                     'Switch to/from a GSAS-II development branch')
             frame.Bind(wx.EVT_MENU, gitSelectBranch, helpobj)
-        # test if conda present? 
         helpobj = self.Append(wx.ID_ANY,'Add packages for more functionality',
                 'Install optional Python packages to provide more GSAS-II capabilities')
         helpobj.Enable(bool(G2fil.condaRequestList))
@@ -10626,7 +10647,60 @@ def StringSearchTemplate(parent,title,prompt,start,help=None):
         dlg.Destroy()
     return val
 
-def LLMsearch(event):
+def InstallLLMindex(G2frame=None):
+    '''Download the documentation index files for LLM with a status dialog.
+    Used with Ollama only
+    '''
+    pdlg = wx.ProgressDialog('Installing Index',
+                            'Downloading and installing index files.\n\n'+
+                            'Search window will open when download is complete',
+                            100,parent=G2frame,style = wx.PD_ELAPSED_TIME)
+    try:
+        pdlg.CenterOnParent()
+        wx.GetApp().Yield()
+        GSASIIpath.getLLMindex()
+    finally:
+        pdlg.Destroy()
+
+def DownloadLLMfiles(G2frame,dlg,installIndex):
+    '''Download the llama model and/or the documentation index files for 
+    LLM searching. This is run in a background thread and only with 
+    the llama backend.
+    '''
+    if installIndex:
+        print('Installing index')
+        GSASIIpath.getLLMindex()
+    print('Installing model')
+    GSASIIpath.installLLamaModel()
+    if dlg:
+        try:
+            wx.CallAfter(dlg.Destroy)
+        except:
+            pass
+    model = GSASIIpath.testLLamaModel()
+    if model is None:
+        print('No model found after install attempt')
+        return
+    wx.CallAfter(LaunchLLama,G2frame)
+
+def LaunchLLama(G2frame):
+    'Start up the Query_gsas LLM dialog with a llama backend'
+    res = GSASIIpath.setupLLama()
+    font = int(14 + GSASII.GSASIIpath.GetConfigValue("FontSize_incr", 0))
+    if res:
+        import gsas_query.gui
+        gsas_query.gui.show_assistant(G2frame,font)
+    else:
+        print('Unable to launch llama')
+        
+def LLMsearch(event,repeat=False):
+    '''Master routine to perform LLM searching of documentation. 
+    Checks to see that needed modules and files are present and for 
+    index, recent. Asks user for permission to do installation/downloads 
+    where needed.
+    For llama, where the model is quite large, the download is 
+    performed in a background thread. 
+    '''
     G2frame = event.GetEventObject().frame
     while True:
         res = GSASIIpath.testLLMquery()
@@ -10641,8 +10715,10 @@ def LLMsearch(event):
             dlg.Destroy()
         if result == wx.ID_NO: return
         SelectPkgInstall(event)
-    age = GSASIIpath.ageLLMindex()
 
+    # is the index present or old?
+    age = GSASIIpath.ageLLMindex()
+    installIndex = False
     if age is None:
         dlg = wx.MessageDialog(G2frame,
                 'You need the LLM index files. '+
@@ -10655,14 +10731,7 @@ def LLMsearch(event):
         if result == wx.ID_NO:
             return
         else:
-            pdlg = wx.ProgressDialog('Installing Index',
-                                     'Downloading and installing index files',100,
-                                    parent=G2frame,style = wx.PD_ELAPSED_TIME)
-            pdlg.CenterOnParent()
-            wx.GetApp().Yield()
-            GSASIIpath.getLLMindex()
-            pdlg.Destroy()
-            #wx.EndBusyCursor()
+            installIndex = True
     elif age > 15:
         dlg = wx.MessageDialog(G2frame,
                 f'The LLM index files are {age:.1f} days old. '+
@@ -10674,33 +10743,44 @@ def LLMsearch(event):
         finally:
             dlg.Destroy()
         if result != wx.ID_NO:
-            pdlg = wx.ProgressDialog('Installing Index','Downloading and installing index files',100,
-            parent=G2frame,style = wx.PD_ELAPSED_TIME)
-            pdlg.CenterOnParent()
-            wx.GetApp().Yield()
-            GSASIIpath.getLLMindex()
-            pdlg.Destroy()
-            
+            installIndex = True
     wx.GetApp().Yield()
     if res == "llama":
-        # create progress dialog in case the model will be downloaded
-        pdlg = wx.ProgressDialog('Installing llama model',
-                        'Downloading and installing llama model. '+
-                        'This is a >2 Gb download that will take a while. ',
-                        100,
-                        parent=G2frame,style = wx.PD_ELAPSED_TIME)
-        pdlg.CenterOnParent()
-        wx.GetApp().Yield()
-        GSASIIpath.setupLLama()
-        pdlg.Destroy()
-        wx.GetApp().Yield()
+        import threading
+        model = GSASIIpath.testLLamaModel()
+        if model is None:
+            dlg = wx.MessageDialog(G2frame,
+                'You need to install the llama model (once). '+
+                'This is a >2 Gb download that will take a while,\n'+
+                'but GSAS-II can be used while the download is running in the background.\n\n'+
+                'Do you want to download and install this?',
+                'Install model?',wx.YES_NO | wx.ICON_QUESTION)
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_NO: return
+            dlg = G2ModelessMessage(G2frame, 
+                'Download(s) are in progress. The "LLM\n'+
+                'Docs Search" window will open when complete.',
+                'Download in progress')
+            thread = threading.Thread(target=DownloadLLMfiles,
+                                      args=(G2frame,dlg,installIndex))
+            thread.start()
+            return
+        else:
+            LaunchLLama(G2frame)
     elif res == "ollama":
-        GSASIIpath.setupOllama()
+        font = int(14 + GSASII.GSASIIpath.GetConfigValue("FontSize_incr", 0))
+        if installIndex: InstallLLMindex(G2frame)
+        res = GSASIIpath.setupOllama()
+        if res:
+            import gsas_query.gui
+            gsas_query.gui.show_assistant(G2frame,font)
+        else:
+            print('setupOllama did not complete properly')
     else:
         print('Unknown LLM',res)
-    if res:
-        import gsas_query.gui
-        gsas_query.gui.show_assistant(G2frame)
 
 def HistogramNameTemplate(exporter,stripChars):
     '''Dialog to obtain a string value for grouping histograms

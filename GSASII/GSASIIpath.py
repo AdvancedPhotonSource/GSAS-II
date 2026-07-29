@@ -1556,6 +1556,8 @@ def findConda():
     We could also look for conda relative to the python (sys.executable)
     image, but I don't want to muck around with python that someone else
     installed.
+
+    Not currently in use.
     '''
     parent = os.path.split(path2GSAS2)[0]
     if sys.platform != "win32":
@@ -2176,7 +2178,8 @@ end tell
         fp.close()
         subprocess.Popen(cmds,start_new_session=True)
 
-# routines used for gsas_query (LLM Documentation searching) 
+#===========================================================================
+# routines used for Query_gsas (query_gsas2, LLM Documentation searching) 
 def testLLMquery():
     '''See if the LLM documentation searching is set up to run. 
     This can take a second or two to run, so don't use this 
@@ -2192,27 +2195,35 @@ def testLLMquery():
         import chromadb # slowish
         #if importlib.util.find_spec('chromadb') is None: return
     except ImportError:
-        print('chromadb is not installed')
+        #print('chromadb is not installed')
         from . import GSASIIfiles as G2fil
         G2fil.NeededPackage({'LLM docs search':['chromadb',
-                                    'llama_cpp','huggingface_hub']})
+                                    'llama-cpp-python','huggingface_hub']})
         return
     try:
         import gsas_query.gui
     except ImportError:
-        print('gsas_query is not installed; unexpected!')
+        print('query_gsas2 is not installed; unexpected!')
         return
     
-    # is Ollama setup?
+    # is Ollama setup? TODO: should also allow for designation of
+    # Ollama server location and to have 
     try:
         if gsas_query.gui._is_ollama_running(): return "ollama"
     except ImportError:
         pass
-    
-    # is llama setup?
+    bin = os.environ.get("OLLAMA_BIN")
+    if bin is not None:
+        if os.path.exists(bin): return "ollama"
+
+    # No Ollama; is llama installed?
     try:
         import llama_cpp # slow
-        import huggingface_hub # not strictly necessary
+        try:
+            import huggingface_hub # not strictly necessary
+        except:
+            print('Warning: llama installer but not huggingface_hub.\n'+
+                  'Unable to download llama models')
         return "llama"
         #if (importlib.util.find_spec('llama_cpp') is not None and
         #    importlib.util.find_spec('huggingface_hub') is not None
@@ -2224,39 +2235,56 @@ def testLLMquery():
     return
 
 def setupOllama():
+    '''Set up to run Ollama
+    '''
     os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
     import chromadb
     os.environ['LLM_BACKEND'] ='ollama'
     return True
 
-def setupLLama():
-    os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-    import chromadb
+def testLLamaModel():
+    '''Test if an llama model has been installed.
+    Returns the name of the most recently installed model 
+    or None if the model needs to be installed.
+    '''
     modelDir = os.path.expanduser("~/.GSASII/llama_models")
-    getModel = False
     if not os.path.exists(modelDir):
-        getModel = True
-    if not getModel:
-        fileList = glob.glob(os.path.join(modelDir,'*.gguf'))
-        if not fileList: getModel = True
-    if getModel:
-        os.makedirs(modelDir, exist_ok=True)
-        print('Downloading a model...')
-        from huggingface_hub import hf_hub_download
-        hf_hub_download(repo_id='Qwen/Qwen2.5-3B-Instruct-GGUF',
+        return None
+    fileList = glob.glob(os.path.join(modelDir,'*.gguf'))
+    if not fileList: return None
+    if len(fileList) == 1:
+        return fileList[0]
+    elif len(fileList) > 1:
+        return sorted(fileList, key=os.path.getmtime, reverse=True)[0]
+    else:
+        return None
+
+def installLLamaModel():
+    '''Download the Qwen2.5-3B-Instruct llama model'''
+    modelDir = os.path.expanduser("~/.GSASII/llama_models")
+    os.makedirs(modelDir, exist_ok=True)
+    print('Downloading a model...')
+    from huggingface_hub import hf_hub_download
+    hf_hub_download(repo_id='Qwen/Qwen2.5-3B-Instruct-GGUF',
                         filename='qwen2.5-3b-instruct-q4_k_m.gguf',
                         local_dir=modelDir)
-        print('...Download complete')
-        fileList = glob.glob(os.path.join(modelDir,'*.gguf'))
-    if len(fileList) == 0:
-        print('Error:  not download a llama model from huggingface_hub')
+    print('...Download complete')
+
+def setupLLama():
+    '''Prepare settings to run llama
+    '''
+    os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+    import chromadb
+    model = testLLamaModel()
+#    if model is None:
+#        installLLamaModel()
+#        model = testLLamaModel()
+    if model is None:
+#        print('Error: did not download a llama model from huggingface_hub')
+        print('Error: cannot use llama without a llama model')
         return False
-    elif len(fileList) == 1:
-        newest_file = fileList[0]
-    else:
-        newest_file = sorted(fileList, key=os.path.getmtime, reverse=True)[0]
     os.environ['LLM_BACKEND'] ='llama_cpp'
-    os.environ['LLAMA_CPP_MODEL'] = newest_file
+    os.environ['LLAMA_CPP_MODEL'] = model
     return True
 
 def ageLLMindex():
@@ -2265,7 +2293,7 @@ def ageLLMindex():
     '''
     import datetime
     f = 'chroma_db'
-    dbdir = os.path.expanduser('~/.GSASII/gsas_query')
+    dbdir = os.path.expanduser('~/.GSASII/query_gsas2')
     db = os.path.join(dbdir,f)
     if os.path.exists(db):
         m_time_timestamp = os.path.getmtime(db)
@@ -2277,15 +2305,19 @@ def getLLMindex():
     '''Download the ChromaDB database from the GitHub site and place
     into the location where GSAS-II will use it. 
 
-    Do this in two stages as someday I may want to do this
-    as an update in the background
+    Do this in two stages (download to temp location and then move) 
+    as someday perhaps the index update might be performed in the 
+    background.
+
+    TODO: for now this is downlaoded from the GSAS-II site, where the file
+    is placed manually. It should be generated automatically and possibly 
+    on a different site. 
     '''
     import tempfile
     import requests
     import zipfile
     import shutil
 
-    #OWNER = "briantoby"
     OWNER = "AdvancedPhotonSource"
     #REPO = "Query-GSAS"
     REPO = "GSAS-II-buildtools"
@@ -2315,9 +2347,9 @@ def getLLMindex():
         #print("Saved to:", tmp.name)
         # create the files in a new location and then move them to the final location
         f = 'chroma_db'
-        finaldir = os.path.expanduser('~/.GSASII/gsas_query')
+        finaldir = os.path.expanduser('~/.GSASII/query_gsas2')
         finaldb = os.path.join(finaldir,f)
-        newdir = os.path.expanduser('~/.GSASII/new_gsas_query')
+        newdir = os.path.expanduser('~/.GSASII/new_query_gsas2')
         newdb = os.path.join(newdir,f)
         os.makedirs(newdir, exist_ok=True)
         os.makedirs(finaldir, exist_ok=True)

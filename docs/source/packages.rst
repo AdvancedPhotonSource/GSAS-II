@@ -241,7 +241,8 @@ optional packages are:
   the base miniconda and anaconda installations, but if you create an
   environment for GSAS-II
   (`conda create -n <env> package-list...`), it will not be added
-  to that environment unless you request it specifically.
+  to that environment unless you request it specifically. This is
+  recommended. 
   
 * pybaselines: Determines a background for a powder pattern in the
   "autobackground" option. See https://pybaselines.readthedocs.io and
@@ -263,6 +264,30 @@ optional packages are:
 * sympy: This package performs symbolic computations and is used
   for k-vector searching with ISODISTORT.
 
+* chromaDB: The chromaDB package is used for LLM (AI-based)
+  documentation searching. It is needed with both the llama and ollama
+  backends.  ("Help via LLM Docs Search" command.)
+
+* llama-cpp-python: this provides the llama backend used for LLM
+  (AI-based) documentation searching. The alternate is to use the
+  ollama backend for the used for the "Help via LLM Docs Search"
+  command.
+
+* huggingface_hub: This is used to install the LLM model used in the
+  llama backend used for LLM (AI-based) documentation searching. If
+  the model is downloaded in some other manner (to
+  ~/.GSASII/llama_models) then huggingface_hub is not needed.
+
+* ollama: The ollama package in conda and pip does not appear to work,
+  at least not on all platforms, but can be used as an alternate
+  backend to llama-cpp for LLM (AI-based) documentation searching with
+  the "Help via LLM Docs Search" command.
+  aYou are commended to install ollama directly from
+  https://ollama.com/download/. Then either start this as a server
+  process or define the ``OLLAMA_BIN`` environment variable and
+  GSAS-II will start when the help window is open and end the server
+  process when the window or GSAS-II is closed.
+  
 *Conda command*:
   Should you wish to install Python and the desired packages yourself,
   this is certainly possible. For Linux, ``apt`` or ``yum`` is an option, as is

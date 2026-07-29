@@ -25,7 +25,10 @@ from . import GSASIIlattice as G2lat
 from . import GSASIIElem as G2elem
 from . import GSASIIctrlGUI as G2G
 
-import GSASII.Bilbao.BCS_API as BCS
+try:
+    import GSASII.Bilbao.BCS_API as BCS
+except ImportError:
+    BCS = None
 
 bilbaoURL = "http://cryst.ehu.es"
 #bilbaoSite = f'{bilbaoURL}/cgi-bin/cryst/programs/'
@@ -42,6 +45,7 @@ def BCS_init(threadCallback=None):
 
     :Returns: True if initialization fails due to the lack of a key
     '''
+    if BCS is None: return True
     if threadCallback == '':
         # setup default threading for BCS Post commands
         def BCS_sleep():

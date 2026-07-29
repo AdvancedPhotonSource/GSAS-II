@@ -1,12 +1,19 @@
 """
 Complete list of GSAS-II documentation sources.
 
-All URLs resolve under:
+All Home page, Help & Tutorial URLs resolve under:
     https://advancedphotonsource.github.io/GSAS-II-tutorials/
+    URL lists in HOME_SOURCES, HELP_SOURCES and TUTORIAL_SOURCES
 
-Additional PDFs:
-  - GSAS-II Programmer's Guide (readthedocs)
-  - Powder Crystallography book (Brian Toby, updated weekly — fetched dynamically)
+Additional HTML sources:
+  - GSAS-II Programmer's Guide — 24 pages from readthedocs (https://gsas-ii.readthedocs.io/en/latest)
+    URL list in READTHEDOCS_SOURCES
+    
+  - Powder Diffraction Crystallography book — 185 HTML pages (https://briantoby.github.io/PowderCrystallography)
+    URL list in BOOK_HTML_SOURCES
+
+Sources are selected based on the arguments supplied when ingest.py is run (e.g. --book includes BOOK_HTML_SOURCES)
+
 """
 
 BASE_URL = "https://advancedphotonsource.github.io/GSAS-II-tutorials"
@@ -14,6 +21,7 @@ BASE_URL = "https://advancedphotonsource.github.io/GSAS-II-tutorials"
 # ── Home / installation pages (22) ────────────────────────────────────────────
 
 HOME_SOURCES = [
+    "GSAS-II Home pages",
     {"title": "GSAS-II Home",                    "url": f"{BASE_URL}/index.html",             "category": "Home"},
     {"title": "About GSAS-II",                   "url": f"{BASE_URL}/AboutGSASII.html",        "category": "Home"},
     {"title": "Documentation Overview",          "url": f"{BASE_URL}/documentation.html",      "category": "Home"},
@@ -37,10 +45,11 @@ HOME_SOURCES = [
     {"title": "Bug Reporting",                   "url": f"{BASE_URL}/bug.html",               "category": "Home"},
     {"title": "General Index",                   "url": f"{BASE_URL}/genindex.html",           "category": "Home"},
 ]
-
+    
 # ── Help pages (42, skipping 404.html) ────────────────────────────────────────
 
 HELP_SOURCES = [
+    "GSAS-II Help pages",
     {"title": "Help: Application Window",            "url": f"{BASE_URL}/help/applicationwindow.html",   "category": "Help"},
     {"title": "Help: Main Menu",                     "url": f"{BASE_URL}/help/mainmenu.html",            "category": "Help"},
     {"title": "Help: Data Tree",                     "url": f"{BASE_URL}/help/datatree.html",            "category": "Help"},
@@ -88,6 +97,7 @@ HELP_SOURCES = [
 # ── Tutorials (62, skipping tutorial_template) ────────────────────────────────
 
 TUTORIAL_SOURCES = [
+    "GSAS-II Tutorials",
     # Getting Started
     {"title": "Starting GSAS-II",
      "url": f"{BASE_URL}/StartingGSASII/Starting%20GSAS.htm",
@@ -318,6 +328,7 @@ TUTORIAL_SOURCES = [
 _RTD = "https://gsas-ii.readthedocs.io/en/latest"
 
 READTHEDOCS_SOURCES = [
+    "GSAS-II programmers' manual",
     {"title": "GSAS-II Packages Overview",          "url": f"{_RTD}/packages.html",          "category": "Programmer's Guide"},
     {"title": "GSAS-II Versioning",                 "url": f"{_RTD}/versioning.html",         "category": "Programmer's Guide"},
     {"title": "Object/Variable Organization",       "url": f"{_RTD}/objvarorg.html",          "category": "Programmer's Guide"},
@@ -341,49 +352,73 @@ READTHEDOCS_SOURCES = [
     {"title": "Import modules",                     "url": f"{_RTD}/imports.html",            "category": "Programmer's Guide"},
     {"title": "Export modules",                     "url": f"{_RTD}/exports.html",            "category": "Programmer's Guide"},
     {"title": "G2tools module",                     "url": f"{_RTD}/G2tools.html",            "category": "Programmer's Guide"},
-    {"title": "GSAS-II General Index",              "url": f"{_RTD}/indices.html",            "category": "Programmer's Guide"},
+    #{"title": "GSAS-II General Index",              "url": f"{_RTD}/indices.html",            "category": "Programmer's Guide"},
 ]
 
 # ── PDF sources ────────────────────────────────────────────────────────────────
 
-PDF_SOURCES = []  # Programmer's Guide now ingested as HTML (see READTHEDOCS_SOURCES)
+PDF_SOURCES = []  # Book and Programmer's Guide now available as HTML
 
-# ── Dynamic PDF: Powder Crystallography book (Brian Toby) ─────────────────────
-# Updated every week or two — fetched fresh at ingest time.
+# ── Powder Diffraction Crystallography book — 185 HTML pages (Brian Toby) ─────
+# https://briantoby.github.io/PowderCrystallography/
+# Pages are accessible by direct URL; include via `gsas-query --setup --book`.
 
-BOOK_REPO = "briantoby/PowderCrystallography"
-BOOK_FILENAME = "PowderCrystallography.pdf"
-BOOK_FALLBACK_URL = (
-    "https://github.com/briantoby/PowderCrystallography/releases/download"
-    "/v0.6.0/PowderCrystallography.pdf"
-)
+_BOOK_BASE = "https://briantoby.github.io/PowderCrystallography"
 
-
-def get_book_url() -> str:
-    """Return download URL for the latest release of the book."""
-    import json
-    import urllib.request
+import requests
+def url_exists(url):
     try:
-        api_url = f"https://api.github.com/repos/{BOOK_REPO}/releases/latest"
-        req = urllib.request.Request(
-            api_url, headers={"Accept": "application/vnd.github+json"}
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            tag = json.loads(resp.read())["tag_name"]
-        return (
-            f"https://github.com/{BOOK_REPO}/releases/download"
-            f"/{tag}/{BOOK_FILENAME}"
-        )
-    except Exception:
-        return BOOK_FALLBACK_URL
-PDF_SOURCES += [
-    {
-        "title": "Crystallographic Powder Diffraction Analysis with GSAS-II: An Introduction to Rietveld Analysis",
-        "url": get_book_url(),
-        "category": "GSAS-II Rietveld textbook",
-    },
-]
+        # allow_redirects=True ensures 301/302 redirects resolve to the final page
+        response = requests.head(url, allow_redirects=True, timeout=5)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
 
+
+BOOK_HTML_SOURCES = [
+    "Powder Diff. Cryst. Book book",
+    {"title": "Powder Diff. Cryst. Book (Contents)", "url": f"{_BOOK_BASE}/HTML-template.html", "category": "Powder Crystallography Book"},
+]
+#for _i in range(1, 7):  # these are book section tables of contents, no text
+#    BOOK_HTML_SOURCES.append({
+#        "title": f"Powder Diff. Cryst. Book Part {_i}",
+#        "url": f"{_BOOK_BASE}/HTML-templatepa{_i}.html",
+#        "category": "Powder Crystallography Book",
+#    })
+_i = 0
+lastURL = ''
+while True:
+    _i += 1
+#for _i in range(1, 30):   # these are mostly tables of contents & no text, but a few have text
+    url = f"{_BOOK_BASE}/HTML-templatech{_i}.html"
+    if url_exists(url):
+        lastURL = url
+        BOOK_HTML_SOURCES.append({
+            "title": f"Powder Diff. Cryst. Book Chapter {_i}",
+            "url": url,
+            "category": "Powder Crystallography Book",
+        })
+    else:
+        print(f'Last Powder Diff. Cryst. Book Chapter is {_i-1} ({lastURL})')
+        break
+
+_i = 0
+lastURL = ''
+while True:
+    _i += 1
+#for _i in range(1, 150):
+    url = f"{_BOOK_BASE}/HTML-templatese{_i}.html"
+    if url_exists(url):
+        lastURL = url
+        BOOK_HTML_SOURCES.append({
+            "title": f"Powder Diff. Cryst. Book Section {_i}",
+            "url": url,
+            "category": "Powder Crystallography Book",
+        })
+    else:
+        print(f'Last Powder Diff. Cryst. Book Section is {_i-1}  ({lastURL})')
+        break
+        
 # ── Dynamic tutorial list from GSAS-II's tutorialIndex.py ────────────────────
 # Fetched at ingest time so new tutorials are picked up automatically.
 # Falls back to the hardcoded TUTORIAL_SOURCES on any network or parse error.
@@ -394,7 +429,7 @@ _TUTORIAL_INDEX_URL = (
 )
 
 
-def get_tutorial_sources() -> list[dict]:
+def get_tutorial_sources():
     """Return tutorial sources from GSAS-II's canonical tutorialIndex.py.
 
     Uses ast.literal_eval (not eval) so untrusted file content is never executed.
@@ -424,7 +459,7 @@ def get_tutorial_sources() -> list[dict]:
         if not index_value:
             return TUTORIAL_SOURCES
 
-        sources = []
+        sources = ['GSAS-II tutorials']
         for entry in index_value:
             if len(entry) == 4:
                 directory, filename, title, _ = entry
@@ -437,11 +472,3 @@ def get_tutorial_sources() -> list[dict]:
 
     except Exception:
         return TUTORIAL_SOURCES
-
-
-# ── Convenience aggregates ─────────────────────────────────────────────────────
-
-ALL_HTML_SOURCES = HOME_SOURCES + HELP_SOURCES + TUTORIAL_SOURCES
-
-# All non-tutorial HTML sources ingested by ingest.py
-WEBPAGE_SOURCES = HOME_SOURCES + HELP_SOURCES + READTHEDOCS_SOURCES

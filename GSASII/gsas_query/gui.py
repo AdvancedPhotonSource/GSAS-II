@@ -22,6 +22,23 @@ import webbrowser
 from ._paths import get_chroma_path
 
 
+def _get_gsas_font_size(default: int = 10) -> int:
+    """Return the font size to use, in points.
+
+    Priority:
+      1. specified font size in show_assistant() or GSASQueryDialog() call
+      2. GSAS_QUERY_FONT_SIZE env var (explicit override)
+      3. *default* (10 pt)
+    """
+    env = os.environ.get("GSAS_QUERY_FONT_SIZE")
+    if env:
+        try:
+            return int(env)
+        except ValueError:
+            pass
+    return default
+
+
 def _ollama_url() -> str:
     return os.environ.get("OLLAMA_URL", "http://localhost:11434")
 
@@ -43,22 +60,41 @@ def _launch_ollama() -> "subprocess.Popen | None":
     """Start `ollama serve` if not already running. Returns the process we started, or None."""
     if _is_ollama_running():
         return None
-    try:
-        proc = subprocess.Popen(
-            [_ollama_bin(), "serve"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except FileNotFoundError:
-        return None
-    for _ in range(12):          # wait up to 6 s
-        time.sleep(0.5)
-        if _is_ollama_running():
-            # Register a fallback: if GSAS-II exits without closing the dialog
-            # (EVT_CLOSE won't fire for child frames), atexit still kills Ollama.
-            atexit.register(proc.terminate)
-            return proc
-    proc.terminate()
+    repeat = True
+    cmdarg = "serve"
+    sec = 6
+    while repeat:
+        repeat = False
+        try:
+            proc = subprocess.Popen(
+                [_ollama_bin(), cmdarg],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                encoding='UTF-8'
+                )
+        except FileNotFoundError:
+            return None
+        for _ in range(sec*2):          # wait up to `sec` s
+            time.sleep(0.5)
+            if _is_ollama_running():
+                # Register a fallback: if GSAS-II exits without closing the dialog
+                # (EVT_CLOSE won't fire for child frames), atexit still kills Ollama.
+                atexit.register(proc.terminate)
+                return proc
+            elif cmdarg == "serve":
+                # on Mac provided binary runs w/o server. Longer timeout, as 
+                # one may need to respond to GUI questions
+                for line in proc.stderr:
+                    if "serve command not supported" in line:
+                        repeat = True
+                        sec = 60
+                        break
+                else:
+                    continue
+                break
+        print(f'Failed to launch Ollama server with "{_ollama_bin()} {cmdarg}"')
+        cmdarg = ''  # if repeat, try again without serve        
+        proc.terminate()
     return None
 
 try:
@@ -100,7 +136,7 @@ class _QueryThread(threading.Thread):
 # ── Source link panel ──────────────────────────────────────────────────────────
 
 class _SourcePanel(wx.Panel):
-    def __init__(self, parent, source: dict, number: int):
+    def __init__(self, parent, source: dict, number: int, font_size: int = 10):
         super().__init__(parent, style=wx.BORDER_NONE)
         self.SetBackgroundColour(parent.GetBackgroundColour())
 
@@ -109,13 +145,12 @@ class _SourcePanel(wx.Panel):
         section = source.get("section", "")
         rel = int(source.get("relevance", 0) * 100)
 
+        small = max(font_size - 1, 8)
+
         # Number label — bold, matches inline [N] in answer text
         num_lbl = wx.StaticText(self, label=f"[{number}]")
         num_lbl.SetForegroundColour(_ACCENT)
-        nf = num_lbl.GetFont()
-        nf.SetWeight(wx.FONTWEIGHT_BOLD)
-        nf.SetPointSize(nf.GetPointSize() - 1)
-        num_lbl.SetFont(nf)
+        num_lbl.SetFont(wx.Font(wx.FontInfo(small).Bold()))
 
         # Clickable title + section
         text = title
@@ -126,9 +161,7 @@ class _SourcePanel(wx.Panel):
         lnk = wx.StaticText(self, label=text)
         lnk.SetForegroundColour(_BLUE)
         lnk.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-        f = lnk.GetFont()
-        f.SetPointSize(f.GetPointSize() - 1)
-        lnk.SetFont(f)
+        lnk.SetFont(wx.Font(wx.FontInfo(small)))
         lnk.Bind(wx.EVT_LEFT_UP, lambda e: webbrowser.open(url))
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -145,7 +178,7 @@ class GSASQueryDialog(wx.Frame):
     Call show_assistant() rather than instantiating directly.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, fontsize=None):
         super().__init__(
             parent,
             title="GSAS-II Documentation Assistant",
@@ -155,6 +188,10 @@ class GSASQueryDialog(wx.Frame):
         self._history: list[dict] = []
         self._busy = False
         self._ollama_proc: "subprocess.Popen | None" = None
+        if fontsize is None:
+            self._font_size = _get_gsas_font_size(default=10)
+        else:
+            self._font_size = fontsize
         self._build_ui()
         self.Centre()
         self.Bind(wx.EVT_CLOSE, self._on_close)
@@ -209,6 +246,13 @@ class GSASQueryDialog(wx.Frame):
         self._src_sizer.Add(self._src_panel, 1, wx.EXPAND | wx.ALL, 4)
         self._src_panel.SetMinSize((-1, 90))
         outer.Add(self._src_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
+        # Progress indicator — shown while the LLM is generating
+        self._gauge = wx.Gauge(self, range=50, style=wx.GA_HORIZONTAL | wx.GA_SMOOTH)
+        self._gauge.Hide()
+        outer.Add(self._gauge, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        self._gauge_timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, lambda _: self._gauge.Pulse(), self._gauge_timer)
 
         # Input row
         in_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -292,8 +336,8 @@ class GSASQueryDialog(wx.Frame):
                 "Run 'gsas-query --setup' to index all GSAS-II documentation (~10 min)."
             )
         else:
-            backend = os.environ.get("LLM_BACKEND", "ollama")
-            self._index_lbl.SetLabel(f"{count:,} chunks · {backend}")
+            from .rag import _effective_backend
+            self._index_lbl.SetLabel(f"{count:,} chunks · {_effective_backend()}")
 
     # ── Event handlers ─────────────────────────────────────────────────────────
 
@@ -311,6 +355,10 @@ class GSASQueryDialog(wx.Frame):
         self._busy = True
         self._send_btn.Disable()
         self._status.SetStatusText("Thinking…")
+        self._gauge.Show()
+        self._gauge_timer.Start(80)   # pulse every 80 ms
+        wx.BeginBusyCursor()
+        self.Layout()
         self._append_user(question)
         self._clear_sources()
         _QueryThread(self, question, self._history).start()
@@ -324,6 +372,10 @@ class GSASQueryDialog(wx.Frame):
     def _on_query_done(self, result: dict):
         self._busy = False
         self._send_btn.Enable()
+        self._gauge_timer.Stop()
+        self._gauge.Hide()
+        wx.EndBusyCursor()
+        self.Layout()
         self._status.SetStatusText("")
         answer = result.get("answer", "")
         self._append_assistant(answer)
@@ -335,12 +387,16 @@ class GSASQueryDialog(wx.Frame):
     # ── Chat helpers ───────────────────────────────────────────────────────────
 
     def _append_user(self, text: str):
-        self._chat.SetDefaultStyle(wx.TextAttr(_BLUE, font=wx.Font(wx.FontInfo(10).Bold())))
+        self._chat.SetDefaultStyle(
+            wx.TextAttr(_BLUE, font=wx.Font(wx.FontInfo(self._font_size).Bold()))
+        )
         self._chat.AppendText(f"You: {text}\n\n")
         self._chat.SetDefaultStyle(wx.TextAttr(wx.BLACK))
 
     def _append_assistant(self, text: str):
-        self._chat.SetDefaultStyle(wx.TextAttr(wx.BLACK, font=wx.Font(wx.FontInfo(10))))
+        self._chat.SetDefaultStyle(
+            wx.TextAttr(wx.BLACK, font=wx.Font(wx.FontInfo(self._font_size)))
+        )
         self._chat.AppendText(f"Assistant: {text}\n\n")
         self._chat.SetDefaultStyle(wx.TextAttr(wx.BLACK))
 
@@ -358,7 +414,8 @@ class GSASQueryDialog(wx.Frame):
     def _show_sources(self, citations: dict):
         self._clear_sources()
         for key in sorted(citations, key=lambda k: int(k)):
-            item = _SourcePanel(self._src_panel, citations[key], number=int(key))
+            item = _SourcePanel(self._src_panel, citations[key],
+                                number=int(key), font_size=self._font_size)
             self._src_inner.Add(item, 0, wx.EXPAND | wx.BOTTOM, 4)
         self._src_panel.FitInside()
         self._src_panel.Layout()
@@ -370,7 +427,7 @@ class GSASQueryDialog(wx.Frame):
 _instance: GSASQueryDialog | None = None
 
 
-def show_assistant(parent=None) -> GSASQueryDialog:
+def show_assistant(parent=None,fontsize=None) -> GSASQueryDialog:
     """
     Show the GSAS-II Documentation Assistant dialog.
 
@@ -382,7 +439,7 @@ def show_assistant(parent=None) -> GSASQueryDialog:
     """
     global _instance
     if _instance is None or not _instance.IsShown():
-        _instance = GSASQueryDialog(parent)
+        _instance = GSASQueryDialog(parent,fontsize=fontsize)
         _instance.Show()
     else:
         _instance.Raise()

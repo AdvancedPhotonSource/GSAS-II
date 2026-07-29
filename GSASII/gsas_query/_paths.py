@@ -12,7 +12,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 def get_data_dir() -> Path:
     """Return (and create) the user data directory for gsas_query."""
     d = Path(os.environ.get("GSAS_QUERY_DATA_DIR",
-                            Path.home() / ".GSASII" / "gsas_query"))
+                            Path.home() / ".GSASII" / "query_gsas2"))
     d.mkdir(parents=True, exist_ok=True)
     return d
 

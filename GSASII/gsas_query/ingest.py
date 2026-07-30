@@ -244,10 +244,6 @@ def main():
         print(f"  Adding Programmers' manual ({len(READTHEDOCS_SOURCES)} HTML pages)")
         html_sources = html_sources + [READTHEDOCS_SOURCES]
     if args.book:
-        for i in BOOK_HTML_SOURCES:
-            if 'title' in i:
-                i['title'] += ' (B)'
-        print(f"  Adding Powder Crystallography book ({len(BOOK_HTML_SOURCES)} HTML pages)")
         html_sources = html_sources + [BOOK_HTML_SOURCES]
 
     print("\n=== Ingesting HTML pages ===")

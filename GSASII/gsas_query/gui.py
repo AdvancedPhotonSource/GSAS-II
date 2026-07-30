@@ -9,10 +9,14 @@ GSAS-II Help menu integration:
     def OnDocAssistant(self, event):
         from gsas_query.gui import show_assistant
         show_assistant(self)
+
+Uses MathJaX to display equations using https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js, if available.
 """
 
 import atexit
+import html
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -41,6 +45,194 @@ def _get_gsas_font_size(default: int = 10) -> int:
 
 def _ollama_url() -> str:
     return os.environ.get("OLLAMA_URL", "http://localhost:11434")
+
+
+def _format_llm_markdown(text: str) -> str:
+    """Convert markdown/math flavored model output into readable plain text.
+
+    The chat transcript is rendered in a wx.TextCtrl, so we normalize common
+    markdown and MathJax delimiters rather than showing raw markup.
+    """
+    if not text:
+        return ""
+
+    out = text.replace("\r\n", "\n")
+
+    # Avoid duplicated speaker prefix in the transcript.
+    if out.lstrip().lower().startswith("assistant:"):
+        out = out.split(":", 1)[1].lstrip()
+
+    # Convert fenced code blocks into plain indented blocks.
+    out = re.sub(r"```(?:[\w+-]+)?\n(.*?)```", lambda m: "\n" + "\n".join(
+        f"    {line}" if line else "" for line in m.group(1).split("\n")
+    ) + "\n", out, flags=re.DOTALL)
+
+    # Convert display math delimiters into visible equation lines.
+    out = out.replace("\\[", "\n")
+    out = out.replace("\\]", "\n")
+    out = out.replace("$$", "\n")
+
+    # Convert inline math delimiters to simple quoted equation text.
+    out = out.replace("\\(", "[")
+    out = out.replace("\\)", "]")
+
+    # Simplify common markdown markers for plain-text display.
+    out = re.sub(r"^\s*[-*]\s+", "• ", out, flags=re.MULTILINE)
+    out = re.sub(r"\*\*(.*?)\*\*", r"\1", out)
+    out = re.sub(r"__(.*?)__", r"\1", out)
+    out = re.sub(r"`([^`]+)`", r"\1", out)
+
+    # Collapse excess blank space introduced by conversions.
+    out = re.sub(r"\n{3,}", "\n\n", out)
+    return out.strip()
+
+
+def _strip_speaker_prefix(text: str) -> str:
+    """Drop a leading 'Assistant:' emitted by some models."""
+    if text.lstrip().lower().startswith("assistant:"):
+        return text.split(":", 1)[1].lstrip()
+    return text
+
+
+def _inline_md_to_html(line: str) -> str:
+    """Render a small markdown subset into HTML-safe inline content."""
+    out = html.escape(line)
+    out = re.sub(r"`([^`]+)`", r"<code>\1</code>", out)
+    out = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", out)
+    out = re.sub(r"__(.+?)__", r"<strong>\1</strong>", out)
+    return out
+
+
+def _assistant_text_to_html(text: str) -> str:
+    """Convert model output into safe HTML while preserving TeX delimiters."""
+    if not text:
+        return ""
+
+    src = _strip_speaker_prefix(text).replace("\r\n", "\n")
+    parts = re.split(r"```(?:[\w+-]+)?\n(.*?)```", src, flags=re.DOTALL)
+    chunks: list[str] = []
+
+    for i, part in enumerate(parts):
+        if i % 2 == 1:
+            chunks.append(f"<pre><code>{html.escape(part.strip())}</code></pre>")
+            continue
+
+        lines = part.split("\n")
+        in_list = False
+        para_lines: list[str] = []
+
+        def flush_para():
+            if para_lines:
+                body = "<br>".join(_inline_md_to_html(x) for x in para_lines)
+                chunks.append(f"<p>{body}</p>")
+                para_lines.clear()
+
+        for raw in lines:
+            line = raw.rstrip()
+            m = re.match(r"^\s*[-*]\s+(.*)$", line)
+            if m:
+                flush_para()
+                if not in_list:
+                    chunks.append("<ul>")
+                    in_list = True
+                chunks.append(f"<li>{_inline_md_to_html(m.group(1))}</li>")
+                continue
+
+            if line.strip() == "":
+                flush_para()
+                if in_list:
+                    chunks.append("</ul>")
+                    in_list = False
+                continue
+
+            if in_list:
+                chunks.append("</ul>")
+                in_list = False
+            para_lines.append(line)
+
+        flush_para()
+        if in_list:
+            chunks.append("</ul>")
+
+    return "\n".join(chunks)
+
+
+def _chat_document(messages: list[dict], font_size: int) -> str:
+    """Build the full chat HTML document with MathJax enabled."""
+    msg_html: list[str] = []
+    for msg in messages:
+        role = msg.get("role", "assistant")
+        if role == "user":
+            body = f"<p>{_inline_md_to_html(msg.get('content', ''))}</p>"
+            msg_html.append(
+                f'<div class="msg user"><div class="who">You</div><div class="bubble">{body}</div></div>'
+            )
+        elif role == "system":
+            body = f"<p>{_inline_md_to_html(msg.get('content', ''))}</p>"
+            msg_html.append(
+                f'<div class="msg system"><div class="bubble">{body}</div></div>'
+            )
+        else:
+            body = _assistant_text_to_html(msg.get("content", ""))
+            msg_html.append(
+                f'<div class="msg assistant"><div class="who">Assistant</div><div class="bubble">{body}</div></div>'
+            )
+
+    if not msg_html:
+        msg_html.append('<div class="msg system"><div class="bubble"><p>Ask a question about GSAS-II documentation.</p></div></div>')
+
+    return f"""<!doctype html>
+<html>
+<head>
+<meta charset=\"utf-8\">
+<style>
+  :root {{
+    --blue: rgb(26,79,138);
+    --bg: rgb(244,246,249);
+    --bot: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #d1d9e6;
+  }}
+  html, body {{ margin: 0; padding: 0; background: var(--bg); color: var(--text); }}
+    body {{ font: {font_size}pt system-ui, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif; }}
+  #chat {{ padding: 10px; }}
+  .msg {{ margin: 0 0 10px 0; max-width: 94%; }}
+  .msg.user {{ margin-left: auto; }}
+    .who {{ color: var(--muted); font-size: .65em; margin: 0 0 3px 2px; }}
+    .bubble {{ background: var(--bot); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; line-height: 1.3; font-size: .78em; }}
+  .msg.user .bubble {{ border-color: rgba(26,79,138,.3); background: #eef5ff; }}
+  .msg.system .bubble {{ color: var(--muted); background: #f8fafc; }}
+  p {{ margin: 0 0 7px 0; }}
+  p:last-child {{ margin-bottom: 0; }}
+  ul {{ margin: 6px 0 8px 20px; padding: 0; }}
+  li {{ margin: 2px 0; }}
+  code {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: #eef2f7; padding: 1px 4px; border-radius: 4px; }}
+  pre {{ margin: 8px 0; background: #1f2937; color: #e5e7eb; padding: 10px; border-radius: 7px; overflow: auto; }}
+  pre code {{ background: transparent; padding: 0; color: inherit; }}
+</style>
+<script>
+window.MathJax = {{
+  tex: {{
+    inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+    displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']]
+  }},
+  options: {{ skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }}
+}};
+</script>
+<script defer src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js\"></script>
+</head>
+<body>
+<div id=\"chat\">{''.join(msg_html)}</div>
+<script>
+window.scrollTo(0, document.body.scrollHeight);
+if (window.MathJax && window.MathJax.typesetPromise) {{
+  window.MathJax.typesetPromise().then(() => window.scrollTo(0, document.body.scrollHeight));
+}}
+</script>
+</body>
+</html>
+"""
 
 
 def _ollama_bin() -> str:
@@ -100,6 +292,11 @@ def _launch_ollama() -> "subprocess.Popen | None":
 try:
     import wx
     import wx.html
+    try:
+        import wx.html2
+        _HAS_WEBVIEW = True
+    except Exception:
+        _HAS_WEBVIEW = False
 except ImportError:
     print("wxPython is required for the GUI. It is included with GSAS-II.")
     sys.exit(1)
@@ -186,6 +383,8 @@ class GSASQueryDialog(wx.Frame):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT,
         )
         self._history: list[dict] = []
+        self._messages: list[dict] = []
+        self._pending_question = ""
         self._busy = False
         self._ollama_proc: "subprocess.Popen | None" = None
         if fontsize is None:
@@ -193,6 +392,10 @@ class GSASQueryDialog(wx.Frame):
         else:
             self._font_size = fontsize
         self._build_ui()
+        if self._chat_web is None:
+            self._append_system(
+                "Math rendering unavailable: WebView backend is not available in this wxPython environment."
+            )
         self.Centre()
         self.Bind(wx.EVT_CLOSE, self._on_close)
         self._check_index()
@@ -226,13 +429,25 @@ class GSASQueryDialog(wx.Frame):
         header.SetMinSize((-1, 46))
         outer.Add(header, 0, wx.EXPAND)
 
-        # Chat transcript
-        self._chat = wx.TextCtrl(
-            self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.BORDER_NONE
-        )
-        self._chat.SetBackgroundColour(_BOT_BG)
-        self._chat.SetMinSize((-1, 300))
-        outer.Add(self._chat, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        # Chat transcript (WebView + MathJax when available)
+        self._chat_web = None
+        self._chat = None
+        if _HAS_WEBVIEW:
+            try:
+                self._chat_web = wx.html2.WebView.New(self)
+                outer.Add(self._chat_web, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+                self._render_chat()
+            except Exception:
+                # Some wx builds expose wx.html2 but lack a working runtime backend.
+                self._chat_web = None
+
+        if self._chat_web is None:
+            self._chat = wx.TextCtrl(
+                self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.BORDER_NONE
+            )
+            self._chat.SetBackgroundColour(_BOT_BG)
+            self._chat.SetMinSize((-1, 300))
+            outer.Add(self._chat, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
 
         # Sources panel
         src_box = wx.StaticBox(self, label="Sources")
@@ -352,6 +567,7 @@ class GSASQueryDialog(wx.Frame):
         if not question or self._busy:
             return
         self._input.SetValue("")
+        self._pending_question = question
         self._busy = True
         self._send_btn.Disable()
         self._status.SetStatusText("Thinking…")
@@ -365,7 +581,11 @@ class GSASQueryDialog(wx.Frame):
 
     def _on_clear(self, event):
         self._history.clear()
-        self._chat.SetValue("")
+        self._messages.clear()
+        if self._chat_web is not None:
+            self._render_chat()
+        else:
+            self._chat.SetValue("")
         self._clear_sources()
         self._status.SetStatusText("History cleared.")
 
@@ -379,14 +599,21 @@ class GSASQueryDialog(wx.Frame):
         self._status.SetStatusText("")
         answer = result.get("answer", "")
         self._append_assistant(answer)
-        self._history.append({"role": "user",
-                               "content": self._chat.GetValue().split("\n")[-2]})
+        self._history.append({"role": "user", "content": self._pending_question})
         self._history.append({"role": "assistant", "content": answer})
         self._show_sources(result.get("citations", {}))
 
     # ── Chat helpers ───────────────────────────────────────────────────────────
 
+    def _render_chat(self):
+        if self._chat_web is not None:
+            self._chat_web.SetPage(_chat_document(self._messages, self._font_size), "")
+
     def _append_user(self, text: str):
+        self._messages.append({"role": "user", "content": text})
+        if self._chat_web is not None:
+            self._render_chat()
+            return
         self._chat.SetDefaultStyle(
             wx.TextAttr(_BLUE, font=wx.Font(wx.FontInfo(self._font_size).Bold()))
         )
@@ -394,13 +621,22 @@ class GSASQueryDialog(wx.Frame):
         self._chat.SetDefaultStyle(wx.TextAttr(wx.BLACK))
 
     def _append_assistant(self, text: str):
+        self._messages.append({"role": "assistant", "content": text})
+        if self._chat_web is not None:
+            self._render_chat()
+            return
+        formatted = _format_llm_markdown(text)
         self._chat.SetDefaultStyle(
             wx.TextAttr(wx.BLACK, font=wx.Font(wx.FontInfo(self._font_size)))
         )
-        self._chat.AppendText(f"Assistant: {text}\n\n")
+        self._chat.AppendText(f"Assistant: {formatted}\n\n")
         self._chat.SetDefaultStyle(wx.TextAttr(wx.BLACK))
 
     def _append_system(self, text: str):
+        self._messages.append({"role": "system", "content": text})
+        if self._chat_web is not None:
+            self._render_chat()
+            return
         self._chat.SetDefaultStyle(wx.TextAttr(_MUTED))
         self._chat.AppendText(f"{text}\n\n")
         self._chat.SetDefaultStyle(wx.TextAttr(wx.BLACK))

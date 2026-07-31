@@ -6643,7 +6643,7 @@ class G2Image(G2ObjectWrapper):
                     'outAzimuths'],
         'float': ['cutoff', 'setdist', 'wavelength', 'Flat Bkg',
                       'azmthOff', 'tilt', 'calibdmin', 'rotation',
-                      'distance', 'DetDepth'],
+                      'distance', 'DetDepth','sag'],
         'bool': ['setRings', 'setDefault', 'centerAzm', 'fullIntegrate',
                      'DetDepthRef', 'showLines'],
         'str': ['SampleShape', 'binType', 'formatName', 'color',
@@ -6827,6 +6827,9 @@ class G2Image(G2ObjectWrapper):
 
         :param bool clean: causes the calbration information to be deleted
         '''
+        #patch
+        self.data['Image Controls']['sag'] = self.data['Image Controls'].get('sag',0.0)
+        #end patch
         ImageControls = copy.deepcopy(self.data['Image Controls'])
         if clean:
             ImageControls['showLines'] = True

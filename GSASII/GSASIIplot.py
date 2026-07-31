@@ -2956,11 +2956,19 @@ def PlotStrain(G2frame,data,newPlot=False):
     Plot.set_xlabel(r'Azimuth',fontsize=14)
     NC = len(Colors)
     for N,item in enumerate(data['d-zero']):
-        Y,X = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
-        Plot.plot(X,Y,marker='+',color=Colors[N%NC],linewidth=0)
-        Y,X = np.array(item['ImtaCalc'])
-        Plot.plot(X,Y,Colors[N%NC])
-        Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5))
+        Yo,Xo = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
+        Yc,Xc = np.array(item['ImtaCalc'])
+        if N:
+            Plot.plot(Xo,Yo,marker='+',color=Colors[N%NC],linewidth=0)
+            Plot.plot(Xc,Yc,Colors[N%NC])
+            Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5))
+            Plot.plot([0.,360.],[item['Dset'],item['Dset']],Colors[5])
+        else:    
+            Plot.plot(Xo,Yo,marker='+',color=Colors[N%NC],linewidth=0,label='Obs')
+            Plot.plot(Xc,Yc,Colors[N%NC],label='Calc')
+            Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5),label='d-zero ave')
+            Plot.plot([0.,360.],[item['Dset'],item['Dset']],Colors[5],label='d-zero')
+    Plot.legend(loc='best')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

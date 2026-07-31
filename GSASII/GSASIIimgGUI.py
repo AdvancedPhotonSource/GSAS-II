@@ -668,6 +668,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                     CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
                     Data = G2frame.GPXtree.GetItemPyData(CId)
+                    Data['sag'] = Data.get('sag',0.0)   #patch
                     same = True
                     for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta','sag']:
                         if Data[item] != oldData[item]:

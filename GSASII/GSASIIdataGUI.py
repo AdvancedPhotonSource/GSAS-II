@@ -1830,30 +1830,10 @@ If you continue from this point, it is quite likely that all intensity computati
                     header='Select default inst parms',useCancel=True)
                 if res is None: return None
                 rd.instfile = ''
-                if 'lab data' in choices[res]:
-                    rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
-                        'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
-                else:
-                    rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
-                        'DisplaceY':[0.,False]})
                 if 'Generic' in choices[res]:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
                     Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
                     return Inst    #this is [Inst1,Inst2] a pair of dicts
-                    # The input below is now requested for each bank in OnImportPowder
-                    # dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
-                    #     prompts=['Total FP','2-theta',],values=[25.0,150.,],
-                    #         limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
-                    # if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
-                    #     FP,tth = dlg.GetValues()
-                    #     difC = 505.632*FP*sind(tth/2.)
-                    #     sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
-                    #     bet1 = .00226+7.76e+11/difC**4
-                    #     Inst[0]['difC'] = [difC,difC,0]
-                    #     Inst[0]['sig-1'] = [sig1,sig1,0]
-                    #     Inst[0]['beta-1'] = [bet1,bet1,0]
-                    #     return Inst    #this is [Inst1,Inst2] a pair of dicts
-                    # dlg.Destroy()
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
                     inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
@@ -2075,23 +2055,30 @@ If you continue from this point, it is quite likely that all intensity computati
                     Iparms = {}
 #                    lastVals = (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0]))
                 iSource = rd.instmsg
-            # for defaulted TOF data, reset the default bank number & for generic get FP/2Th
-            if iSource.startswith('default:') and 'Bank' in Iparm1 and 'T' in Iparm1['Type'][0]:
-                if 'Generic' in iSource:
-                    dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
-                        prompts=['Total flight path','2-theta',],values=[FP,tth],
-                            limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',],
-                            header=f'Set detector info for\n{rd.idstring}')
-                    if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
-                        FP,tth = dlg.GetValues()
-                        difC = 505.632*FP*sind(tth/2.)
-                        sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
-                        bet1 = .00226+7.76e+11/difC**4
-                        Iparm1['difC'] = [difC,difC,0]
-                        Iparm1['sig-1'] = [sig1,sig1,0]
-                        Iparm1['beta-1'] = [bet1,bet1,0]
-                    dlg.Destroy()
-                Iparm1['Bank'][0] = Iparm1['Bank'][1] = ihst+1
+            if iSource.startswith('default:'): # Instrument parameters are set from defaults
+                if 'lab data' in iSource:
+                    rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
+                        'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
+                else:
+                    rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
+                        'DisplaceY':[0.,False]})
+                # for defaulted TOF data, reset the default bank number & for generic get FP/2Th
+                if 'Bank' in Iparm1 and 'T' in Iparm1['Type'][0]:
+                    if 'Generic' in iSource:
+                        dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
+                            prompts=['Total flight path','2-theta',],values=[FP,tth],
+                                limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',],
+                                header=f'Set detector info for\n{rd.idstring}')
+                        if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
+                            FP,tth = dlg.GetValues()
+                            difC = 505.632*FP*sind(tth/2.)
+                            sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
+                            bet1 = .00226+7.76e+11/difC**4
+                            Iparm1['difC'] = [difC,difC,0]
+                            Iparm1['sig-1'] = [sig1,sig1,0]
+                            Iparm1['beta-1'] = [bet1,bet1,0]
+                        dlg.Destroy()
+                    Iparm1['Bank'][0] = Iparm1['Bank'][1] = ihst+1
             # override any keys in read instrument parameters with ones set in import
             for key in Iparm1:
                 if key in rd.instdict:

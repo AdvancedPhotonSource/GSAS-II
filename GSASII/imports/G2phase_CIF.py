@@ -147,6 +147,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 except:
                     haveGUI = False
             if haveGUI:
+                from .. import GSASIIctrlGUI as G2G
                 selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
                     title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
             else:
@@ -729,6 +730,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         print('\nUnable to correct this, giving up')
                         return False
                 elif haveGUI:
+                    from .. import GSASIIctrlGUI as G2G
                     msg += '''
 Do you want to use Bilbao's "CIF to Standard Setting" web service to
 transform this into a standard setting?

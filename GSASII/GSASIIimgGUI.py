@@ -165,6 +165,7 @@ def UpdateImageData(G2frame,data):
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Image size: %d by %d'%(data['size'][0],data['size'][1])),0)
     pixSize = wx.FlexGridSizer(0,4,5,5)
     pixLabels = [u' Pixel X-dimension (\xb5m)',u' Pixel Y-dimension (\xb5m)']
+    data['pixelSize'] = list(data['pixelSize']) #some old gpx have tuple for this!
     for i,[pixLabel,pix] in enumerate(zip(pixLabels,data['pixelSize'])):
         pixSize.Add(wx.StaticText(G2frame.dataWindow,label=pixLabel),0,WACV)
         pixVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['pixelSize'],i,nDig=(10,3),

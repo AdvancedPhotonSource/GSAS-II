@@ -706,7 +706,8 @@ def GetTthAzmG(x,y,data):
     def costth(xyz,d0):
         ''' compute cos of angle between vectors; xyz not normalized, d0 normalized'''
         u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
-        return np.dot(u,d0)
+        v = d0/nl.norm(d0)
+        return np.dot(u,v)
 #zero detector 2-theta: tested with tilted images - perfect integrations
     dx = x-data['center'][0]
     dy = y-data['center'][1]
@@ -714,7 +715,7 @@ def GetTthAzmG(x,y,data):
     dist = data['distance']/npcosd(tilt)    #sample-beam intersection point on detector plane
     T = makeMat(tilt,0)         #detector tilt matrix
     R = makeMat(data['rotation'],2)     #rotation of tilt axis matrix
-    MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T)
+    MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T), because that don't work
     d001 = np.array([0.,0.,1.])         #vector along z (beam direction); normal to untilted detector plane
     r001 = np.inner(d001,MN)            #should rotate vector same as detector
     dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #transform detector pixel x,y by tilt/rotate

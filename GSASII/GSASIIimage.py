@@ -41,7 +41,7 @@ nptand = lambda x: np.tan(x*np.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 nxs = np.newaxis
-debug = False
+debug = True
 
 def peneCorr(tth,dep,dist):
     ''' Compute empirical position correction due to detector absorption
@@ -106,15 +106,15 @@ def GetTthP(x,y,parmDict,dist=None,detX=None,detY=None):
     ctth0 = costth(dxyz0,r001)              #cos of angle between detector normal & sample-pixel vector
     return npacosd(ctth0)[0]
 
-def SamAbs(data,tax,tay,muT):
+def SamAbs(data,tth,azm,muT):
     'Compute sample absorption correction for images'
     if 'Cylind' in data['SampleShape']:
-        muR = muT*(1.+npsind(tay)**2/2.)/(npcosd(tax))      #adjust for additional thickness off sample normal
-        tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
+        muR = muT*(1.+npsind(azm)**2/2.)/(npcosd(tth))      #adjust for additional thickness off sample normal
+        tabs = G2pwd.Absorb(data['SampleShape'],muR,tth)
     elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
-        tabs = G2pwd.Absorb('Fixed',muT,tay)
+        tabs = G2pwd.Absorb('Fixed',muT,tth)
     else:
-        tabs = np.ones_like(tax)
+        tabs = np.ones_like(tth)
     return tabs
 
 def makeMat(Angle,Axis):
@@ -207,9 +207,6 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
     phi = parms['phi']-90.               #get rotation of major axis from tilt axis
     dsag = sagCorr(x,y,parms['sag'],parmDict['xyLim'])
     if keyArray is None:
-        # detX = parms['det-X']
-        # detY = parms['det-Y']
-        # dist = parms['dist']
         detX = np.array(len(x)*[parms['det-X']])
         detY = np.array(len(x)*[parms['det-Y']])
         dist = np.array(len(x)*[parms['dist']])+dsag
@@ -285,7 +282,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         print (ptstr)
         print (sigstr)
         
-
+    print(rings)
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave','sag']
     fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f','%12.4f']
     Fmt = dict(zip(names,fmt))
@@ -1105,7 +1102,7 @@ def ImageCalibrate(G2frame,data):
             Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)
             if len(Ringm) > 10:
                 parmDict['tilt'] *= -1
-                chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
+                chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)[0]
                 tiltm = parmDict['tilt']
                 phim = parmDict['phi']
                 centm = [parmDict['det-X'],parmDict['det-Y']]
@@ -1129,8 +1126,9 @@ def ImageCalibrate(G2frame,data):
         G2plt.PlotImage(G2frame,newImage=True)
     if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
         data['DetDepth'] /= data['distance']
-    parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],'sag':data['sag'],
-        'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
+    parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
+        'sag':data['sag'],'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],
+        'dep':data['DetDepth'],'xyLim':data['xyLim']}
     varyList = [item for item in varyDict if varyDict[item]]
     data['rings'] = []
     data['ellipses'] = []
@@ -1141,7 +1139,7 @@ def ImageCalibrate(G2frame,data):
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
         if debug:   print (fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1]))
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]
+        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)
         if Ring:
             data['rings'].append(np.array(Ring))
             rings = np.concatenate((data['rings']),axis=0)

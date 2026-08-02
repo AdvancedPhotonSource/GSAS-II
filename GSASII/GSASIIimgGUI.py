@@ -3084,6 +3084,8 @@ def UpdateStressStrain(G2frame,data):
 # patches
     if 'Sample load' not in data:
         data['Sample load'] = 0.0
+    if len(data['d-zero']) and 'Ivar' not in data['d-zero'][0]:
+        data['d-zero'] = []
 # end patches
 
     # UpdateStressStrain starts here

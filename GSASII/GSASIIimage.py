@@ -41,7 +41,8 @@ nptand = lambda x: np.tan(x*np.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 nxs = np.newaxis
-debug = True
+debug = False
+
 
 def peneCorr(tth,dep,dist):
     ''' Compute empirical position correction due to detector absorption
@@ -429,9 +430,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     def ellipseC():
         'compute estimate of ellipse circumference'
         if radii[0] <= 0:        #hyperbola
-            if debug: 
-                theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
-                print ('hyperbola:',theta)
+            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
+            print ('hyperbola at 2-theta:',theta)
             return 720.
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
@@ -1128,7 +1128,7 @@ def ImageCalibrate(G2frame,data):
         data['DetDepth'] /= data['distance']
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'sag':data['sag'],'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],
-        'dep':data['DetDepth'],'xyLim':data['xyLim']}
+        'dep':data['DetDepth'],'xyLim':xyLim}
     varyList = [item for item in varyDict if varyDict[item]]
     data['rings'] = []
     data['ellipses'] = []
@@ -1702,6 +1702,9 @@ def FitStrSta(Image,StrSta,Controls):
             ring['Emat'] = val
             ring['Esig'] = esd
             ellipse = FitEllipse(R['ImxyObs'].T)
+            if any(np.isnan(ellipse[2])):
+                print('hyperbola for d=%.5f not fit, suggest deleting it'%dset)
+                continue
             ringxy = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringixy = [[int(x*scalex),int(y*scaley)] for y,x in np.array(ringxy)[:,:2]]

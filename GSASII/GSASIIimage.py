@@ -234,6 +234,8 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
     fminus = d*tanb*stth/(cosb-stth)
     vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
     vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
+    if np.all(vplus+vminus < 0.):
+        return 0.
     R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
     R1 = (vplus+vminus)/2.                                    #major axis
     zdis = (fplus-fminus)/2.
@@ -283,7 +285,6 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         print (ptstr)
         print (sigstr)
         
-    print(rings)
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave','sag']
     fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f','%12.4f']
     Fmt = dict(zip(names,fmt))
@@ -481,18 +482,18 @@ def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     tbp = tand((tth+tilt)/2.)
     sinb = sind(tilt)
     d = dist+dxy
-    if tth+abs(tilt) < 90.:      #ellipse
-        fplus = d*tanb*stth/(cosb+stth)
-        fminus = d*tanb*stth/(cosb-stth)
-        vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
-        vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
+    fplus = d*tanb*stth/(cosb+stth)
+    fminus = d*tanb*stth/(cosb-stth)
+    vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
+    vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
+    if vplus+vminus > 0.:      #ellipse
         radii[0] = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
         radii[1] = (vplus+vminus)/2.                                    #major axis
         radii[2] = tth                                                  #save for ellipse; might be useful
         zdis = (fplus-fminus)/2.
     else:   #hyperbola!
         f = d*abs(tanb)*stth/(cosb+stth)
-        v = d*(abs(tanb)+tand(tth-abs(tilt)))
+        v = abs(d*(abs(tanb)+tand(tth-abs(tilt))))
         delt = d*stth*(1.+stth*cosb)/(abs(sinb)*cosb*(stth+cosb))
         eps = (v-f)/(delt-v)
         radii[0] = -eps*(delt-f)/np.sqrt(eps**2-1.)                     #-minor axis
@@ -1733,6 +1734,7 @@ def IntStrSta(Image,StrSta,Controls):
             RXA = np.array(ringxy)
             MRXA = np.array([rxa if (0.<=rxa[0]<=xyLim[0] and 0.<=rxa[1]<=xyLim[1]) else [0.,0.,0.] for rxa in RXA])
             Th,Azm,G = GetTthAzmG(MRXA.T[0],MRXA.T[1],Controls)
+            Azm[0] = np.array([azm if azm < 180. else azm-360. for azm in Azm[0]])
             pola = G2pwd.Polarization(Controls['PolaVal'][0],Th,Azm-90.)[0]     #get pola not dpola
             ring['ImxyCalc'] = MRXA[:2]
             ringixy = [[int(x*scalex),int(y*scaley)] for y,x in MRXA[:,:2]]

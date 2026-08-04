@@ -134,6 +134,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 sg = cf[blknm].get("_symmetry_space_group_name_H-M",'')
                 if not sg: sg = cf[blknm].get("_space_group_name_H-M_alt",'')
                 if not sg: sg = cf[blknm].get("_space_group_ssg_name",'')
+                if not sg: sg = cf[blknm].get("_space_group_ssg_name_IT",'')
                 if not sg: sg = cf[blknm].get("_space_group.magn_ssg_name_BNS",'')
                 if not sg: sg = cf[blknm].get("_space_group.magn_ssg_name",'')
                 #how about checking for super/magnetic ones as well? - reject 'X'?
@@ -176,12 +177,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += '\n'+msg
                     return False
                 sspgrp = blk.get("_space_group_ssg_name",'')
+                if not sspgrp:   sspgrp = blk.get("_space_group_ssg_name_IT",'')       
                 if not sspgrp:          #might be incommensurate magnetic
                     MSSpGrp = blk.get("_space_group.magn_ssg_name_BNS",'')
                     if not MSSpGrp:
                         MSSpGrp = blk.get("_space_group.magn_ssg_name",'')
                     if not MSSpGrp:
-                        msg = 'No incommensurate space group name was found in the CIF.'
+                        msg = 'No incommensurate magnetic space group name was found in the CIF.'
                         self.errors = msg
                         self.warnings += '\n'+msg
                         return False
@@ -1545,7 +1547,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
         'Maps ISODISTORT parm names to GSAS-II names'
         # used for all types of modes
         self.Constraints = []
-        G2obj.AddPhase2Index(self,filename)   # put phase info into Var index
+#        G2obj.AddPhase2Index(self,filename)   # put phase info into Var index
         #----------------------------------------------------------------------
         if blk.get('_iso_displacivemode_label'):
             # Read in the ISODISTORT displacement modes here

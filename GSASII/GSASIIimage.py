@@ -206,8 +206,8 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
         else:
             parms[parm] = parmDict[parm]
     phi = parms['phi']-90.               #get rotation of major axis from tilt axis
-    dsag = sagCorr(x,y,parms['sag'],parmDict['xyLim'])
     if keyArray is None:
+        dsag = sagCorr(x,y,parms['sag'],parmDict['xyLim'])
         detX = np.array(len(x)*[parms['det-X']])
         detY = np.array(len(x)*[parms['det-Y']])
         dist = np.array(len(x)*[parms['dist']])+dsag
@@ -982,6 +982,10 @@ def ImageCalibrate(G2frame,data):
     pixLimit = data['pixLimit']
     cutoff = data['cutoff']
     varyDict = data['varyList']
+    #make sure dep & sag aren't refined in calibrate
+    varyDict['sag'] = False
+    varyDict['dep'] = False
+    print('NB: Sag & dep are not refined during Calibrate; use Recalibrate to refine them')
     if varyDict['dist'] and varyDict['wave']:
         G2fil.G2Print ('ERROR - you can not simultaneously calibrate distance and wavelength')
         return False
@@ -1210,8 +1214,8 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     TA = np.empty((4,nI,nJ))
     if data['type'] == 'SASD': # correct for SASD
         TA[:3] = np.array(GetTthAzmG2(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))
-    elif data.get('det2theta',0.0):   #PWDR & det2theta != 0.0 
-        TA[:3] = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))
+    # elif data.get('det2theta',0.0):   #PWDR & det2theta != 0.0 
+    #     TA[:3] = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))
     else:
         TA[:3] = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
@@ -1734,7 +1738,6 @@ def IntStrSta(Image,StrSta,Controls):
             RXA = np.array(ringxy)
             MRXA = np.array([rxa if (0.<=rxa[0]<=xyLim[0] and 0.<=rxa[1]<=xyLim[1]) else [0.,0.,0.] for rxa in RXA])
             Th,Azm,G = GetTthAzmG(MRXA.T[0],MRXA.T[1],Controls)
-            Azm[0] = np.array([azm if azm < 180. else azm-360. for azm in Azm[0]])
             pola = G2pwd.Polarization(Controls['PolaVal'][0],Th,Azm-90.)[0]     #get pola not dpola
             ring['ImxyCalc'] = MRXA[:2]
             ringixy = [[int(x*scalex),int(y*scaley)] for y,x in MRXA[:,:2]]

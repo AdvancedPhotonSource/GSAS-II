@@ -1795,7 +1795,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         OnIntegrate(None,useTA=useTA,useMask=useMask)
         return
 
-    G2frame.GetStatusBar().SetStatusText('* Global parameters in Multi-dist recalib.',1)
+    G2frame.GetStatusBar().SetStatusText('* Global parameters in Multi-dist recalib. Sag should only be used for tilted detectors that may sag under gravity',1)
     colorList = sorted([m for m in mpl.cm.datad.keys() ]+['GSPaired','GSPaired_r',],key=lambda s: s.lower())   #if not m.endswith("_r")
     calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
     typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',]

@@ -6751,6 +6751,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     #        self.ConstraintEdit.Append(id=G2G.wxID_ADDRIDING, kind=wx.ITEM_NORMAL,text='Add H riding constraints',
     #            help='Add H atom riding constraints between atom parameter values')
     #        self.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,False)
+            G2G.Define_wxId('wxID_CONSTREXPORT')
+            self.ConstraintEdit.Append(G2G.wxID_CONSTREXPORT,
+                            'Export constraints',
+                            'Write a text file with constraints')
+            G2G.Define_wxId('wxID_CONSTRIMPORT')
+            self.ConstraintEdit.Append(G2G.wxID_CONSTRIMPORT,
+                            'Import constraints',
+                            'Read a text file to create new constraints')
             self.ConstraintEdit.Append(G2G.wxID_SHOWISO,'Show New Var modes',
                     'Show New Var constraints and dependent vars')
             self.ConstraintEdit.Enable(G2G.wxID_SHOWISO,False)

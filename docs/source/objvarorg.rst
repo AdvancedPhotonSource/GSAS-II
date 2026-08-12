@@ -112,6 +112,13 @@ Phase       This specifies a list of constraints on phase
 Global      This specifies a list of constraints on parameters
             that are not tied to a histogram or phase and
             are of form ::<var>:n
+_seqmode    Determines how constraints are interpreted for
+            sequential fits. Modes are 'auto-wildcard',
+            'wildcards-only' and 'use-all'
+_seqhist    A histogram number. In auto-wildcard mode, this
+            histogram will be replaced with the current
+            sequential histogram number.
+_NewVarOff  An offset to be applied to NewVar expressions
 ==========  ====================================================
 
 .. _Constraint_definitions_table:

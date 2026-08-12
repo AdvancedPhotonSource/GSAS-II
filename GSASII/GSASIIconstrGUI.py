@@ -1577,6 +1577,142 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     def OnShowISODISTORT(event):
         ShowIsoDistortCalc(G2frame)
 
+    def ExportConstraints(event):
+        import datetime
+        G2frame = wx.GetApp().GetTopWindow()
+        sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+        Constraints = G2frame.GPXtree.GetItemPyData(sub)
+        text = f'# Constraints from {G2frame.GSASprojectfile} on '
+        text += datetime.datetime.strftime(datetime.datetime.now(),
+                                           "%Y-%m-%dT%H:%M\n")
+        for key in 'Hist', 'HAP', 'Phase':
+            for c in Constraints[key]:
+                s = ''
+                for i0,i1 in c[:-3]:
+                    if c[-1] == 'e' and s:
+                        s += ' = '
+                    elif c[-1] == 'h' and s:  # unexpected, should be 1 hold per constraint
+                        s += ' = '
+                    elif s:
+                        s += ' + '
+                    if c[-1] == 'h':
+                        s += f'{i1}'
+                    else:
+                        s += f'{i0} * {i1}'
+                if c[-1] == 'c':
+                    s = f'Equation & {s} = {c[-3]}'
+                elif c[-1] == 'e':
+                    s = f'Equivalence & {s}'
+                elif c[-1] == 'h':
+                    s = f'Hold & {s}'
+                elif c[-1] == 'f':
+                    if c[-3]:  # prefix by var name, if present
+                        s = f'{c[-3]} & {s}'
+                    if c[-2]:  # vary flag
+                        s = s + ' & varied'
+                    s = f'NewVar & {s}'
+                else: # unexpected!
+                    print('Unknown constraint:',c)
+                    continue
+                text += s + '\n'
+
+        f = G2G.askSaveFile(G2frame,'Constraints','.constr','text constraints file')
+        with open(f,'w') as fp:
+            fp.write(text)
+            print(f'Constraints written to file {fp.name}')
+
+    def var2key(varObj):
+        if varObj.phase and varObj.histogram:
+            return 'HAP'
+        elif varObj.phase:
+            return 'Phase'
+        elif varObj.histogram:
+            return 'Hist'
+        else:
+            return 'Global'
+
+    def ImportConstraints(event):
+        G2frame = wx.GetApp().GetTopWindow()
+        sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+        Constraints = G2frame.GPXtree.GetItemPyData(sub)
+        dlg = wx.FileDialog(G2frame, 'Select a text file with constraints to read',
+                                style=wx.FD_DEFAULT_STYLE|wx.FD_FILE_MUST_EXIST,
+                                wildcard="constraints|*.constr")
+        try:
+            res = dlg.ShowModal()
+            if res != wx.ID_OK: return
+            f = dlg.GetPath()
+        finally:
+            dlg.Destroy()
+        if not os.path.exists(f):
+            print(f'Strange, {f} not found')
+            return
+        txt = open(f,'r').readlines()
+        for i,line in enumerate(txt):
+            if line.strip().startswith('#'): continue
+            spLine = line.split('&')
+            tag = spLine[0].strip() 
+            if tag == 'Equation':
+                val = spLine[1].split('=')[1].strip()
+                cons = []
+                for e in spLine[1].split('=')[0].split('+'):
+                    try:
+                        m,var = e.split('*')
+                        varObj = G2obj.G2VarObj(var.strip())
+                        cons += [[float(m),varObj]]
+                    except:
+                        print('skipping {line}')
+                        continue
+                    # TODO: could do a consistency check to make sure that all
+                    # vars are of same type. For now only the last one matters.
+                    key = var2key(varObj)
+                Constraints[key].append(cons + [val,None,'c'])
+            elif tag == 'Hold':
+                cons = []
+                for e in spLine[1].split('='): # should only be one
+                    varObj = G2obj.G2VarObj(e.strip())
+                    cons += [[0.,varObj]]
+                    key = var2key(varObj)
+                Constraints[key].append(cons + [None,None,'h'])
+            elif tag == 'Equivalence':
+                cons = []
+                for e in spLine[1].split('='):
+                    try:
+                        m,var = e.split('*')
+                        varObj = G2obj.G2VarObj(var.strip())
+                        cons += [[float(m),varObj]]
+                    except:
+                        print('skipping {line}')
+                        continue
+                    # TODO: could do a consistency check to make sure that all
+                    # vars are of same type. For now only the last one matters.
+                    key = var2key(varObj)
+                Constraints[key].append(cons + [None,None,'e'])
+            elif tag == 'NewVar':
+                cons = []
+                name = None
+                vary = False
+                if len(spLine) >= 3:
+                    name = spLine[1].strip()
+                if len(spLine) >= 4:
+                    vary = True
+                for e in spLine[1].split('+'):
+                    try:
+                        m,var = e.split('*')
+                        varObj = G2obj.G2VarObj(var.strip())
+                        cons += [[float(m),varObj]]
+                    except:
+                        print('skipping {line}')
+                        continue
+                    # TODO: could do a consistency check to make sure that all
+                    # vars are of same type. For now only the last one matters.
+                    key = var2key(varObj)
+                Constraints[key].append(cons + [name,vary,'f'])
+            else:
+                print(f'line #{i+1} ({line}) not recognized')
+                continue
+        OnPageChanged(None)
+
     #### UpdateConstraints execution starts here ##############################
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
     if Clear:
@@ -1723,6 +1859,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     G2frame.Bind(wx.EVT_MENU, OnAddAtomEquiv, id=G2G.wxID_EQUIVALANCEATOMS)
 #    G2frame.Bind(wx.EVT_MENU, OnAddRiding, id=G2G.wxID_ADDRIDING)
     G2frame.Bind(wx.EVT_MENU, OnShowISODISTORT, id=G2G.wxID_SHOWISO)
+    G2frame.Bind(wx.EVT_MENU, ExportConstraints, id=G2G.wxID_CONSTREXPORT)
+    G2frame.Bind(wx.EVT_MENU, ImportConstraints, id=G2G.wxID_CONSTRIMPORT)
     # tab commands
     for id in (G2G.wxID_CONSPHASE,
                G2G.wxID_CONSHAP,

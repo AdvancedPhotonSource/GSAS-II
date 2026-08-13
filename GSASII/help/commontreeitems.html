@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="images/gsas2.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1959,6 +1959,44 @@ A set of controls is provided for control of single-crystal refinements. These o
 <li><strong>Add constraint</strong> - If selected, a dialog box will appear with a list of the available parameters. Select one and press OK; a second dialog box will appear with only those parameters that can be used in a constraint with the first one. Choose those and press OK. Cancel in either dialog will cancel the operation. The equivalenced parameters will show as an equation of the form <span class="arithmatex">\(M1*P1+M2*P2+…=C\)</span>; the multipliers M1, M2, … and C can be changed via the 'Edit' button. The equation is shown in the window tagged by 'CONSTR' to mark it as a constraint equation assignment.</li>
 <li><strong>Add New Var</strong> - This behaves very much like the "Add constraint" menu command except that it defines a new parameter rather than define a value for the expression. That new var parameter can optionally have a named assigned. The expression is displayed with the keyword 'New Var' to mark its type. Note that a 'Refine?' box is included for this type of constraint.</li>
 <li><strong>Make atoms equivalent</strong> - This provides a shortcut for establishing constraints when two share a single site. Coordinates and Uiso values are constrained to be the same and site fractions are constrained to add to 1.</li>
+<li><strong>Make atoms equivalent</strong> - This provides a shortcut for establishing constraints</li>
+<li><strong>Export constraints</strong> - This writes the current constraints (Histogram, 
+    Phase and HAP) to a text file that can be used with the <strong>Import constraints</strong>
+    command (see below) to copy the constraints to another GSAS-II project.
+    The file extension for this is usually <code>.constr</code>.</li>
+<li>
+<p><strong>Import constraints</strong> - This reads a text file and adds the constraints into the
+    current GSAS-II project. The type of contraint (Histogram vs. Phase vs. HAP) is
+    determined from the variable name. 
+    This can be used to copy constraints from one file to another or may be used
+    to generate a large number of constraints rather than using the GUI. It may be 
+    useful to generate and export a small number of constraints as a template 
+    and then use a text editor or script to generate what is needed. </p>
+<p>The format for the file consists of a tag ("Equation", "Hold", "Equivalence" 
+or "NewVar") followed by a "&amp;" spacer and then 
+the constraint. 
+The file extension for this is usually <code>.constr</code>.
+Examples are below. </p>
+<p>Note that any line beginning with a "#" will be ignored as a comment.
+Note that Equations are of form: <code>m1 * v1 + m2 * v2 + ... = m0</code>, and
+Holds are simply a variable name. Equivalences are in form:  <code>m1 * v1 = m2 * v2 = ...</code>. 
+NewVar constraints are of form <code>m1 * v1 + m2 * v2 + ...</code></p>
+<p>There are other two variations for NewVar constraints. 
+If the NewVar constraint is named, or to specifiy that the variable should be
+refined (the two forms can be combined), use one of the subsequent examples. </p>
+</li>
+</ul>
+<pre><code>    # Constraints from 4constr.gpx on 2026-08-11T20:50
+    Equation &amp; 1.0 * 0:0:Scale + 1.0 * 1:0:Scale = 1.0
+    Hold &amp; 0::dAz:2
+    Equivalence &amp; 1.0 * 1::AUiso:0 = 1.0 * 1::AUiso:1
+    NewVar &amp; 1.0 * 0::Afrac:0 + 1.0 * 0::Afrac:1
+</code></pre>
+<pre><code>    NewVar &amp; variable-name &amp; 1.0 * 0::Afrac:0 + 1.0 * 0::Afrac:1
+</code></pre>
+<pre><code>    NewVar &amp; 1.0 * 0::Afrac:0 + 1.0 * 0::Afrac:1 &amp; varied
+</code></pre>
+<ul>
 <li><strong>Show New Var modes</strong> – When New Var constraints are present, this opens a window that shows the effect of the constraints to be seen. This is of particular value when representational analysis generated normal modes have been read from a CIF created with ISODISTORT.  From the created window,  the New Var parameters can be changed and the changes that the constraints make to the linked dependent parameters are shown. When this command is used from a Phase "Draw Atoms" tab rather than here, the structure plot is updated. The changes made here are temporary, unless the Save button is used to close the window. </li>
 </ul>
 <p>In addition to menu commands, this window also offer the following actions by pressing buttons:</p>
@@ -2169,7 +2207,7 @@ angle,  ignore,    C11 C12 N15, OK,           ignore,      ignore,      123.91, 
       <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": [], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="javascripts/mathjax.js"></script>
       

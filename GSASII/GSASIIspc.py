@@ -2225,10 +2225,10 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 if All:
                     newX = np.round(newX,6)
 #                    if np.sqrt(np.sum(np.round(newX%1.,6)**2-np.round(X%1.,6)**2)) < 1.e-6:
-                    if np.allclose(newX,X,atol=2.e-5):     #do we want %1. here?
+                    if np.allclose(newX,X,atol=2.e-4):     #do we want %1. here?
                         idup = False
                 else:
-                    if True in [np.allclose(newX%1.,oldX%1.,atol=2.e-5) for oldX in XYZEquiv]:
+                    if True in [np.allclose(newX%1.,oldX%1.,atol=2.e-4) for oldX in XYZEquiv]:
                         idup = False
                 if All or idup:
                     XYZEquiv.append(newX)

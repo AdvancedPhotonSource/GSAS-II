@@ -2175,7 +2175,8 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     '''
     Generates the equivalent positions for a specified coordinate and space group
 
-    :param XYZ: an array, tuple or list containing 3 elements: x, y & z
+
+    :param XYZ: an array, tuple or list containing 3 elements for a single atom: x, y & z
     :param SGData: from :func:`SpcGroup`
     :param All: True return all equivalent positions including duplicates;
       False return only unique positions
@@ -2192,6 +2193,12 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
       * +1/-1 for spin inversion of operator - empty if not magnetic
 
     '''
+    def fixtrighex(X):
+        IXY = np.array([np.rint(x*3.) for x in X[:2]])
+        if str(IXY) in ['[1,2]','[2,1]'] and np.allclose(IXY/3.,X[:2],atol=2.e-4):
+            X = IXY/3.
+        return X
+              
     XYZEquiv = []
     UijEquiv = []
     Idup = []
@@ -2202,7 +2209,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
         inv = 1
     SpnFlp = SGData.get('SpnFlp',[])
     spnflp = []
-    X = np.round(np.array(XYZ),6)
+    X = np.array(XYZ)
     mj = 0
     for ic,cen in enumerate(icen):
         C = np.array(cen)
@@ -2223,14 +2230,14 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 else:
                     newX = XT
                 if All:
-                    newX = np.round(newX,6)
-#                    if np.sqrt(np.sum(np.round(newX%1.,6)**2-np.round(X%1.,6)**2)) < 1.e-6:
-                    if np.allclose(newX,X,atol=2.e-4):     #do we want %1. here?
+                    if np.allclose(newX,X,atol=2.e-4):
                         idup = False
                 else:
                     if True in [np.allclose(newX%1.,oldX%1.,atol=2.e-4) for oldX in XYZEquiv]:
                         idup = False
                 if All or idup:
+                    if SGData['SGLaue'][0] in ['3','6']:
+                        newX = fixtrighex(newX)
                     XYZEquiv.append(newX)
                     Idup.append(idup)
                     Cell.append(cell)

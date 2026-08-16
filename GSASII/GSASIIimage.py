@@ -59,6 +59,12 @@ def sagCorr(x,y,sag,xyLim):
     ''' Correct detector Z for detector sag when highly tilted
     something approximate? Seems to be a fold down vertical center.
     
+    :param float/array x: detector x position in mm
+    :param float/array y: detector y position in mm
+    :param float sag: detector sag in mm
+    :param float/array xyLim: detector x/y upper limits in mm
+    :returns: float/array dsag: z-displacement from detector plane by sag
+    
     '''
     dsag = npsind(180.*(x/xyLim[0]))*sag
     return dsag
@@ -431,8 +437,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     def ellipseC():
         'compute estimate of ellipse circumference'
         if radii[0] <= 0:        #hyperbola
-            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
-            print ('hyperbola at 2-theta:',theta)
+#            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
+            print ('hyperbola at 2-theta:',radii[2])
             return 720.
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
@@ -1737,7 +1743,7 @@ def IntStrSta(Image,StrSta,Controls):
             ringxy = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
             RXA = np.array(ringxy)
             MRXA = np.array([rxa if (0.<=rxa[0]<=xyLim[0] and 0.<=rxa[1]<=xyLim[1]) else [0.,0.,0.] for rxa in RXA])
-            Th,Azm,G = GetTthAzmG(MRXA.T[0],MRXA.T[1],Controls)
+            Th,Azm,G = GetTthAzmG(MRXA.T[0],MRXA.T[1],Controls)      #TODO: deal with break in rings - make min < azm < max continuous
             pola = G2pwd.Polarization(Controls['PolaVal'][0],Th,Azm-90.)[0]     #get pola not dpola
             ring['ImxyCalc'] = MRXA[:2]
             ringixy = [[int(x*scalex),int(y*scaley)] for y,x in MRXA[:,:2]]
@@ -1751,7 +1757,7 @@ def IntStrSta(Image,StrSta,Controls):
             ringint /= np.mean(ringint)
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
             RingsAI.append(np.array(list(zip(Azm[0],ringint))).T)
-    return RingsAI
+    return RingsAI 
 
 def CalcStrSta(StrSta,Controls):
 

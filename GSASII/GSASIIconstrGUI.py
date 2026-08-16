@@ -2802,17 +2802,17 @@ create a Vector or Residue rigid body.
             UpdateVectorBody(rb)
             return rb
 
-        # too lazy to figure out why wx crashes
-        if wx.__version__.split('.')[0] != '4':
-            wx.MessageBox('Sorry, wxPython 4.x is required to run this command',
-                                  caption='Update Python',
-                                  style=wx.ICON_EXCLAMATION)
-            return
-        if platform.python_version()[:1] == '2':
-            wx.MessageBox('Sorry, Python >=3.x is required to run this command',
-                                  caption='Update Python',
-                                  style=wx.ICON_EXCLAMATION)
-            return
+        # # too lazy to figure out why wx crashes
+        # if wx.__version__.split('.')[0] != '4':
+        #     wx.MessageBox('Sorry, wxPython 4.x is required to run this command',
+        #                           caption='Update Python',
+        #                           style=wx.ICON_EXCLAMATION)
+        #     return
+        # if platform.python_version()[:1] == '2':
+        #     wx.MessageBox('Sorry, Python >=3.x is required to run this command',
+        #                           caption='Update Python',
+        #                           style=wx.ICON_EXCLAMATION)
+        #     return
 
         # get importer type and a phase file of that type
         G2sc.LoadG2fil()
@@ -3190,7 +3190,7 @@ create a Vector or Residue rigid body.
         sumR = Radii[Orig]+Radii
         IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
         for j in IndB[0]:
-            if j != Orig and atTypes[j] != 'H':
+            if j != Orig: # and atTypes[j] != 'H':
                 Neigh.append(atNames[j])
         return Neigh
         
@@ -3515,7 +3515,7 @@ create a Vector or Residue rigid body.
                     El = PE.Elem.strip().lower().capitalize()
                     data['Spin'][Indx[ObjId]]['atType'] = El
                     data['Spin'][Indx[ObjId]]['Color'] = G2elem.GetAtomInfo(El)['Color']
-                    Obj.ChangeValue(El)
+                    Obj.SetLabel(El)
                     if 'Q' in El:
                         wx.CallAfter(UpdateSpinRB)
                     
@@ -3555,19 +3555,10 @@ create a Vector or Residue rigid body.
             SpinRBSizer = wx.BoxSizer(wx.VERTICAL)
         Indx = {}
         SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid body shells:'))
-        nQ = 0
-        for spinID in data['Spin']:
-            if 'Q' in data['Spin'][spinID]['atType']:
-                nQ += 1
-        if nQ:
-            bodSizer = wx.FlexGridSizer(0,6,5,5)
-        else:
-            bodSizer = wx.FlexGridSizer(0,5,5,5)
+        bodSizer = wx.FlexGridSizer(0,5,5,5)
         for item in ['Name','Type','RB sym','Atom','Number']:
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label=item))
         for ibod,spinID in enumerate(data['Spin']):
-            if nQ:
-                bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Orbitals from'))
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'RBname'))
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Q'),0)
             data['Spin'][spinID]['rbType'] = 'Q'    #patch
@@ -3578,19 +3569,11 @@ create a Vector or Residue rigid body.
             Indx[simsel.GetId()] = spinID
             simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
             bodSizer.Add(simsel)
-            atSel = wx.TextCtrl(SpinRBDisplay,value=data['Spin'][spinID]['atType'],style=wx.TE_PROCESS_ENTER)
-            atSel.Bind(wx.EVT_TEXT_ENTER,OnAtSel)
+            atSel = wx.Button(SpinRBDisplay,label=data['Spin'][spinID]['atType'],style=wx.BU_EXACTFIT,size=(80,-1))
+            atSel.Bind(wx.EVT_BUTTON,OnAtSel)
             Indx[atSel.GetId()] = spinID
             bodSizer.Add(atSel,0)
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'Natoms'))
-            if 'Q' in data['Spin'][spinID]['atType']:
-                data['Spin'][spinID]['elType'] = data['Spin'][spinID].get('elType','C')
-                elSel = wx.TextCtrl(SpinRBDisplay,value=data['Spin'][spinID]['elType'],style=wx.TE_PROCESS_ENTER)
-                elSel.Bind(wx.EVT_TEXT_ENTER,OnElSel)
-                Indx[elSel.GetId()] = spinID
-                bodSizer.Add(elSel,0)
-            elif nQ:
-                bodSizer.Add((5,5))
         
         SpinRBSizer.Add(bodSizer)
         SpinRBSizer.Add((5,25),)
@@ -3921,22 +3904,20 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             
             iBeg,iFin,angle,iMove = Seq
             ang = wx.TextCtrl(ResidueRBDisplay,wx.ID_ANY,
-                    '%8.2f'%(angle),size=(70,-1),style=wx.TE_PROCESS_ENTER)
+                '%8.2f'%(angle),size=(70,-1),style=wx.TE_PROCESS_ENTER)
             if not iSeq:
-                radBt = wx.RadioButton(ResidueRBDisplay,wx.ID_ANY,
-                                           '',style=wx.RB_GROUP)
+                radBt = wx.RadioButton(ResidueRBDisplay,wx.ID_ANY,'',style=wx.RB_GROUP)
                 data['Residue'][rbid]['SelSeq'] = [iSeq,ang.GetId()]
                 radBt.SetValue(True)
             else:
                 radBt = wx.RadioButton(ResidueRBDisplay,wx.ID_ANY,'')
             radBt.Bind(wx.EVT_RADIOBUTTON,OnRadBtn)                   
             seqSizer.Add(radBt)
-            delBt =  wx.Button(ResidueRBDisplay,wx.ID_ANY,'Del',
-                                style=wx.BU_EXACTFIT)
+            delBt =  wx.Button(ResidueRBDisplay,wx.ID_ANY,'Del',style=wx.BU_EXACTFIT)
             delBt.Bind(wx.EVT_BUTTON,OnDelBtn)
             seqSizer.Add(delBt)
             bond = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,
-                        '%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
+                '%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
             seqSizer.Add(bond,0,WACV)
             Indx[radBt.GetId()] = [Seq,iSeq,ang.GetId()]
             Indx[delBt.GetId()] = [rbid,Seq]
@@ -3947,8 +3928,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             atms = ''
             for i in iMove:    
                 atms += ' %s,'%(atNames[i])
-            moves = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,
-                            atms[:-1],size=(200,20))
+            moves = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,atms[:-1],size=(200,30))
             seqSizer.Add(moves,1,wx.EXPAND|wx.RIGHT)
             return seqSizer
             

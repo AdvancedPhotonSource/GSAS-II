@@ -2195,8 +2195,8 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     '''
     def fixtrighex(X):
         IXY = np.array([np.rint(x*3.) for x in X[:2]])
-        if str(IXY) in ['[1,2]','[2,1]'] and np.allclose(IXY/3.,X[:2],atol=2.e-4):
-            X = IXY/3.
+        if str(IXY) in ['[1. 2.]','[2. 1.]'] and np.allclose(IXY/3.,X[:2],atol=2.e-4):
+            X[:2] = IXY/3.
         return X
               
     XYZEquiv = []
@@ -2210,6 +2210,9 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     SpnFlp = SGData.get('SpnFlp',[])
     spnflp = []
     X = np.array(XYZ)
+    if SGData['SGLaue'][0] in ['3','6']:
+        X = fixtrighex(X)
+        XYZ = X
     mj = 0
     for ic,cen in enumerate(icen):
         C = np.array(cen)
@@ -2236,8 +2239,6 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                     if True in [np.allclose(newX%1.,oldX%1.,atol=2.e-4) for oldX in XYZEquiv]:
                         idup = False
                 if All or idup:
-                    if SGData['SGLaue'][0] in ['3','6']:
-                        newX = fixtrighex(newX)
                     XYZEquiv.append(newX)
                     Idup.append(idup)
                     Cell.append(cell)

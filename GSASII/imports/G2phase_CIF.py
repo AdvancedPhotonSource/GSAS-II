@@ -434,7 +434,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     break
             else:
                 multiplicity_key = False
-                self.warnings += "Unable to find site multiplicities in CIF, will not be able to cross check calculated multiplicities."
+                #self.warnings += "Unable to find site multiplicities in CIF, will not be able to cross check calculated multiplicities."
+                print("Unable to find site multiplicities in CIF. No multiplicity cross check.")
             if not blk.get('_atom_site_type_symbol'):
                 isodistort_warnings += '\natom types are missing. \n Check & revise atom types as needed'
             if magnetic:

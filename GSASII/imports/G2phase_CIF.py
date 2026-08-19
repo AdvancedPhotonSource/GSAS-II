@@ -571,7 +571,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     if expected_multiplicity == observed_multiplicity:
                         pass
                     else:
-                        self.warnings += f"Given and calculated multiplicity for {atomlist[0]} differ\n"
+                        self.warnings += f"Provided ({expected_multiplicity}) and calculated ({observed_multiplicity}) multiplicity for {atomlist[0]} differ\n"
                 atomlist[1] = G2elem.FixValence(atomlist[1])
                 atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
                 self.Phase['Atoms'].append(atomlist)

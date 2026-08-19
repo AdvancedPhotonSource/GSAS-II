@@ -427,6 +427,15 @@ class CIFPhaseReader(G2obj.ImportPhase):
             atomlbllist = [] # table to look up atom IDs
             atomloop = blk.GetLoop('_atom_site_label')
             atomkeys = [i.lower() for i in atomloop.keys()]
+            for _key_i, _key in enumerate(atomkeys):
+                if "site_symmetry_multiplicity" in _key: # accept both _atom_site_site_symmetry_multiplicity and _atom_site_symmetry_multiplicity
+                    multiplicity_key = _key
+                    multiplicity_key_i = _key_i
+                    break
+            else:
+                multiplicity_key = False
+                #self.warnings += "Unable to find site multiplicities in CIF, will not be able to cross check calculated multiplicities."
+                print("Unable to find site multiplicities in CIF. No multiplicity cross check.")
             if not blk.get('_atom_site_type_symbol'):
                 isodistort_warnings += '\natom types are missing. \n Check & revise atom types as needed'
             if magnetic:
@@ -556,6 +565,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     atomlist[9] = 'I'
                     atomlist[11:17] =  [0.,0.,0.,0.,0.,0.]
                 atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
+                if multiplicity_key:
+                    expected_multiplicity = int(aitem[multiplicity_key_i])
+                    observed_multiplicity = atomlist[8]
+                    if expected_multiplicity == observed_multiplicity:
+                        pass
+                    else:
+                        self.warnings += f"Provided ({expected_multiplicity}) and calculated ({observed_multiplicity}) multiplicity for {atomlist[0]} differ\n"
                 atomlist[1] = G2elem.FixValence(atomlist[1])
                 atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
                 self.Phase['Atoms'].append(atomlist)

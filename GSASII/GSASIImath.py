@@ -1365,7 +1365,7 @@ def QsymAxis(Q,symAxis):
     :returns: list Q: new quaternion
     '''
     if symAxis is None:
-        return Q
+        symAxis = [0,0,.1]
     a,v = Q2AV(Q)
     v = vnorm(v)
     symaxis = vnorm(np.array(symAxis))
@@ -1429,12 +1429,10 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         Cart = np.zeros(3)
         XYZ = [np.array(RBObj['Orig'][0]),]
         return XYZ,Cart
-    # if symmetry axis is defined, place symmetry axis along quaternion
-    RBRes['symAxis'] = RBRes.get('symAxis',None)
+    # place symmetry axis (default = z) along quaternion
+    RBRes['symAxis'] = RBRes.get('symAxis',[0,0,1.])
     Q = QsymAxis(RBObj['Orient'][0],RBRes['symAxis'])
-    XYZ = np.zeros_like(Cart)
-    for i,xyz in enumerate(Cart):
-        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))+RBObj['Orig'][0]
+    XYZ = np.inner(Bmat,prodQVQ(Q,Cart)).T+RBObj['Orig'][0]
     return XYZ,Cart
 
 def GetSpnRBData(SpnRB,atId):

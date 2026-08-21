@@ -6376,16 +6376,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 
         if event.Dragging():
             if event.AltDown() and rbObj:  # dragging of a rigid body
-                if event.CmdDown(): # Mac middlebutton workaround
+                if event.MiddleIsDown() or event.CmdDown(): # Mac middlebutton workaround
                     SetRBRotationZ(newxy)
                     if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     Q = rbObj['Orient'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                    G2frame.G2plotNB.status.SetStatusText('New RB quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 elif event.LeftIsDown():
                     SetRBRotation(newxy)
                     if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     Q = rbObj['Orient'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                    G2frame.G2plotNB.status.SetStatusText('New RB quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 elif event.RightIsDown():
                     if 'fixOrig' in rbObj:
                         if rbObj.get('fixOrig',False): return
@@ -6394,12 +6394,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     SetRBTranslation(newxy)
                     Tx,Ty,Tz = rbObj['Orig'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New origin: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
-                elif event.MiddleIsDown():
-                    SetRBRotationZ(newxy)
-                    if rbObj.get('fillMode'): rbObj['needsFill'] = True
-                    Q = rbObj['Orient'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                    G2frame.G2plotNB.status.SetStatusText('New RB origin: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
                 Draw('move')
             elif not event.ControlDown():
                 if event.LeftIsDown():
@@ -6655,27 +6650,28 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         SetViewDirText(VD)
 
     def SetRBRotation(newxy):
+        ''' invoked by Alt-left button down drag when in Phase/Rigid bodies
+        '''
 #first get rotation vector in screen coords. & angle increment
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
-        if dxy[0] == dxy[1] == 0: return
         drawingData['oldxy'] = list(newxy)
-        V = np.array([dxy[1],dxy[0],0.])
-        A = 0.1*np.sqrt(dxy[0]**2+dxy[1]**2)
-        if not A: return # nothing changed, nothing to do
+        dV = 0.002*np.array([dxy[0],-dxy[1],0.])
 # next transform vector back to xtal coordinates via inverse quaternion
 # & make new quaternion
-        Q = rbObj['Orient'][0]              #rotate RB to Cart
+        Q = rbObj['Orient'][0]
+        A,V = G2mth.Q2AV(Q)
         QC = drawingData['Quaternion']      #rotate Cart to drawing
-        V = G2mth.prodQVQ(G2mth.invQ(QC),V)
-        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
-        DQ = G2mth.AVdeg2Q(A,V)
-        Q = G2mth.prodQQ(Q,DQ)
-        rbObj['Orient'][0][:] = Q
+        dV = G2mth.prodQVQ(QC,dV)
+        # dV = G2mth.prodQVQ(G2mth.invQ(Q),dV)
+        V += dV
+        rbObj['Orient'][0][:] = G2mth.AV2Q(A,V)
         SetRBText()
         
     def SetRotationZ(newxy):
+        ''' invoked by middle button down drag 
+        '''
 #first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
@@ -6704,6 +6700,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['Quaternion'] = Q
 
     def SetRBRotationZ(newxy):
+        ''' invoked by Alt-middle button down drag when in Phase/Rigid bodies
+        '''
 #first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
@@ -6713,24 +6711,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if dxy[0] == dxy[1] == 0: return
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
-        A = [0,0]
-        A[0] = dxy[1]*.25
-        A[1] = dxy[0]*.25
+        dA = [0,0]
+        dA[0] = dxy[1]*.1
+        dA[1] = dxy[0]*.1
         if newxy[0] < cent[0]:
-            A[0] *= -1
+            dA[0] *= -1
         if newxy[1] > cent[1]:
-            A[1] *= -1
-# next transform vector back to RB coordinates & make new quaternion
-        Q = rbObj['Orient'][0]              #rotate RB to cart
-        V = np.inner(Amat,V)
-        V = -G2mth.prodQVQ(G2mth.invQ(Q),V)
-        if A[0]:
-            Qx = G2mth.AVdeg2Q(A[0],V)
-            Q = G2mth.prodQQ(Q,Qx)
-        if A[1]:
-            Qy = G2mth.AVdeg2Q(A[1],V)
-            Q = G2mth.prodQQ(Q,Qy)
-        rbObj['Orient'][0] = Q
+            dA[1] *= -1
+# next apply to angle part & make new quaternion
+        Q = rbObj['Orient'][0]
+        A,V = G2mth.Q2AVdeg(Q)
+        A += (dA[0]+dA[1])  #U/D same as L/R
+        rbObj['Orient'][0] = G2mth.AVdeg2Q(A,V)
         SetRBText()
 
     def RenderBox():

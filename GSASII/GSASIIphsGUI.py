@@ -10477,6 +10477,7 @@ at one of the following locations:
         def OnVecSelect(event):
             global prevVecId
             prevVecId = vecSelect.GetSelection()
+            data['testRBObj'] = {}
             try:
                 resSelect.Deselect(resSelect.GetSelection())
             except:
@@ -10537,6 +10538,7 @@ at one of the following locations:
 
         def OnSpnSelect(event):
             global prevSpnId
+            data['testRBObj'] = {}
             prevSpnId = spnSelect.GetSelection()
             try:
                 resSelect.Deselect(resSelect.GetSelection())

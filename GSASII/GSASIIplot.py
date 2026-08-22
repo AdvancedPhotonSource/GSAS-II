@@ -6415,7 +6415,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             SetCursorStatus(newxy,drawingData.get('showSlice',False) in [1,3])
 
     def OnMouseWheel(event):
-        if event.ShiftDown():
+        if event.ShiftDown() or event.AltDown():
             return
         drawingData['cameraPos'] += event.GetWheelRotation()/24.
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
@@ -6598,13 +6598,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         V = np.array([-dxy[0],dxy[1],0.])
 #then transform to rotated crystal coordinates & apply to view point
         Q = drawingData['Quaternion']
-        V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
-        Tx,Ty,Tz = drawingData['viewPoint'][0]
-        Tx += V[0]*0.01
-        Ty += V[1]*0.01
-        Tz += V[2]*0.01
-        drawingData['viewPoint'][0] =  np.array([Tx,Ty,Tz])
-        SetViewPointText([Tx,Ty,Tz])
+        drawingData['viewPoint'][0] += 0.01*np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
+        SetViewPointText(drawingData['viewPoint'][0])
 
     def SetRBTranslation(newxy):
 #first get translation vector in screen coords.
@@ -6617,12 +6612,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         V = np.array([-dxy[0],dxy[1],0.])
 #then transform to rotated crystal coordinates & apply to RB origin
         Q = drawingData['Quaternion']
-        V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
-        Tx,Ty,Tz = rbObj['Orig'][0]
-        Tx -= V[0]*0.002
-        Ty -= V[1]*0.002
-        Tz -= V[2]*0.002
-        rbObj['Orig'][0][:] =  Tx,Ty,Tz
+        rbObj['Orig'][0] -= 0.01*np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
         SetRBText()
 
     def SetRotation(newxy):
@@ -6633,14 +6623,14 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         dxy = newxy-oldxy
         if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         drawingData['oldxy'] = list(newxy)
-        V = np.array([dxy[1],dxy[0],0.])
-        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
-        if not A: return # nothing changed, nothing to do
+        dV = np.array([dxy[1],dxy[0],0.])
+        dA = 0.25*np.sqrt(np.sum(dV**2))
+        if not dA: return # nothing changed, nothing to do
     # next transform vector back to xtal coordinates via inverse quaternion
     # & make new quaternion
         Q = drawingData['Quaternion']
-        V = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,V))
-        DQ = G2mth.AVdeg2Q(A,V)
+        dV = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,dV))
+        DQ = G2mth.AVdeg2Q(dA,dV)
         Q = G2mth.prodQQ(Q,DQ)
         drawingData['Quaternion'] = Q
     # finally get new view vector - last row of rotation matrix
@@ -6657,16 +6647,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         drawingData['oldxy'] = list(newxy)
-        dV = 0.002*np.array([dxy[0],-dxy[1],0.])
+        dV = 0.025*np.array([dxy[0],-dxy[1],0.])
+        if not -np.sqrt(np.sum(dV**2)): return # nothing changed, nothing to do
 # next transform vector back to xtal coordinates via inverse quaternion
 # & make new quaternion
         Q = rbObj['Orient'][0]
         A,V = G2mth.Q2AV(Q)
-        QC = drawingData['Quaternion']      #rotate Cart to drawing
-        dV = G2mth.prodQVQ(QC,dV)
-        # dV = G2mth.prodQVQ(G2mth.invQ(Q),dV)
-        V += dV
-        rbObj['Orient'][0][:] = G2mth.AV2Q(A,V)
+        QC = drawingData['Quaternion']      #rotate x,y,0 to Cart
+        dV = G2mth.prodQVQ(G2mth.invQ(QC),dV)
+        dV = np.inner(Bmat,dV)  #Cart to crystal
+        rbObj['Orient'][0][:] = G2mth.AV2Q(A,V+dV)
         SetRBText()
         
     def SetRotationZ(newxy):
@@ -6711,9 +6701,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if dxy[0] == dxy[1] == 0: return
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
-        dA = [0,0]
-        dA[0] = dxy[1]*.1
-        dA[1] = dxy[0]*.1
+        dA = [-dxy[1]*.1,-dxy[0]*.1]
         if newxy[0] < cent[0]:
             dA[0] *= -1
         if newxy[1] > cent[1]:
@@ -6721,8 +6709,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 # next apply to angle part & make new quaternion
         Q = rbObj['Orient'][0]
         A,V = G2mth.Q2AVdeg(Q)
-        A += (dA[0]+dA[1])  #U/D same as L/R
-        rbObj['Orient'][0] = G2mth.AVdeg2Q(A,V)
+        if dA[0]:
+            A += dA[0]
+        if dA[1]:
+            A += dA[1]
+        rbObj['Orient'][0] = G2mth.AVdeg2Q(A%360.,V)
         SetRBText()
 
     def RenderBox():
@@ -6767,7 +6758,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
 
-    def RenderRBtriplet(orig,Q0,Q,Bmat):
+    def RenderRBtriplet(orig,Q0,Bmat):
         '''draw an axes triplet located at the origin of a rigid body
         and with the x, y & z axes drawn as red, green and blue.
         '''
@@ -6782,7 +6773,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glLineStipple(1,255)
         GL.glEnable(GL.GL_LINE_STIPPLE)
         GL.glBegin(GL.GL_LINES)
-        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,None)
+        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q0,None)
         colors = [Rd,Gr,Bl]
         # lines along axial directions
         for line,color in zip(lines,colors):
@@ -7364,8 +7355,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             RenderUnitVectors(x,y,z)
         if pageName == 'RB Models' and G2frame.selectRB.get('showAxes',False):
             Q0 = G2frame.selectRB['Orient'][0]
-            Q = G2mth.QsymAxis(Q0,G2frame.selectRB.get('symAxis',None))
-            RenderRBtriplet(G2frame.selectRB['Orig'][0],Q0,Q,Bmat)
+            RenderRBtriplet(G2frame.selectRB['Orig'][0],Q0,Bmat)
         Backbones = {}
         BackboneColor = []
 #        glEnable(GL_BLEND)
@@ -7623,7 +7613,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if len(testRBObj) and pageName == 'RB Models':
             # plot a test rigid body as ball & [green] sticks when adding the RB into cell
             XYZ = G2mth.UpdateRBXYZ(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])[0]
-            symAxis = None
+#            symAxis = None
             if testRBObj['rbType'] != 'Spin':
                 rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
@@ -7645,10 +7635,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if testRBObj['rbType'] != 'Spin':
                     RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
-                symAxis = testRBObj.get('symAxis',None)
+#                symAxis = testRBObj.get('symAxis',None)
             Q0 = testRBObj['rbObj']['Orient'][0]
-            Q = G2mth.QsymAxis(Q0,symAxis)
-            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],Q0,Q,Bmat)
+            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],Q0,Bmat)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = mcsaTypes[ind]

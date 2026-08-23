@@ -90,9 +90,11 @@ class CIFhklReader(G2obj.ImportStructFactor):
             )
         rdbuffer = kwarg.get('buffer')
         cf = None
-        if self.repeat and rdbuffer is not None:
-            cf = rdbuffer.get('lastcif')
-            print ('Reusing previously parsed CIF')
+        if self.repeat:
+            self.RefDict = {'RefList':[],'FF':{},'Super':0} # needed when multiple blocks are read
+            if rdbuffer is not None:
+                cf = rdbuffer.get('lastcif')
+                print ('Reusing previously parsed CIF')
         if cf is None:
             cf = G2obj.ReadCIF(filename)
         # scan blocks for reflections
@@ -160,8 +162,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                     if sg:
                         choice[-1] += ', (' + sg.strip() + ')'
                         break
-# TODO: removed all of above because read of multiple HKLFs from CIF seems broken
-#            choice.append('Import all of the above')
+            choice.append('Import all of the above')
             if self.repeat: # we were called to repeat the read
                 selblk = self.repeatcount
                 self.repeatcount += 1
@@ -207,7 +208,8 @@ class CIFhklReader(G2obj.ImportStructFactor):
                     wave = float(blk['_diffrn_radiation_wavelength'])
                 self.UpdateParameters(Type='SXC',Wave=wave) # histogram type
                 return True
-            except:
+            except Exception as msg:
+                print(f'error in _shelx_hkl_file read in block {blknm}:\n\t{msg}')
                 return False                
         self.objname = os.path.basename(filename)+':'+str(blknm)
         self.errors = 'Error during reading of reflections'

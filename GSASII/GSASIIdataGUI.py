@@ -5827,6 +5827,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
             else:
                 G2G.G2MessageBox(self,
                     'Zero cycle "refinement" computation completed',lbl)
+                self.reloadFromGPX(rtext,Rvals)
                 ans = None
             if ans == wx.ID_OK:  # refinement has been accepted save, log & display
                 self.reloadFromGPX(rtext,Rvals)

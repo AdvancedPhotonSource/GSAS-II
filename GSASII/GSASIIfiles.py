@@ -2084,6 +2084,9 @@ class ExportBaseclass(object):
             self.constList += consDict[item]
         # now process the constraints
         G2mv.InitVars()
+        d = {str(k):v for k,v in zip(consDict.get('_OffsetKeys',[]),
+                                     consDict.get('_OffsetVals',[]))}
+        G2mv.ProcessOffsets(d)
         constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList)
         varyList = covDict.get('varyListStart',[])
         if varyList is None and len(constrDict) == 0:

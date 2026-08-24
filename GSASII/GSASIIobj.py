@@ -1333,7 +1333,14 @@ class ImportPhase(ImportBaseclass):
             extensionlist,strictExtension)
         self.Phase = None # a phase must be created with G2IO.SetNewPhase in the Reader
         self.SymOps = {} # specified when symmetry ops are in file (e.g. CIF)
+        self.Constraints = None  # constraints read from a phase (ISODISTORT CIFs)
+        self.ConstraintOffsets = None # offsets applied to parameters when (ISODISTORT occupancy mode CIFs)
+
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
         self.Constraints = None
+        self.ConstraintOffsets = None
 
 ######################################################################
 class ImportStructFactor(ImportBaseclass):

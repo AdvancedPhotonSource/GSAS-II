@@ -1374,7 +1374,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 raise Exception("Rank of _iso_occupancymode != _iso_deltaoccupancy")
 
             error = False
-            ParentOcc = {}
+            OccOffset = {}
             for lbl,exp in zip(
                 blk.get('_iso_occupancy_label'),
                 blk.get('_iso_occupancy_formula') ):
@@ -1396,7 +1396,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                         self.warnings += ' ERROR: _iso_occupancy_formula coordinate not interpreted: '+lbl
                         error = True
                         continue
-                    ParentOcc[albl] = val
+                    OccOffset[albl] = val
             if error:
                 raise Exception("Error decoding occupancy labels")
             # get mapping of modes to atomic coordinate displacements
@@ -1418,9 +1418,20 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmodelist[i],None))
                 modeVarList.append(modeVar)
-                constraint += [modeVar,False,'f']    # TODO -- use new form for occupancy mode
-                #constraint += [modeVar,False,1.0]
+                constraint += [modeVar,False,'f']
                 self.Constraints.append(constraint)
+            # record offsets to apply to Occupancy (Afrac) parameters
+            self.ConstraintOffsets = []
+            for albl in OccOffset:
+                if OccOffset[albl] == 0: continue
+                try:
+                    a = [i[0] for i in self.Phase['Atoms']].index(albl)
+                    self.ConstraintOffsets.append({'var':'Afrac','atomnum':a,
+                                                   'value':OccOffset[albl]})
+                except:
+                    pass
+                
+                #OccOffset[albl] = val
             # normilization constants
             normlist = []
             idlist = []
@@ -1438,7 +1449,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 # coordinate items
                 'OccVarList' : occVarLbl,
                 'G2OccVarList' : G2varObj,
-                'BaseOcc' : ParentOcc,
+                'BaseOcc' : OccOffset,
                 # mode items
                 'OccModeList' : modelist,
                 'G2OccModeList' : modeVarList,
@@ -1521,7 +1532,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
             #             s += n * modeVarDelta[modelist[j]] * k
             #         print( lbl,'=',str(G2varObj[i]),'=',l,'=',s,'\n')
             #         j = lbl.split('_')[0]
-            #         Occ[j] = ParentOcc[j]+s
+            #         Occ[j] = OccOffset[j]+s
 
             #     # determine the coordinate delta values from deviations from the parent structure
             #     print('\nOccupancy from CIF vs computed')

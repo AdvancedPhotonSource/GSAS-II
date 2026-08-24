@@ -356,10 +356,12 @@ separated into separate storage.
      to that used in "Const" entries. The differences between "New Var" and "Const" entries is 
      that for "Const" entries, a constant value (as a string) is placed in :data:`fixedList` while
      for "New Var" entries corresponding entry in :data:`fixedList` is None. 
-     Also, one or two additional entries are created in the dict for "New Var" constraints:
-     an entry with key "_vary" is given the value of True or False
-     depending on the refinement flag setting; 
-     an entry with key "_name" will be created if the "New Var" parameter has a supplied name.
+     Also, additional entries are created in the dict for "New Var"
+     constraints:
+      * an entry with key "_vary" is given the value of True or False
+        depending on the refinement flag setting;  
+      * an entry with key "_name" will be created if the "New Var"
+        parameter has a supplied name.
 
    For "**Hold**" entries, 
      User-supplied “Hold” constraints are stored in global variable :data:`holdParmList`.
@@ -707,6 +709,14 @@ in these variables is related to a group of constraints.
                                  that an equivalence was generated internally GSAS-II 
                                  meaning it is generated based on symmetry, twining 
                                  or Pawley overlap.
+
+:data:`offsetDict`               a dict with offset values. The keys are str values with the 
+                                 names of GSAS-II parameters from the Constraints data tree 
+                                 entry "_OffsetKeys" and the values (_OffsetVals) are the 
+                                 offsets that will be subtracted from parameter values 
+                                 prior to their use in NewVar expressions.
+                                 Note that parameter offsets are used only for ISODISTORT 
+                                 occupancy modes, currently.
 
 =============================  ===================================================================
 

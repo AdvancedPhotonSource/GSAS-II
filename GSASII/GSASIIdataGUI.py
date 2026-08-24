@@ -1389,6 +1389,15 @@ If you continue from this point, it is quite likely that all intensity computati
                         Constraints['_Explain'].update(i)
                     else:
                         Constraints['Phase'].append(i)
+            if rd.ConstraintOffsets:  # make a dict with offset values to apply to values
+                Constraints['_OffsetKeys'] = Constraints.get('_OffsetKeys',[])
+                Constraints['_OffsetVals'] = Constraints.get('_OffsetVals',[])
+                for d in rd.ConstraintOffsets:
+                    var = d['var']
+                    AtRanId = rd.Phase['Atoms'][d['atomnum']][-1]
+                    prm = G2obj.G2VarObj([rd.Phase['ranId'],None,var,AtRanId])
+                    Constraints['_OffsetKeys'].append(prm)
+                    Constraints['_OffsetVals'].append(d['value'])
             # make ISODISTORT magnetic phase constraints here
             Phases = self.GetPhaseData()
             prevPhases = list(Phases.keys())
@@ -1513,7 +1522,6 @@ If you continue from this point, it is quite likely that all intensity computati
                 Constraints['HAP'] += G2lat.GenHAPConstraints(Vratio,oRanId,nRanId,hRanId)
         wx.EndBusyCursor()
         self.EnableRefineCommand()
-
         return # success
 
     def _Add_ImportMenu_Image(self,parent):

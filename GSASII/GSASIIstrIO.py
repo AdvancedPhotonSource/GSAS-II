@@ -149,6 +149,9 @@ def ReadConstraints(GPXfile, seqHist=None):
     for item in ConstraintsItem[1]:
         if item.startswith('_'): continue
         constList += ConstraintsItem[1][item]
+    d = {str(k):v for k,v in zip(ConstraintsItem[1].get('_OffsetKeys',[]),
+                                 ConstraintsItem[1].get('_OffsetVals',[]))}
+    G2mv.ProcessOffsets(d)
     constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList,seqmode,seqHist)
     #if ignored:
     #    G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))

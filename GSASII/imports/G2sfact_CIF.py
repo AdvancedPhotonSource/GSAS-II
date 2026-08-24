@@ -207,6 +207,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 if blk.get('_diffrn_radiation_wavelength'):
                     wave = float(blk['_diffrn_radiation_wavelength'])
                 self.UpdateParameters(Type='SXC',Wave=wave) # histogram type
+                self.objname = os.path.basename(filename)+':'+str(blknm)
                 return True
             except Exception as msg:
                 print(f'error in _shelx_hkl_file read in block {blknm}:\n\t{msg}')

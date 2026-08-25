@@ -4002,11 +4002,15 @@ def OmitMap(data,reflDict,pgbar=None):
     return mapData
 
 def FourierMap(data,reflDict):
-    '''default doc string
+    '''Compute 3D Fourier map. Expands reflist hkl to cover full sphere & expand/zero fill to
+    box matching dimensions of desired map. Shifts hkl to put origin at corner.
+    Uses fft.fftn to make map & shifts it back accordingly.
+    Twinned data not handled properly
 
-    :param type name: description
+    :param dict data: phase data
+    :param dict reflDict: 3D hkl structure factors
 
-    :returns: type name: description
+    :returns: None; map is put in phase data
 
     '''
     generalData = data['General']
@@ -4071,11 +4075,14 @@ def FourierMap(data,reflDict):
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
 
 def Fourier4DMap(data,reflDict):
-    '''default doc string
+    '''Compute 4D Fourier map. Expands reflist hklm to cover full sphere & expand/zero fill to
+    box matching dimensions of desired 4D map. Shifts hklm to put origin at corner.
+    Uses fft.fftn to make map & shifts it back accordingly.
 
-    :param type name: description
+    :param dict data: phase data
+    :param dict reflDict: 4D hklm structure factors
 
-    :returns: type name: description
+    :returns: None; map is put in phase data
 
     '''
     generalData = data['General']

@@ -9807,7 +9807,6 @@ at one of the following locations:
                 names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
             Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
             TLSobj = []
-            TLSref = []
             CSI = G2spc.GetCSuinel(Sytsym)
             for i,name in enumerate(names):
                 thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,WACV)
@@ -9821,6 +9820,7 @@ at one of the following locations:
                     thermSizer.Add(Tcheck,0,WACV)
                 else:
                     thermVal = G2G.ReadOnlyTextCtrl(RigidBodies,value='%.4f'%(model[1][i]))
+                    model[2][i] = False         #patch to remove bad refine flags
                     thermSizer.Add(thermVal)
                     thermSizer.Add((5,5),0)
                 TLSobj.append(thermVal)

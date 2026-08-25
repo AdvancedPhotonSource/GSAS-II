@@ -49,6 +49,7 @@ vnorm = lambda v: v/nl.norm(v)
 try:  # fails on doc build
     twopi = 2.0*np.pi
     twopisq = 2.0*np.pi**2
+    atepisq = 8.0*np.pi**2
     _double_min = np.finfo(float).min
     _double_max = np.finfo(float).max
 except TypeError:
@@ -4875,7 +4876,10 @@ def DoWilsonStat(refList,Super,normEle,Inst):
     A = np.vstack([SQbins,np.ones_like(SQbins)]).T
     result = nl.lstsq(A,np.log(E2bins),rcond=None)
     twoB,lnscale = result[0]    #twoB = -2B
+    U = -twoB/atepisq
     scale = np.exp(lnscale)
+    print(' Wilson thermal parameter U = %.3f, scale = %.4f'%(U,scale))
+    print(' (Divide by unit cell Z to get true scale estimate)')
     E2calc = lnscale+twoB*SQbins
     normE = np.sqrt(np.where(Esq>0.,Esq,0.)/scale)*np.exp(-0.5*twoB*SQ2)
     return [np.mean(normE),np.mean(normE**2),np.mean(np.abs(-1.+normE**2))],[SQbins,np.log(E2bins),E2calc]

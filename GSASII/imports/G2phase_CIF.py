@@ -226,10 +226,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
                 if not SpGrp:
                     SpGrp = blk.get("_space_group_name_H-M_alt",'')
-                try:
-                    SpGrp = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
-                except:
-                    pass
+                if not SpGrp:
+                    try:
+                        SpGrp = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
+                    except:
+                        pass
                 if SpGrp:
                     SpGrp = SpGrp.replace('_','').split('(')[0]
                     SpGrp = G2spc.fullHM2shortHM(SpGrp)
@@ -571,7 +572,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     if expected_multiplicity == observed_multiplicity:
                         pass
                     else:
-                        self.warnings += f"Provided ({expected_multiplicity}) and calculated ({observed_multiplicity}) multiplicity for {atomlist[0]} differ\n"
+                        self.warnings += f"CIF multiplicity ({expected_multiplicity}) differs from calculated ({observed_multiplicity}) for {atomlist[0]}\n"
                 atomlist[1] = G2elem.FixValence(atomlist[1])
                 atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
                 self.Phase['Atoms'].append(atomlist)

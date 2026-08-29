@@ -1871,7 +1871,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                     pfx+'U12cos:'+stiw,pfx+'U13cos:'+stiw,pfx+'U23cos:'+stiw]
                                 equivs = {1:[],2:[],3:[],4:[],5:[],6:[], 7:[],8:[],9:[],10:[],11:[],12:[]}
                             elif Stype == 'Sfrac':
-                                equivs = {1:[],2:[]}
+                                equivs = {}
                                 if 'Crenel' in waveType and not iw:
                                     names = [pfx+'Fzero:'+stiw,pfx+'Fwid:'+stiw]
                                 else:

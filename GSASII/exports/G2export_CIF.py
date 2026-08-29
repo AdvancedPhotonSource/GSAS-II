@@ -4564,6 +4564,11 @@ class ExportCIF(G2fil.ExportBaseclass):
                     # load the constraints specific to the current histogram
                     varyList = copy.copy(list(self.seqData[hist].get('varyListStart',[])))
                     G2mv.InitVars()
+                    # I don't think Offsets are needed here
+                    d = {}
+                    # d = {str(k):v for k,v in zip(consDict.get('_OffsetKeys',[]),
+                    #                              consDict.get('_OffsetVals',[]))}
+                    G2mv.ProcessOffsets(d)
                     constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList,'auto-wildcard',hId)
                     G2mv.EvaluateMultipliers(constrDict,self.parmDict)
                     errmsg,conswarnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)

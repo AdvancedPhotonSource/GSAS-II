@@ -5,6 +5,17 @@ These modules are used to create different parts of the GSAS-II
 graphical user interface (GUI).
 
 --------------------------------------
+*G2.py: Routine to start GSAS-II*
+--------------------------------------
+
+`G2.py` is a short python file that can be used to start the GSAS-II
+GUI. When GSAS-II is installed into Python (or in the path), the GUI
+can also be started with command ``python -m GSASII``.
+
+.. automodule:: GSASII.G2
+        :members:
+
+--------------------------------------
 *GSASIIdataGUI: Main GUI for GSAS-II*
 --------------------------------------
 
@@ -12,12 +23,10 @@ Module that defines GUI routines and classes for the main GUI Frame (window)
 and the main routines that define the GSAS-II tree panel and much of the
 data editing panel. 
 
+
 GSASIIdataGUI Classes & Routines
 ---------------------------------------
 
-.. automodule:: GSASII.G2
-        :members:
-           
 .. automodule:: GSASII.GSASIIdataGUI
         :members: 
 

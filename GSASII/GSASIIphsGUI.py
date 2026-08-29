@@ -9807,7 +9807,6 @@ at one of the following locations:
                 names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
             Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
             TLSobj = []
-            TLSref = []
             CSI = G2spc.GetCSuinel(Sytsym)
             for i,name in enumerate(names):
                 thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,WACV)
@@ -9821,6 +9820,7 @@ at one of the following locations:
                     thermSizer.Add(Tcheck,0,WACV)
                 else:
                     thermVal = G2G.ReadOnlyTextCtrl(RigidBodies,value='%.4f'%(model[1][i]))
+                    model[2][i] = False         #patch to remove bad refine flags
                     thermSizer.Add(thermVal)
                     thermSizer.Add((5,5),0)
                 TLSobj.append(thermVal)
@@ -10473,36 +10473,11 @@ at one of the following locations:
             vecrbSizer.Add(thermSizer)
             vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
             return vecrbSizer
-
-        def OnVecSelect(event):
-            global prevVecId
-            prevVecId = vecSelect.GetSelection()
-            try:
-                resSelect.Deselect(resSelect.GetSelection())
-            except:
-                pass
-            try:
-                spnSelect.Deselect(spnSelect.GetSelection())
-            except:
-                pass
-            wx.CallLater(100,RepaintRBInfo,'Vector',prevVecId)
-
-        def OnResSelect(event):
-            global prevResId
-            prevResId = resSelect.GetSelection()
-            try:
-                vecSelect.Deselect(vecSelect.GetSelection())
-            except:
-                pass
-            try:
-                spnSelect.Deselect(spnSelect.GetSelection())
-            except:
-                pass
-            # define the parameters needed to drag the RB with the mouse
-            data['testRBObj'] = {}
-            rbType = 'Residue'
-            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
-            rbId = data['RBModels'][rbType][prevResId]['RBId']
+        
+        def SetTestRB(rbType,prevRBId,data):
+            
+            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevRBId])
+            rbId = data['RBModels'][rbType][prevRBId]['RBId']
             RBdata = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
             data['testRBObj']['rbData'] = RBdata
@@ -10533,10 +10508,75 @@ at one of the following locations:
             for item in RBData[rbType][rbId].get('rbSeq',[]):
                 data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
                 data['testRBObj']['torAtms'].append([-1,-1,-1])
+
+        def OnVecSelect(event):
+            global prevVecId
+            prevVecId = vecSelect.GetSelection()
+            try:
+                resSelect.Deselect(resSelect.GetSelection())
+            except:
+                pass
+            try:
+                spnSelect.Deselect(spnSelect.GetSelection())
+            except:
+                pass
+            data['testRBObj'] = {}
+            rbType = 'Vector'
+            SetTestRB(rbType,prevVecId,data)
+            wx.CallLater(100,RepaintRBInfo,'Vector',prevVecId)
+
+        def OnResSelect(event):
+            global prevResId
+            prevResId = resSelect.GetSelection()
+            try:
+                vecSelect.Deselect(vecSelect.GetSelection())
+            except:
+                pass
+            try:
+                spnSelect.Deselect(spnSelect.GetSelection())
+            except:
+                pass
+            # define the parameters needed to drag the RB with the mouse
+            data['testRBObj'] = {}
+            rbType = 'Residue'
+            SetTestRB(rbType,prevResId,data)
+            # data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
+            # rbId = data['RBModels'][rbType][prevResId]['RBId']
+            # RBdata = G2frame.GPXtree.GetItemPyData(
+            #     G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+            # data['testRBObj']['rbData'] = RBdata
+            # data['testRBObj']['rbType'] = rbType
+            # data['testRBObj']['rbAtTypes'] = RBdata[rbType][rbId]['rbTypes']
+            # data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
+            # data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
+            # data['testRBObj']['Sizers'] = {}
+            # data['testRBObj']['rbRef'] = RBData[rbType][rbId]['rbRef']
+
+            # refType = []
+            # for ref in data['testRBObj']['rbRef'][:3]:
+            #     reftype = data['testRBObj']['rbAtTypes'][ref]
+            #     refType.append(reftype)
+            #     #refName.append(reftype+' '+str(rbRef[0]))
+            # atNames = [{},{},{}]
+            # AtNames = {}
+            # cx,ct,cs,cia = data['General']['AtomPtrs']
+            # for iatm,atom in enumerate(data['Atoms']):
+            #     AtNames[atom[ct-1]] = iatm
+            #     for i,reftype in enumerate(refType):
+            #         if atom[ct] == reftype:
+            #             atNames[i][atom[ct-1]] = iatm
+            # data['testRBObj']['atNames'] = atNames
+            # data['testRBObj']['AtNames'] = AtNames
+            # data['testRBObj']['torAtms'] = []
+            # # unclear why these torsion entries are being added to rbObj.
+            # for item in RBData[rbType][rbId].get('rbSeq',[]):
+            #     data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
+            #     data['testRBObj']['torAtms'].append([-1,-1,-1])
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
 
         def OnSpnSelect(event):
             global prevSpnId
+            data['testRBObj'] = {}
             prevSpnId = spnSelect.GetSelection()
             try:
                 resSelect.Deselect(resSelect.GetSelection())

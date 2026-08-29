@@ -97,22 +97,35 @@ The keys in the Constraints dict are:
 
 .. tabularcolumns:: |l|p{4.5in}|
 
-==========  ====================================================
+===========  ====================================================
   key         explanation
-==========  ====================================================
-Hist        This specifies a list of constraints on
-            histogram-related parameters,
-            which will be of form :h:<var>:n.
-HAP         This specifies a list of constraints on parameters
-            that are defined for every histogram in each phase
-            and are of form p:h:<var>:n.
-Phase       This specifies a list of constraints on phase
-            parameters,
-            which will be of form p::<var>:n.
-Global      This specifies a list of constraints on parameters
-            that are not tied to a histogram or phase and
-            are of form ::<var>:n
-==========  ====================================================
+===========  ====================================================
+Hist         This specifies a list of constraints on
+             histogram-related parameters,
+             which will be of form :h:<var>:n.
+HAP          This specifies a list of constraints on parameters
+             that are defined for every histogram in each phase
+             and are of form p:h:<var>:n.
+Phase        This specifies a list of constraints on phase
+             parameters, which will be of form p::<var>:n.
+Global       This specifies a list of constraints on parameters
+             that are not tied to a histogram or phase and
+             are of form ::<var>:n
+_seqmode     Determines how constraints are interpreted for
+             sequential fits. Modes are 'auto-wildcard',
+             'wildcards-only' and 'use-all'
+_seqhist     A histogram number. In auto-wildcard mode, this
+             histogram will be replaced with the current
+             sequential histogram number.
+_NewVarOff   An offset to be applied to NewVar expressions
+_OffsetKeys  A list of G2VarObj objects for GSAS-II parameters
+             that will have offset values applied. 
+_OffsetVals  A list of offset values (as floats) that will be
+             subtracted from parameter values prior to their
+             use in NewVar expressions. Note that parameter
+             offsets are used only for ISODISTORT occupancy
+             modes, currently.
+===========  ====================================================
 
 .. _Constraint_definitions_table:
 
@@ -131,10 +144,13 @@ Where the variable pair list item containing two values [<mult>, <var>], where:
 
 Note that the last three items in the list play a special role:
 
- * <fixedval> is the fixed value for a `constant equation` (``constype=c``)
-   constraint or is None. For a `New variable` (``constype=f``) constraint,
-   a variable name can be specified as a str (used for externally
-   generated constraints)
+ * <fixedval> is None, except for a `constant equation` (``constype=c``)
+   constraint where is a float that specifies the value for the
+   equation, or, 
+   for a `New variable` (``constype=f``) constraint, if not None,
+   a string can be specified. This provides a variable name for the
+   New variable. This is used for externally generated constraints, such as
+   ISODISTORT modes.
  * <varyflag> is True or False for `New variable` (``constype=f``) constraints
    or is None. This indicates if this variable should be refined.
  * <constype> is one of four letters, 'e', 'c', 'h', 'f' that determines the type of constraint:

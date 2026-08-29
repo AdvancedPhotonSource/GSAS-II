@@ -134,6 +134,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 sg = cf[blknm].get("_symmetry_space_group_name_H-M",'')
                 if not sg: sg = cf[blknm].get("_space_group_name_H-M_alt",'')
                 if not sg: sg = cf[blknm].get("_space_group_ssg_name",'')
+                if not sg: sg = cf[blknm].get("_space_group_ssg_name_IT",'')
                 if not sg: sg = cf[blknm].get("_space_group.magn_ssg_name_BNS",'')
                 if not sg: sg = cf[blknm].get("_space_group.magn_ssg_name",'')
                 #how about checking for super/magnetic ones as well? - reject 'X'?
@@ -147,6 +148,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 except:
                     haveGUI = False
             if haveGUI:
+                from .. import GSASIIctrlGUI as G2G
                 selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
                     title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
             else:
@@ -175,12 +177,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += '\n'+msg
                     return False
                 sspgrp = blk.get("_space_group_ssg_name",'')
+                if not sspgrp:   sspgrp = blk.get("_space_group_ssg_name_IT",'')       
                 if not sspgrp:          #might be incommensurate magnetic
                     MSSpGrp = blk.get("_space_group.magn_ssg_name_BNS",'')
                     if not MSSpGrp:
                         MSSpGrp = blk.get("_space_group.magn_ssg_name",'')
                     if not MSSpGrp:
-                        msg = 'No incommensurate space group name was found in the CIF.'
+                        msg = 'No incommensurate magnetic space group name was found in the CIF.'
                         self.errors = msg
                         self.warnings += '\n'+msg
                         return False
@@ -424,6 +427,15 @@ class CIFPhaseReader(G2obj.ImportPhase):
             atomlbllist = [] # table to look up atom IDs
             atomloop = blk.GetLoop('_atom_site_label')
             atomkeys = [i.lower() for i in atomloop.keys()]
+            for _key_i, _key in enumerate(atomkeys):
+                if "site_symmetry_multiplicity" in _key: # accept both _atom_site_site_symmetry_multiplicity and _atom_site_symmetry_multiplicity
+                    multiplicity_key = _key
+                    multiplicity_key_i = _key_i
+                    break
+            else:
+                multiplicity_key = False
+                #self.warnings += "Unable to find site multiplicities in CIF, will not be able to cross check calculated multiplicities."
+                print("Unable to find site multiplicities in CIF. No multiplicity cross check.")
             if not blk.get('_atom_site_type_symbol'):
                 isodistort_warnings += '\natom types are missing. \n Check & revise atom types as needed'
             if magnetic:
@@ -553,6 +565,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     atomlist[9] = 'I'
                     atomlist[11:17] =  [0.,0.,0.,0.,0.,0.]
                 atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
+                if multiplicity_key:
+                    expected_multiplicity = int(aitem[multiplicity_key_i])
+                    observed_multiplicity = atomlist[8]
+                    if expected_multiplicity == observed_multiplicity:
+                        pass
+                    else:
+                        self.warnings += f"Provided ({expected_multiplicity}) and calculated ({observed_multiplicity}) multiplicity for {atomlist[0]} differ\n"
                 atomlist[1] = G2elem.FixValence(atomlist[1])
                 atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
                 self.Phase['Atoms'].append(atomlist)
@@ -729,6 +748,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         print('\nUnable to correct this, giving up')
                         return False
                 elif haveGUI:
+                    from .. import GSASIIctrlGUI as G2G
                     msg += '''
 Do you want to use Bilbao's "CIF to Standard Setting" web service to
 transform this into a standard setting?
@@ -1354,7 +1374,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 raise Exception("Rank of _iso_occupancymode != _iso_deltaoccupancy")
 
             error = False
-            ParentOcc = {}
+            OccOffset = {}
             for lbl,exp in zip(
                 blk.get('_iso_occupancy_label'),
                 blk.get('_iso_occupancy_formula') ):
@@ -1376,7 +1396,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                         self.warnings += ' ERROR: _iso_occupancy_formula coordinate not interpreted: '+lbl
                         error = True
                         continue
-                    ParentOcc[albl] = val
+                    OccOffset[albl] = val
             if error:
                 raise Exception("Error decoding occupancy labels")
             # get mapping of modes to atomic coordinate displacements
@@ -1398,9 +1418,20 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmodelist[i],None))
                 modeVarList.append(modeVar)
-                constraint += [modeVar,False,'f']    # TODO -- use new form for occupancy mode
-                #constraint += [modeVar,False,1.0]
+                constraint += [modeVar,False,'f']
                 self.Constraints.append(constraint)
+            # record offsets to apply to Occupancy (Afrac) parameters
+            self.ConstraintOffsets = []
+            for albl in OccOffset:
+                if OccOffset[albl] == 0: continue
+                try:
+                    a = [i[0] for i in self.Phase['Atoms']].index(albl)
+                    self.ConstraintOffsets.append({'var':'Afrac','atomnum':a,
+                                                   'value':OccOffset[albl]})
+                except:
+                    pass
+                
+                #OccOffset[albl] = val
             # normilization constants
             normlist = []
             idlist = []
@@ -1418,7 +1449,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 # coordinate items
                 'OccVarList' : occVarLbl,
                 'G2OccVarList' : G2varObj,
-                'BaseOcc' : ParentOcc,
+                'BaseOcc' : OccOffset,
                 # mode items
                 'OccModeList' : modelist,
                 'G2OccModeList' : modeVarList,
@@ -1501,7 +1532,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
             #             s += n * modeVarDelta[modelist[j]] * k
             #         print( lbl,'=',str(G2varObj[i]),'=',l,'=',s,'\n')
             #         j = lbl.split('_')[0]
-            #         Occ[j] = ParentOcc[j]+s
+            #         Occ[j] = OccOffset[j]+s
 
             #     # determine the coordinate delta values from deviations from the parent structure
             #     print('\nOccupancy from CIF vs computed')
@@ -1543,7 +1574,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
         'Maps ISODISTORT parm names to GSAS-II names'
         # used for all types of modes
         self.Constraints = []
-        G2obj.AddPhase2Index(self,filename)   # put phase info into Var index
+#        G2obj.AddPhase2Index(self,filename)   # put phase info into Var index
         #----------------------------------------------------------------------
         if blk.get('_iso_displacivemode_label'):
             # Read in the ISODISTORT displacement modes here

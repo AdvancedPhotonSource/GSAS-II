@@ -376,6 +376,9 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
         constrDict += data[key]
     if newcons:
         constrDict = constrDict + newcons
+
+    d = {str(k):v for k,v in zip(data.get('_OffsetKeys',[]),data.get('_OffsetVals',[]))}
+    G2mv.ProcessOffsets(d)
     constrDict, fixedList, ignored = G2mv.ProcessConstraints(constrDict, seqhst=seqhst, seqmode=seqmode)
     parmDict = {}
     # generate symmetry constraints to check for conflicts
@@ -1158,6 +1161,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 Sizer.Add((-1,-1))
             return Sizer1
         constSizer = wx.FlexGridSizer(0,8,0,0)
+        offsetDict = {str(k):v for k,v in zip(data.get('_OffsetKeys',[]),data.get('_OffsetVals',[]))}
         maxlen = 50 # characters before wrapping a constraint
         for Id,item in enumerate(data[name]):
             refineflag = False
@@ -1200,7 +1204,11 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         #     helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
                         var,explain,note,warnmsg = term[1].fmtVarByMode(seqmode,note,warnmsg)
                         varMean = G2obj.fmtVarDescr(var)
-                        helptext += f'\n  {m:.5g} * {var}  ({varMean}'
+                        if var in offsetDict:  # needed?
+                            varS = f'({var}-{offsetDict[var]:.4g})'
+                        else:
+                            varS = var
+                        helptext += f'\n  {m:.5g} * {varS}  ({varMean}'
                         #if '?' in var: badVar = True
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
@@ -1211,9 +1219,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                                 eqString[-1] += ' - '
                                 m = abs(m)
                         if m == 1:
-                            eqString[-1] += '{:} '.format(var)
+                            eqString[-1] += f'{varS} '
                         else:
-                            eqString[-1] += '{:.3g}*{:} '.format(m,var)
+                            eqString[-1] += f'{m:.3g}*{varS} '
                     # Add extra notes about this constraint (such as from ISODISTORT)
                     if '_Explain' in data:
                         hlptxt = None
@@ -1577,6 +1585,142 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     def OnShowISODISTORT(event):
         ShowIsoDistortCalc(G2frame)
 
+    def ExportConstraints(event):
+        import datetime
+        G2frame = wx.GetApp().GetTopWindow()
+        sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+        Constraints = G2frame.GPXtree.GetItemPyData(sub)
+        text = f'# Constraints from {G2frame.GSASprojectfile} on '
+        text += datetime.datetime.strftime(datetime.datetime.now(),
+                                           "%Y-%m-%dT%H:%M\n")
+        for key in 'Hist', 'HAP', 'Phase':
+            for c in Constraints[key]:
+                s = ''
+                for i0,i1 in c[:-3]:
+                    if c[-1] == 'e' and s:
+                        s += ' = '
+                    elif c[-1] == 'h' and s:  # unexpected, should be 1 hold per constraint
+                        s += ' = '
+                    elif s:
+                        s += ' + '
+                    if c[-1] == 'h':
+                        s += f'{i1}'
+                    else:
+                        s += f'{i0} * {i1}'
+                if c[-1] == 'c':
+                    s = f'Equation & {s} = {c[-3]}'
+                elif c[-1] == 'e':
+                    s = f'Equivalence & {s}'
+                elif c[-1] == 'h':
+                    s = f'Hold & {s}'
+                elif c[-1] == 'f':
+                    if c[-3]:  # prefix by var name, if present
+                        s = f'{c[-3]} & {s}'
+                    if c[-2]:  # vary flag
+                        s = s + ' & varied'
+                    s = f'NewVar & {s}'
+                else: # unexpected!
+                    print('Unknown constraint:',c)
+                    continue
+                text += s + '\n'
+
+        f = G2G.askSaveFile(G2frame,'Constraints','.constr','text constraints file')
+        with open(f,'w') as fp:
+            fp.write(text)
+            print(f'Constraints written to file {fp.name}')
+
+    def var2key(varObj):
+        if varObj.phase and varObj.histogram:
+            return 'HAP'
+        elif varObj.phase:
+            return 'Phase'
+        elif varObj.histogram:
+            return 'Hist'
+        else:
+            return 'Global'
+
+    def ImportConstraints(event):
+        G2frame = wx.GetApp().GetTopWindow()
+        sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+        Constraints = G2frame.GPXtree.GetItemPyData(sub)
+        dlg = wx.FileDialog(G2frame, 'Select a text file with constraints to read',
+                                style=wx.FD_DEFAULT_STYLE|wx.FD_FILE_MUST_EXIST,
+                                wildcard="constraints|*.constr")
+        try:
+            res = dlg.ShowModal()
+            if res != wx.ID_OK: return
+            f = dlg.GetPath()
+        finally:
+            dlg.Destroy()
+        if not os.path.exists(f):
+            print(f'Strange, {f} not found')
+            return
+        txt = open(f,'r').readlines()
+        for i,line in enumerate(txt):
+            if line.strip().startswith('#'): continue
+            spLine = line.split('&')
+            tag = spLine[0].strip() 
+            if tag == 'Equation':
+                val = spLine[1].split('=')[1].strip()
+                cons = []
+                for e in spLine[1].split('=')[0].split('+'):
+                    try:
+                        m,var = e.split('*')
+                        varObj = G2obj.G2VarObj(var.strip())
+                        cons += [[float(m),varObj]]
+                    except:
+                        print('skipping {line}')
+                        continue
+                    # TODO: could do a consistency check to make sure that all
+                    # vars are of same type. For now only the last one matters.
+                    key = var2key(varObj)
+                Constraints[key].append(cons + [val,None,'c'])
+            elif tag == 'Hold':
+                cons = []
+                for e in spLine[1].split('='): # should only be one
+                    varObj = G2obj.G2VarObj(e.strip())
+                    cons += [[0.,varObj]]
+                    key = var2key(varObj)
+                Constraints[key].append(cons + [None,None,'h'])
+            elif tag == 'Equivalence':
+                cons = []
+                for e in spLine[1].split('='):
+                    try:
+                        m,var = e.split('*')
+                        varObj = G2obj.G2VarObj(var.strip())
+                        cons += [[float(m),varObj]]
+                    except:
+                        print('skipping {line}')
+                        continue
+                    # TODO: could do a consistency check to make sure that all
+                    # vars are of same type. For now only the last one matters.
+                    key = var2key(varObj)
+                Constraints[key].append(cons + [None,None,'e'])
+            elif tag == 'NewVar':
+                cons = []
+                name = None
+                vary = False
+                if len(spLine) >= 3:
+                    name = spLine[1].strip()
+                if len(spLine) >= 4:
+                    vary = True
+                for e in spLine[1].split('+'):
+                    try:
+                        m,var = e.split('*')
+                        varObj = G2obj.G2VarObj(var.strip())
+                        cons += [[float(m),varObj]]
+                    except:
+                        print('skipping {line}')
+                        continue
+                    # TODO: could do a consistency check to make sure that all
+                    # vars are of same type. For now only the last one matters.
+                    key = var2key(varObj)
+                Constraints[key].append(cons + [name,vary,'f'])
+            else:
+                print(f'line #{i+1} ({line}) not recognized')
+                continue
+        OnPageChanged(None)
+
     #### UpdateConstraints execution starts here ##############################
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
     if Clear:
@@ -1723,6 +1867,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     G2frame.Bind(wx.EVT_MENU, OnAddAtomEquiv, id=G2G.wxID_EQUIVALANCEATOMS)
 #    G2frame.Bind(wx.EVT_MENU, OnAddRiding, id=G2G.wxID_ADDRIDING)
     G2frame.Bind(wx.EVT_MENU, OnShowISODISTORT, id=G2G.wxID_SHOWISO)
+    G2frame.Bind(wx.EVT_MENU, ExportConstraints, id=G2G.wxID_CONSTREXPORT)
+    G2frame.Bind(wx.EVT_MENU, ImportConstraints, id=G2G.wxID_CONSTRIMPORT)
     # tab commands
     for id in (G2G.wxID_CONSPHASE,
                G2G.wxID_CONSHAP,
@@ -2664,17 +2810,17 @@ create a Vector or Residue rigid body.
             UpdateVectorBody(rb)
             return rb
 
-        # too lazy to figure out why wx crashes
-        if wx.__version__.split('.')[0] != '4':
-            wx.MessageBox('Sorry, wxPython 4.x is required to run this command',
-                                  caption='Update Python',
-                                  style=wx.ICON_EXCLAMATION)
-            return
-        if platform.python_version()[:1] == '2':
-            wx.MessageBox('Sorry, Python >=3.x is required to run this command',
-                                  caption='Update Python',
-                                  style=wx.ICON_EXCLAMATION)
-            return
+        # # too lazy to figure out why wx crashes
+        # if wx.__version__.split('.')[0] != '4':
+        #     wx.MessageBox('Sorry, wxPython 4.x is required to run this command',
+        #                           caption='Update Python',
+        #                           style=wx.ICON_EXCLAMATION)
+        #     return
+        # if platform.python_version()[:1] == '2':
+        #     wx.MessageBox('Sorry, Python >=3.x is required to run this command',
+        #                           caption='Update Python',
+        #                           style=wx.ICON_EXCLAMATION)
+        #     return
 
         # get importer type and a phase file of that type
         G2sc.LoadG2fil()
@@ -3052,7 +3198,7 @@ create a Vector or Residue rigid body.
         sumR = Radii[Orig]+Radii
         IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
         for j in IndB[0]:
-            if j != Orig and atTypes[j] != 'H':
+            if j != Orig: # and atTypes[j] != 'H':
                 Neigh.append(atNames[j])
         return Neigh
         
@@ -3377,7 +3523,7 @@ create a Vector or Residue rigid body.
                     El = PE.Elem.strip().lower().capitalize()
                     data['Spin'][Indx[ObjId]]['atType'] = El
                     data['Spin'][Indx[ObjId]]['Color'] = G2elem.GetAtomInfo(El)['Color']
-                    Obj.ChangeValue(El)
+                    Obj.SetLabel(El)
                     if 'Q' in El:
                         wx.CallAfter(UpdateSpinRB)
                     
@@ -3417,19 +3563,10 @@ create a Vector or Residue rigid body.
             SpinRBSizer = wx.BoxSizer(wx.VERTICAL)
         Indx = {}
         SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid body shells:'))
-        nQ = 0
-        for spinID in data['Spin']:
-            if 'Q' in data['Spin'][spinID]['atType']:
-                nQ += 1
-        if nQ:
-            bodSizer = wx.FlexGridSizer(0,6,5,5)
-        else:
-            bodSizer = wx.FlexGridSizer(0,5,5,5)
+        bodSizer = wx.FlexGridSizer(0,5,5,5)
         for item in ['Name','Type','RB sym','Atom','Number']:
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label=item))
         for ibod,spinID in enumerate(data['Spin']):
-            if nQ:
-                bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Orbitals from'))
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'RBname'))
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Q'),0)
             data['Spin'][spinID]['rbType'] = 'Q'    #patch
@@ -3440,19 +3577,11 @@ create a Vector or Residue rigid body.
             Indx[simsel.GetId()] = spinID
             simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
             bodSizer.Add(simsel)
-            atSel = wx.TextCtrl(SpinRBDisplay,value=data['Spin'][spinID]['atType'],style=wx.TE_PROCESS_ENTER)
-            atSel.Bind(wx.EVT_TEXT_ENTER,OnAtSel)
+            atSel = wx.Button(SpinRBDisplay,label=data['Spin'][spinID]['atType'],style=wx.BU_EXACTFIT,size=(80,-1))
+            atSel.Bind(wx.EVT_BUTTON,OnAtSel)
             Indx[atSel.GetId()] = spinID
             bodSizer.Add(atSel,0)
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'Natoms'))
-            if 'Q' in data['Spin'][spinID]['atType']:
-                data['Spin'][spinID]['elType'] = data['Spin'][spinID].get('elType','C')
-                elSel = wx.TextCtrl(SpinRBDisplay,value=data['Spin'][spinID]['elType'],style=wx.TE_PROCESS_ENTER)
-                elSel.Bind(wx.EVT_TEXT_ENTER,OnElSel)
-                Indx[elSel.GetId()] = spinID
-                bodSizer.Add(elSel,0)
-            elif nQ:
-                bodSizer.Add((5,5))
         
         SpinRBSizer.Add(bodSizer)
         SpinRBSizer.Add((5,25),)
@@ -3783,22 +3912,20 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             
             iBeg,iFin,angle,iMove = Seq
             ang = wx.TextCtrl(ResidueRBDisplay,wx.ID_ANY,
-                    '%8.2f'%(angle),size=(70,-1),style=wx.TE_PROCESS_ENTER)
+                '%8.2f'%(angle),size=(70,-1),style=wx.TE_PROCESS_ENTER)
             if not iSeq:
-                radBt = wx.RadioButton(ResidueRBDisplay,wx.ID_ANY,
-                                           '',style=wx.RB_GROUP)
+                radBt = wx.RadioButton(ResidueRBDisplay,wx.ID_ANY,'',style=wx.RB_GROUP)
                 data['Residue'][rbid]['SelSeq'] = [iSeq,ang.GetId()]
                 radBt.SetValue(True)
             else:
                 radBt = wx.RadioButton(ResidueRBDisplay,wx.ID_ANY,'')
             radBt.Bind(wx.EVT_RADIOBUTTON,OnRadBtn)                   
             seqSizer.Add(radBt)
-            delBt =  wx.Button(ResidueRBDisplay,wx.ID_ANY,'Del',
-                                style=wx.BU_EXACTFIT)
+            delBt =  wx.Button(ResidueRBDisplay,wx.ID_ANY,'Del',style=wx.BU_EXACTFIT)
             delBt.Bind(wx.EVT_BUTTON,OnDelBtn)
             seqSizer.Add(delBt)
             bond = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,
-                        '%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
+                '%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
             seqSizer.Add(bond,0,WACV)
             Indx[radBt.GetId()] = [Seq,iSeq,ang.GetId()]
             Indx[delBt.GetId()] = [rbid,Seq]
@@ -3809,8 +3936,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             atms = ''
             for i in iMove:    
                 atms += ' %s,'%(atNames[i])
-            moves = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,
-                            atms[:-1],size=(200,20))
+            moves = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,atms[:-1],size=(200,30))
             seqSizer.Add(moves,1,wx.EXPAND|wx.RIGHT)
             return seqSizer
             
@@ -4517,13 +4643,15 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     subSizer1.Add((-1,-1))
     for i in range(cols1): subSizer1.Add((-1,5)) # spacer
 
+    sliderRange = 10.
     for indVar in constrDict:
         indVarName = indVar.replace('::','::nv-')
         subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,indVar),0,WACV)
         modeName = modeDict.get(indVar,'N/A')
+        if 'occ' in modeName: sliderRange = 1.
         if modeDict: 
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,modeName),0,WACV)
-        sl = G2G.G2SliderWidget(panel1,parmDict,indVarName,'',-10.,10.,50,
+        sl = G2G.G2SliderWidget(panel1,parmDict,indVarName,'',-sliderRange,sliderRange,50,
                                     onChange=showChange,
                                     size=(40,-1),slsize=(120,-1))
         subSizer1.Add(sl,0,WACV)        

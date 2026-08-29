@@ -59,7 +59,7 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
             counts[Type] += 1
             Aname = Type + str(counts[Type])
             Atoms.append([Aname,Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
-                    1.0,'1',1,'I',0.0,0,0,0,0,0,0,ran.randint(0,sys.maxsize)])
+                    1.0,'1',1,'I',0.0,0.,0.,0.,0.,0.,0.,ran.randint(0,sys.maxsize)])
         fp.close()
         self.errors = 'Error after read complete'
         self.Phase = G2obj.SetNewPhase(Name=Title,SGData=SGData,cell=cell+[Volume,])

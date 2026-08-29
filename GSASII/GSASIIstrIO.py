@@ -149,6 +149,9 @@ def ReadConstraints(GPXfile, seqHist=None):
     for item in ConstraintsItem[1]:
         if item.startswith('_'): continue
         constList += ConstraintsItem[1][item]
+    d = {str(k):v for k,v in zip(ConstraintsItem[1].get('_OffsetKeys',[]),
+                                 ConstraintsItem[1].get('_OffsetVals',[]))}
+    G2mv.ProcessOffsets(d)
     constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList,seqmode,seqHist)
     #if ignored:
     #    G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
@@ -1571,7 +1574,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             equivs = {1:[],2:[],3:[],4:[],5:[],6:[]}
             for j in range(6):
                 if CSI[0][j] > 0:
-                    phaseVary.append(names[j])
+                    if names[j] not in phaseVary: phaseVary.append(names[j])
                     equivs[CSI[0][j]].append([names[j],CSI[1][j]])
             for equiv in equivs:
                 if len(equivs[equiv]) > 1:
@@ -1592,7 +1595,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             equivs = {1:[],2:[],3:[],4:[],5:[],6:[]}
             for j in range(6):
                 if CSI[0][j] > 0:
-                    phaseVary.append(names[j])
+                    if names[j] not in phaseVary: phaseVary.append(names[j])
                     equivs[CSI[0][j]].append([names[j],CSI[1][j]])
             for equiv in equivs:
                 if len(equivs[equiv]) > 1:
@@ -1613,16 +1616,6 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             phaseDict[name] = RB['ThermalMotion'][1][0]
             if RB['ThermalMotion'][2][0]:
                 phaseVary += [name,]
-
-                #         for equiv in equivs:
-                #             if len(equivs[equiv]) > 1:
-                #                 name = equivs[equiv][0][0]
-                #                 coef = equivs[equiv][0][1]
-                #                 for eqv in equivs[equiv][1:]:
-                #                     eqv[1] /= coef
-                #                     G2mv.StoreEquivalence(name,(eqv,))
-
-
 
     def MakeRBTorsions(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))

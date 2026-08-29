@@ -165,6 +165,7 @@ def UpdateImageData(G2frame,data):
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Image size: %d by %d'%(data['size'][0],data['size'][1])),0)
     pixSize = wx.FlexGridSizer(0,4,5,5)
     pixLabels = [u' Pixel X-dimension (\xb5m)',u' Pixel Y-dimension (\xb5m)']
+    data['pixelSize'] = list(data['pixelSize']) #some old gpx have tuple for this!
     for i,[pixLabel,pix] in enumerate(zip(pixLabels,data['pixelSize'])):
         pixSize.Add(wx.StaticText(G2frame.dataWindow,label=pixLabel),0,WACV)
         pixVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['pixelSize'],i,nDig=(10,3),
@@ -668,6 +669,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                     CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
                     Data = G2frame.GPXtree.GetItemPyData(CId)
+                    Data['sag'] = Data.get('sag',0.0)   #patch
                     same = True
                     for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta','sag']:
                         if Data[item] != oldData[item]:
@@ -1793,7 +1795,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         OnIntegrate(None,useTA=useTA,useMask=useMask)
         return
 
-    G2frame.GetStatusBar().SetStatusText('* Global parameters in Multi-dist recalib.',1)
+    G2frame.GetStatusBar().SetStatusText('* Global parameters in Multi-dist recalib. Sag should only be used for tilted detectors that may sag under gravity',1)
     colorList = sorted([m for m in mpl.cm.datad.keys() ]+['GSPaired','GSPaired_r',],key=lambda s: s.lower())   #if not m.endswith("_r")
     calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
     typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',]
@@ -3082,6 +3084,8 @@ def UpdateStressStrain(G2frame,data):
 # patches
     if 'Sample load' not in data:
         data['Sample load'] = 0.0
+    if len(data['d-zero']) and 'Ivar' not in data['d-zero'][0]:
+        data['d-zero'] = []
 # end patches
 
     # UpdateStressStrain starts here

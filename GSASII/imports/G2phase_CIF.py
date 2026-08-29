@@ -271,11 +271,14 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
                 if SpGrpNorm:
                     E,SGData = G2spc.SpcGroup(SpGrpNorm)
-            # if E:   #try lookup from number  - found full symbol?
-            #     SpGrpNorm = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
-            #     if SpGrpNorm:
-            #         E,SGData = G2spc.SpcGroup(SpGrpNorm)
-            # nope, try the space group "out of the Box"
+            if E:   # try lookup from number, if symbol is not interpreted
+                sgnum = int(blk.get('_symmetry_Int_Tables_number'))
+                SpGrpNorm = G2spc.spgbyNum[sgnum]
+                if SpGrpNorm:
+                    E,SGData = G2spc.SpcGroup(SpGrpNorm)
+                    if not E:
+                        self.warnings += f'Note: space group symbol {SpGrp} could\nnot be interpreted. Using space group number {sgnum}'
+            # nope, nothing worked
             if E:
                 self.warnings += 'ERROR in space group symbol '+SpGrp
                 self.warnings += '\nThe space group has been set to "P 1". '

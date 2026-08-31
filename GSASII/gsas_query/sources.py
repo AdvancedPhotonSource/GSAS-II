@@ -361,63 +361,71 @@ PDF_SOURCES = []  # Book and Programmer's Guide now available as HTML
 
 # ── Powder Diffraction Crystallography book — 185 HTML pages (Brian Toby) ─────
 # https://briantoby.github.io/PowderCrystallography/
-# Pages are accessible by direct URL; include via `gsas-query --setup --book`.
+# Pages are accessible by direct URL; include via `gsas2-query --setup --book`.
 
 _BOOK_BASE = "https://briantoby.github.io/PowderCrystallography"
 
-import requests
-def url_exists(url):
+# Placeholder — populated lazily by get_book_sources() at ingest time, not import time.
+BOOK_HTML_SOURCES = [
+    "Powder Diff. Cryst. Book book",
+    {"title": "Powder Diff. Cryst. Book (Contents)", "url": f"{_BOOK_BASE}/HTML-template.html", "category": "Powder Crystallography Book"},
+]
+
+
+def _url_exists(url):
+    import requests
     try:
-        # allow_redirects=True ensures 301/302 redirects resolve to the final page
         response = requests.head(url, allow_redirects=True, timeout=5)
         return response.status_code == 200
     except requests.RequestException:
         return False
 
 
-BOOK_HTML_SOURCES = [
-    "Powder Diff. Cryst. Book book",
-    {"title": "Powder Diff. Cryst. Book (Contents)", "url": f"{_BOOK_BASE}/HTML-template.html", "category": "Powder Crystallography Book"},
-]
-#for _i in range(1, 7):  # these are book section tables of contents, no text
-#    BOOK_HTML_SOURCES.append({
-#        "title": f"Powder Diff. Cryst. Book Part {_i}",
-#        "url": f"{_BOOK_BASE}/HTML-templatepa{_i}.html",
-#        "category": "Powder Crystallography Book",
-#    })
-_i = 0
-lastURL = ''
-while True:
-    _i += 1
-#for _i in range(1, 30):   # these are mostly tables of contents & no text, but a few have text
-    url = f"{_BOOK_BASE}/HTML-templatech{_i}.html"
-    if url_exists(url):
-        lastURL = url
-        BOOK_HTML_SOURCES.append({
-            "title": f"Powder Diff. Cryst. Book Chapter {_i}",
-            "url": url,
-            "category": "Powder Crystallography Book",
-        })
-    else:
-        print(f'Last Powder Diff. Cryst. Book Chapter is {_i-1} ({lastURL})')
-        break
+def get_book_sources():
+    """Probe the Powder Crystallography book URLs and return the full source list.
 
-_i = 0
-lastURL = ''
-while True:
-    _i += 1
-#for _i in range(1, 150):
-    url = f"{_BOOK_BASE}/HTML-templatese{_i}.html"
-    if url_exists(url):
-        lastURL = url
-        BOOK_HTML_SOURCES.append({
-            "title": f"Powder Diff. Cryst. Book Section {_i}",
-            "url": url,
-            "category": "Powder Crystallography Book",
-        })
-    else:
-        print(f'Last Powder Diff. Cryst. Book Section is {_i-1}  ({lastURL})')
-        break
+    Called at ingest time (not import time) so that importing sources.py never
+    makes network requests.  Returns a list with the string label as the first
+    element, followed by one dict per discovered chapter/section page.
+    """
+    sources = [
+        "Powder Diff. Cryst. Book book",
+        {"title": "Powder Diff. Cryst. Book (Contents)", "url": f"{_BOOK_BASE}/HTML-template.html", "category": "Powder Crystallography Book"},
+    ]
+
+    _i = 0
+    lastURL = ''
+    while True:
+        _i += 1
+        url = f"{_BOOK_BASE}/HTML-templatech{_i}.html"
+        if _url_exists(url):
+            lastURL = url
+            sources.append({
+                "title": f"Powder Diff. Cryst. Book Chapter {_i}",
+                "url": url,
+                "category": "Powder Crystallography Book",
+            })
+        else:
+            print(f'Last Powder Diff. Cryst. Book Chapter is {_i-1} ({lastURL})')
+            break
+
+    _i = 0
+    lastURL = ''
+    while True:
+        _i += 1
+        url = f"{_BOOK_BASE}/HTML-templatese{_i}.html"
+        if _url_exists(url):
+            lastURL = url
+            sources.append({
+                "title": f"Powder Diff. Cryst. Book Section {_i}",
+                "url": url,
+                "category": "Powder Crystallography Book",
+            })
+        else:
+            print(f'Last Powder Diff. Cryst. Book Section is {_i-1}  ({lastURL})')
+            break
+
+    return sources
         
 # ── Dynamic tutorial list from GSAS-II's tutorialIndex.py ────────────────────
 # Fetched at ingest time so new tutorials are picked up automatically.
@@ -440,7 +448,7 @@ def get_tutorial_sources():
 
     try:
         req = urllib.request.Request(
-            _TUTORIAL_INDEX_URL, headers={"User-Agent": "gsas-query"}
+            _TUTORIAL_INDEX_URL, headers={"User-Agent": "gsas2-query"}
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             content = resp.read().decode()

@@ -92,7 +92,12 @@ def extract_html_sections(html: str, source_title: str) -> list[dict]:
                 current_text_parts.append(txt)
 
     flush()
-    return sections
+    # count words
+    # Extracts text only from the body, ignoring raw HTML code
+    text = soup.body.get_text() if soup.body else soup.get_text()        
+    # Split text by whitespace to count individual words
+    word_count = len(text.split())
+    return sections,word_count
 
 
 def ingest_html_source(source: dict, collection, model):
@@ -101,15 +106,20 @@ def ingest_html_source(source: dict, collection, model):
     title = source["title"]
     category = source["category"]
 
-    print(f"  Fetching: {title} ({url})")
-    try:
-        resp = requests.get(url, timeout=30)
-        resp.raise_for_status()
-    except Exception as e:
-        print(f"  ERROR fetching {url}: {e}")
-        return 0
+    for i in range(4):  # repeat up to 4 times if there is a 503 error
+        print(f"  Fetching: {title}\n\t({url})")
+        try:
+            resp = requests.get(url, timeout=30)
+            resp.raise_for_status()
+            break
+        except Exception as e:
+            print(f"  ERROR fetching {url}: {e}")
+            if "503" in str(e):
+                time.sleep(10.)
+                continue
+            return 0,0
 
-    sections = extract_html_sections(resp.text, title)
+    sections,word_count = extract_html_sections(resp.text, title)
     # Use a dict keyed by doc_id to deduplicate identical chunks within the source.
     records: dict[str, tuple] = {}
 
@@ -134,10 +144,10 @@ def ingest_html_source(source: dict, collection, model):
         collection.upsert(ids=ids, documents=docs, embeddings=embeddings, metadatas=metadatas)
         print(f"    -> {len(ids)} chunks stored")
         time.sleep(REQUEST_DELAY)
-        return len(ids)
+        return len(ids),word_count
 
     time.sleep(REQUEST_DELAY)
-    return 0
+    return 0,0
 
 
 def ingest_pdf_source(source: dict, collection, model):
@@ -208,13 +218,13 @@ def main():
                         help="Include Programmers' Manual (24 HTML chapters)")
     args = parser.parse_args()
 
-    from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+    from ._embed import get_embedding_function
     from .sources import get_tutorial_sources
     from .sources import HOME_SOURCES, HELP_SOURCES, TUTORIAL_SOURCES
-    from .sources import READTHEDOCS_SOURCES, BOOK_HTML_SOURCES
+    from .sources import READTHEDOCS_SOURCES, get_book_sources
 
-    print("Loading embedding model (ONNX all-MiniLM-L6-v2)...")
-    model = DefaultEmbeddingFunction()
+    print("Loading embedding model...")
+    model = get_embedding_function()
 
     print(f"ChromaDB path: {get_chroma_path()}")
     collection = get_collection(reset=args.reset)
@@ -223,7 +233,8 @@ def main():
     tutorial_sources = get_tutorial_sources()
     print(f"  {len(tutorial_sources)} tutorials found. ({len(TUTORIAL_SOURCES)} in hard-coded list)")
 
-    total_chunks = 0
+    #total_chunks = 0
+    total_words = 0
 
     # add a notes to distinguish information sources
     # W: Web; T: Tutorial; M: Manual; (Help pages & Book already tagged.)
@@ -244,22 +255,34 @@ def main():
         print(f"  Adding Programmers' manual ({len(READTHEDOCS_SOURCES)} HTML pages)")
         html_sources = html_sources + [READTHEDOCS_SOURCES]
     if args.book:
-        html_sources = html_sources + [BOOK_HTML_SOURCES]
+        html_sources = html_sources + [get_book_sources()]
 
     print("\n=== Ingesting HTML pages ===")
     for pagelist in html_sources:
+        source_chunks = 0
+        source_words = 0
+        title = ''
         for source in pagelist:
             if type(source) is str:
+                title = source
                 print(f"\n*** processing {source}")
                 continue
-            total_chunks += ingest_html_source(source, collection, model)
+            chunks,words = ingest_html_source(source, collection, model)
+            source_chunks += chunks
+            source_words += words
+            #total_chunks += chunks
+            total_words += words
+        print(f"Totals for {title}: words={source_words}, chunks={source_chunks}")
     if not args.html_only:
         print("\n=== Ingesting PDFs ===")
         from .sources import PDF_SOURCES
         for source in PDF_SOURCES:
-            total_chunks += ingest_pdf_source(source, collection, model)
+            chunks = ingest_pdf_source(source, collection, model)
+            #total_chunks += chunks
 
-    print(f"\nDone. Total chunks in collection: {collection.count()}")
+    print("\nDone."+
+              f"\n\tTotal words processed: {total_words}"+
+              f"\n\tTotal chunks in collection: {collection.count()}")
 
 
 if __name__ == "__main__":

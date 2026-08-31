@@ -1,4 +1,4 @@
-"""Entry point for `gsas-query-web` console script."""
+"""Entry point for `gsas2-query-web` console script."""
 
 import os
 

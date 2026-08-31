@@ -2,15 +2,15 @@
 GSAS-II Documentation Assistant — command-line interface.
 
 First-time setup:
-    gsas-query --setup
-    gsas-query --setup --reset
-    gsas-query --setup --html-only
+    gsas2-query --setup
+    gsas2-query --setup --reset
+    gsas2-query --setup --html-only
 
 Ask a single question:
-    gsas-query "How do I set up a sequential refinement?"
+    gsas2-query "How do I set up a sequential refinement?"
 
 Interactive REPL:
-    gsas-query
+    gsas2-query
 """
 
 import os
@@ -78,7 +78,7 @@ def run_setup(reset: bool = False, html_only: bool = False):
     print(f"Index will be stored at: {get_chroma_path()}\n")
 
     argv_backup = sys.argv
-    sys.argv = ["gsas-query"]
+    sys.argv = ["gsas2-query"]
     if reset:
         sys.argv.append("--reset")
     if html_only:
@@ -99,7 +99,7 @@ def interactive():
     count = _collection_count()
     if count == 0:
         print("\nWarning: the knowledge base is empty.")
-        print("Run:  gsas-query --setup\n")
+        print("Run:  gsas2-query --setup\n")
     else:
         print(f"\nKnowledge base: {count:,} indexed chunks.")
 
@@ -202,7 +202,7 @@ def main():
     if args.question:
         count = _collection_count()
         if count == 0:
-            print("Knowledge base is empty. Run:  gsas-query --setup")
+            print("Knowledge base is empty. Run:  gsas2-query --setup")
             sys.exit(1)
         print(f"({count:,} chunks indexed)\n")
         result = ask(args.question)

@@ -2,7 +2,7 @@
 GSAS-II Documentation Assistant — wxPython desktop dialog.
 
 Standalone:
-    gsas-query --gui
+    gsas2-query --gui
     python -m gsas_query.gui
 
 GSAS-II Help menu integration:
@@ -545,10 +545,10 @@ class GSASQueryDialog(wx.Frame):
 
     def _set_index_status(self, count: int):
         if count == 0:
-            self._index_lbl.SetLabel("Not indexed — run: gsas-query --setup")
+            self._index_lbl.SetLabel("Not indexed — run: gsas2-query --setup")
             self._append_system(
                 "The knowledge base is empty.\n"
-                "Run 'gsas-query --setup' to index all GSAS-II documentation (~10 min)."
+                "Run 'gsas2-query --setup' to index all GSAS-II documentation (~10 min)."
             )
         else:
             from .rag import _effective_backend

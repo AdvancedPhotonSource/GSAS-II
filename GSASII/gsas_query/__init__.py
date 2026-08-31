@@ -17,4 +17,4 @@ from gsas_query._paths import get_chroma_path, get_data_dir, get_static_dir
 from gsas_query.rag import answer_question
 
 __all__ = ["answer_question", "get_chroma_path", "get_data_dir", "get_static_dir"]
-__version__ = "0.2.0"
+__version__ = "0.3.0"

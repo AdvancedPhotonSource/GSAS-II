@@ -10684,7 +10684,7 @@ def DownloadLLMfiles(G2frame,dlg,installIndex):
     wx.CallAfter(LaunchLLama,G2frame)
 
 def LaunchLLama(G2frame):
-    'Start up the Query_gsas LLM dialog with a llama backend'
+    'Start up the Query_gsas2 LLM dialog with a llama backend'
     res = GSASIIpath.setupLLama()
     font = int(14 + GSASII.GSASIIpath.GetConfigValue("FontSize_incr", 0))
     if res:

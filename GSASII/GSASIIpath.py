@@ -2179,7 +2179,7 @@ end tell
         subprocess.Popen(cmds,start_new_session=True)
 
 #===========================================================================
-# routines used for Query_gsas (query_gsas2, LLM Documentation searching) 
+# routines used for gsas_query (Query-gsas-II, LLM Documentation searching) 
 def testLLMquery():
     '''See if the LLM documentation searching is set up to run. 
     This can take a second or two to run, so don't use this 
@@ -2189,7 +2189,7 @@ def testLLMquery():
       ingredients are in place, None otherwise
     '''
     #import importlib.util # faster but not fast enough
-    
+
     try:
         os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
         import chromadb # slowish
@@ -2203,7 +2203,7 @@ def testLLMquery():
     try:
         import gsas_query.gui
     except ImportError:
-        print('query_gsas2 is not installed; unexpected!')
+        raise Exception('gsas_query is not installed; unexpected!')
         return
     
     # is Ollama setup? TODO: should also allow for designation of
@@ -2302,16 +2302,13 @@ def ageLLMindex():
         return (datetime.datetime.now() - last_modified).total_seconds()/(60*60*24)
 
 def getLLMindex():
-    '''Download the ChromaDB database from the GitHub site and place
-    into the location where GSAS-II will use it. 
+    '''Download the ChromaDB database for Query-GSAS-II from the GSASII 
+    releases GitHub site and place into the location where GSAS-II 
+    will use it. 
 
-    Do this in two stages (download to temp location and then move) 
+    Do this in two stages (download to temp location and then move), 
     as someday perhaps the index update might be performed in the 
     background.
-
-    TODO: for now this is downlaoded from the GSAS-II site, where the file
-    is placed manually. It should be generated automatically and possibly 
-    on a different site. 
     '''
     import tempfile
     import requests
@@ -2319,9 +2316,7 @@ def getLLMindex():
     import shutil
 
     OWNER = "AdvancedPhotonSource"
-    #REPO = "Query-GSAS"
     REPO = "GSAS-II-buildtools"
-    #TAG = "latest-chroma-db"
     TAG = "v1.0.1"
     WANTED = "chroma_db_latest.zip"
     zip_url = f"https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/{WANTED}"

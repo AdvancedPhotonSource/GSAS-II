@@ -18,12 +18,13 @@ import os
 from functools import lru_cache
 
 import chromadb
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
+from ._embed import get_embedding_function
 from ._paths import get_chroma_path
 
 COLLECTION_NAME = "gsasii_docs"
 TOP_K = 6
+FETCH_K = 30  # over-fetch then deduplicate by URL to maximise source diversity
 
 SYSTEM_PROMPT = """\
 You are an expert assistant for GSAS-II (General Structure Analysis System-II), \
@@ -48,11 +49,6 @@ Guidelines:
 
 
 @lru_cache(maxsize=1)
-def _get_ef() -> DefaultEmbeddingFunction:
-    return DefaultEmbeddingFunction()
-
-
-@lru_cache(maxsize=1)
 def _get_collection() -> chromadb.Collection:
     client = chromadb.PersistentClient(path=get_chroma_path())
     return client.get_or_create_collection(COLLECTION_NAME)
@@ -64,12 +60,38 @@ def _retrieve(question: str) -> tuple[str, list[dict], dict[str, dict], list[str
     if collection.count() == 0:
         return "", [], {}, []
 
-    embedding = _get_ef()([question])[0]
+    ef = get_embedding_function()
+    embedding = ef([question])[0]
+    fetch_k = min(FETCH_K, collection.count())
     results = collection.query(
         query_embeddings=[embedding],
-        n_results=TOP_K,
+        n_results=fetch_k,
         include=["documents", "metadatas", "distances"],
     )
+
+    # URL-diversity dedup: keep only the best-scoring chunk per unique URL,
+    # then take top TOP_K. Prevents a single page (e.g. tutorials.html) from
+    # filling multiple result slots with similar content.
+    raw_docs = results["documents"][0]
+    raw_metas = results["metadatas"][0]
+    raw_dists = results["distances"][0]
+
+    seen_urls: dict[str, int] = {}  # url -> index of best (lowest dist) chunk
+    ordered_indices: list[int] = []
+    for idx, (meta, dist) in enumerate(zip(raw_metas, raw_dists)):
+        url = meta.get("url", "")
+        if url not in seen_urls:
+            seen_urls[url] = idx
+            ordered_indices.append(idx)
+        # lower distance = better; first occurrence is always the best since
+        # ChromaDB returns results sorted by ascending distance
+    top_indices = ordered_indices[:TOP_K]
+
+    # Normalise distances within the selected set
+    selected_dists = [raw_dists[i] for i in top_indices]
+    min_d = min(selected_dists) if selected_dists else 0.0
+    max_d = max(selected_dists) if selected_dists else 1.0
+    span = (max_d - min_d) or 1.0
 
     context_parts = []
     citations: dict[str, dict] = {}
@@ -77,19 +99,10 @@ def _retrieve(question: str) -> tuple[str, list[dict], dict[str, dict], list[str
     seen_sources: set = set()
     chunk_texts: list[str] = []
 
-    # Normalise distances within the result set so the best match = 100%
-    # and others are proportional. Raw cosine distances from all-MiniLM tend
-    # to cluster near 1.0 even for good matches, making raw % look misleading.
-    distances = results["distances"][0]
-    min_d = min(distances) if distances else 0.0
-    max_d = max(distances) if distances else 1.0
-    span = (max_d - min_d) or 1.0
-
-    for i, (doc, meta, dist) in enumerate(zip(
-        results["documents"][0],
-        results["metadatas"][0],
-        distances,
-    ), start=1):
+    for i, idx in enumerate(top_indices, start=1):
+        doc = raw_docs[idx]
+        meta = raw_metas[idx]
+        dist = raw_dists[idx]
         context_parts.append(
             f"[{i}] [Source: {meta['title']} | Section: {meta['section']}]\n{doc}"
         )
@@ -256,7 +269,7 @@ def answer_question(question: str, history: list[dict]) -> dict:
     if not context:
         return {
             "answer": (
-                "The knowledge base is empty. Run `gsas-query --setup` "
+                "The knowledge base is empty. Run `gsas2-query --setup` "
                 "to index the GSAS-II documentation."
             ),
             "sources": [],

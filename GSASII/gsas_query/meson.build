@@ -8,7 +8,6 @@ py.install_sources([
     'ingest.py',
     'rag.py',
     'sources.py',
-    'wordcount.py',
 ],
   pure: false,    # Will be installed next to binaries
   subdir: 'GSASII/gsas_query'  # Folder relative to site-packages to install to

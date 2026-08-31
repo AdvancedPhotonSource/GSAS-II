@@ -4009,8 +4009,10 @@ def CompareSym(symList,sgName=None,SGData=None):
       even -X+0.5 can all be accepted. This is typically read from a CIF.
     :param str sgName: a space group name. Need not follow GSAS-II
       convention for spaces, etc (see :func:`GSASIIspc.StandardizeSpcName`)
-    :param SGData: a GSAS-II symmetry objectspace group name. Need not follow GSAS-II
-      convention for spaces, etc (see :func:`GSASIIspc.StandardizeSpcName`)
+    :param SGData: a GSAS-II symmetry object from a space group name. Used
+      if sgName is left as None.
+    
+    :returns: True if the symmetry operators match
     '''
     if sgName:
         sgName = StandardizeSpcName(sgName) # Deal with non-standard spaces in name
@@ -4020,6 +4022,9 @@ def CompareSym(symList,sgName=None,SGData=None):
         matList = AllOps(SGData)[2]
     else:
         raise Exception('CompareSym called without symmetry input')
+    if len(matList) != len(symList): 
+        print(f"Numbers of symmetry elements from input ({len(symList)}) does not match GSAS-II's list ({len(matList)})")
+        return False
 
     for sym in symList:
         try:

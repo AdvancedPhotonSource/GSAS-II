@@ -1814,7 +1814,7 @@ def FitStrSta(Image,StrSta,Controls):
             if any(np.isnan(ellipse[2])):
                 print('hyperbola for d=%.5f'%dset)
                 ellipse = FitHyperbola(R['ImxyObs'])
-            ringxy = makeRing2(ring['Dcalc'],ellipse,0,0.,Controls,Image)
+            ringxy = makeRing2(ring['Dset'],ellipse,0,0.,Controls,Image)
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringixy = [[int(x*scalex),int(y*scaley)] for y,x in np.array(ringxy)[:,:2]]
             ringint = np.array([float(Image[ix,iy]) if (0 <= ix < isze) and (0 <= iy < jsze) else 0.0 for ix,iy in ringixy])

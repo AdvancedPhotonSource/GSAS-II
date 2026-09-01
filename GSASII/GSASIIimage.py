@@ -1812,8 +1812,8 @@ def FitStrSta(Image,StrSta,Controls):
             ring['Esig'] = esd
             ellipse = FitEllipse(R['ImxyObs'].T)
             if any(np.isnan(ellipse[2])):
-                ellipse = FitHyperbola(R['ImxyObs'])
                 print('hyperbola for d=%.5f'%dset)
+                ellipse = FitHyperbola(R['ImxyObs'])
             ringxy = makeRing2(ring['Dcalc'],ellipse,0,0.,Controls,Image)
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringixy = [[int(x*scalex),int(y*scaley)] for y,x in np.array(ringxy)[:,:2]]
@@ -1838,7 +1838,10 @@ def IntStrSta(Image,StrSta,Controls):
         Ring,R = MakeStrStaRing(ring,Image,StaControls)
         if len(Ring):
             ellipse = FitEllipse(R['ImxyObs'].T)
-            ringxy = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
+            if any(np.isnan(ellipse[2])):
+                ellipse = FitHyperbola(R['ImxyObs'])
+            ringxy = makeRing2(ring['Dcalc'],ellipse,0,0.,Controls,Image)
+#            ringxy = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
             RXA = np.array(ringxy)
             MRXA = np.array([rxa if (0.<=rxa[0]<=xyLim[0] and 0.<=rxa[1]<=xyLim[1]) else [0.,0.,0.] for rxa in RXA])
             Th,Azm,G = GetTthAzmG(MRXA.T[0],MRXA.T[1],Controls)      #TODO: deal with break in rings - make min < azm < max continuous

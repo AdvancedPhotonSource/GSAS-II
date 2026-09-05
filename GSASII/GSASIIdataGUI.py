@@ -535,6 +535,7 @@ def ShowVersions():
     version = '?'
     versionDict['errors'] = ''
     warn = False
+    toonew = False
     for s,m in pkgList:
         msg = ''
         if s == 'Python':
@@ -563,13 +564,13 @@ def ShowVersions():
                     msg += "Version is known to be buggy"
                     warn = True
                     break
-        if s in versionDict['tooNewUntested'] and not warn:
+        if s in versionDict['tooNewUntested']:
             match = compareVersions(pkgver,versionDict['tooNewUntested'][s])
             if match >= 0:
                 msg += "\n              "
                 msg += "New untested version; please keep us posted"
-                warn = True
-        if s in versionDict['tooNewWarn'] and not warn:
+                toonew = True
+        if s in versionDict['tooNewWarn'] and not toonew:
             match = compareVersions(pkgver,versionDict['tooNewWarn'][s])
             if match >= 0:
                 msg += "Tests incomplete w/suspected bugs; Please report problems"
@@ -687,6 +688,14 @@ environment as well as the latest GSAS-II version.
 
 For information on GSAS-II package requirements see
 https://gsas-ii.readthedocs.io/en/latest/packages.html''')
+        print(70*'=','\n')
+    elif toonew:
+        print(70*'=')
+        print('''You are running GSAS-II in a Python environment with untested 
+package(s), as noted above. Please report problems. 
+If you see any, you are suggested to install an additional
+copy of GSAS-II from one of the gsas2full installers (see
+https://GSASII.github.io/).''')
         print(70*'=','\n')
     print(GSASIIpath.getG2VersionInfo())
 

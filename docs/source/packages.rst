@@ -130,8 +130,9 @@ interpreter/package versions:
    newer sections of the GUI are expected for wx <4.0.
  * NumPy 1.26 recommended with Python 3.11 and 2.2 with 3.12 or 3.13,
    but anything from 1.17 on is likely fine,
-   but if you do not match the supplied GSAS-II binaries you will
-   need to build them yourself.
+   but if you do not match the supplied GSAS-II binaries you may
+   need to build them yourself. It appears that with newer versions of
+   numpy, there is a bit more flexibility.
  * matplotlib-base
    Note that matplotlib-base is preferred over matplotlib unless
    matplotlib will be used outside GSAS-II.
@@ -304,6 +305,11 @@ optional packages are:
   useful packages::
 
      conda create -n py311 python=3.11 numpy=1.26 matplotlib-base scipy wxpython  pyopengl imageio h5py hdf5 pillow requests pycifrw pybaselines ipython conda spyder-kernels meson sphinx sphinx-rtd-theme jupyter git gitpython -c conda-forge
+
+  For a "scratch" Python environment one can use this command:: 
+     
+     conda create -p /tmp/tstpy python=3.13 numpy=2.2 wxpython scipy matplotlib-base pyopengl pycifrw gitpython requests pillow h5py hdf5plugin imageio seekpath conda pybaselines xmltodict zarr sympy ipython -c conda-forge
+     conda activate /tmp/tstpy 
 
 To find out what packages have been directly installed in a conda
 environment this command can be used::

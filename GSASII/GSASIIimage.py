@@ -183,6 +183,64 @@ def FitEllipse(xy):
         phi -= 90.
     return cent,phi,radii
 
+def FitHyperbola(xy):
+    
+    def hypcof(xo,yo,phi,a,b):
+        a2 = a**2
+        b2 = b**2
+        sp2 = npsind(phi)**2
+        cp2 = npcosd(phi)**2
+        Axx = -a2*sp2+b2*cp2
+        Ayy = -a2*cp2+b2*sp2
+        Axy = (a2+b2)*npsind(phi)*npcosd(phi)
+        Bx = -Axx*xo-Axy*yo
+        By = -Axy*xo-Ayy*yo
+        C = Axx*xo**2+2.*Axy*xo*yo+Ayy*yo**2-a2*b2
+        return [Axx,Ayy,Axy,Bx,By,C]
+        
+    def hypfxn(parms,x,y):
+        Axx,Ayy,Axy,Bx,By,C = parms
+        P = Axx*x**2+2.*Axy*x*y+Ayy*y**2+2.*Bx*x+2.*By*y+C
+        return -P**2
+    
+    def dhypfxn(parms,x,y):
+        Axx,Ayy,Axy,Bx,By,C = parms
+        P = Axx*x**2+2.*Axy*x*y+Ayy*y**2+2.*Bx*x+2.*By*y+C
+        dPdAxx = x**2
+        dPdAxy = 2.*x*y
+        dPdAyy = y**2
+        dPdBx = 2.*x
+        dPdBy = 2.*y
+        dPdC = np.ones_like(x)
+        return np.array([dPdAxx,dPdAxy,dPdAyy,dPdBx,dPdBy,dPdC]).T
+    
+    xy = np.array(xy)
+    x,y = xy
+    xo = 400.
+    yo = 200.
+    phi = 110.
+    radii = [300.,100.]
+    parms = hypcof(xo,yo,phi,radii[0],radii[1])
+    r = leastsq(hypfxn,parms,Dfun=dhypfxn,args=(x,y))[0]
+    Ms = np.array([[r[0],r[1],r[3]],[r[1],r[2],r[4]],[r[3],r[4],r[5]]])
+    dMs = nl.det(Ms)
+    Md = np.array([[r[0],r[1]],[r[1],r[2]]])
+    detMd = nl.det(Md)
+    Mx = np.array([[r[3],r[1]],[r[4],r[2]]])
+    xo = -nl.det(Mx)/detMd
+    My = np.array([[r[0],r[3]],[r[1],r[4]]])
+    yo = -nl.det(My)/detMd
+    ttph = 2.*r[1]/(r[0]-r[2])
+    phi = npatand(ttph)+90.
+    b = -(r[0]+r[2])
+    lam = np.sqrt(4.*detMd-b)
+    lam1 = (-b+lam)/2.
+    lam2 = (-b-lam)/2.
+    a2 = -dMs/(lam1*detMd)
+    b2 = -dMs/(lam2*detMd)
+    radii = [-np.sqrt(a2),np.sqrt(b2),0.]
+    return [xo,yo],phi,radii
+    
 ellipseCalcCount = 0
 ellipseCalcRMS = None
 def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
@@ -431,18 +489,58 @@ def ImageLocalMax(image,w,Xpix,Ypix):
         return xpix,ypix,np.ravel(ZMax)[Zmax],max(0.0001,np.ravel(ZMin)[Zmin])   #avoid neg/zero minimum
     else:
         return 0,0,0,0
+    
+def makeRing2(dsp,ellipse,pix,reject,data,image,mul=1):
+    'Needs a doc string'
+    
+    def ellipseC():
+        'compute estimate of ellipse circumference'
+        if radii[0] <= 0:        #hyperbola
+            return 720.        
+        apb = radii[1]+radii[0]
+        amb = radii[1]-radii[0]
+        return np.pi*apb*(1+3*(amb/apb)**2/(10+np.sqrt(4-3*(amb/apb)**2)))
+    
+    Mx,My = image.shape
+    pixelSize = data['pixelSize']
+    scalex = 1000./pixelSize[0]
+    scaley = 1000./pixelSize[1]
+    cent,phi,radii = ellipse
+    if radii[1] < 0.:
+        return None
+    ring = []
+    C = int(ellipseC())*mul         #ring circumference in mm
+    azm = np.arange(C)*360./C
+    for a in azm:      #step around ring in 1mm increments
+        x,y = GetDetectorXY(dsp,a,data)
+        X = x*scalex      #convert mm to pixels
+        Y = y*scaley
+        if 0<=X<Mx and 0<=Y<My:
+            X,Y,I,J = ImageLocalMax(image,pix,X,Y)
+            if I and J and float(I)/J > reject:
+                X += .5                             #set to center of pixel
+                Y += .5
+                X /= scalex                         #convert back to mm
+                Y /= scaley
+                if [X,Y,dsp] not in ring:           #no duplicates!
+                    ring.append([X,Y,dsp])
+    if len(ring) < 10:
+        ring = []
+    return ring
 
 def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     'Needs a doc string'
+    
     def ellipseC():
         'compute estimate of ellipse circumference'
         if radii[0] <= 0:        #hyperbola
 #            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
             print ('hyperbola at 2-theta:',radii[2])
-            return 720.
+            return 720.        
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
         return np.pi*apb*(1+3*(amb/apb)**2/(10+np.sqrt(4-3*(amb/apb)**2)))
+    
     Mx,My = image.shape
     cent,phi,radii = ellipse
     if radii[1] < 0.:
@@ -1672,7 +1770,7 @@ def MakeStrStaRing(ring,Image,Controls):
     scalex = 1000./pixSize[0]
     scaley = 1000./pixSize[1]
     Controls['xyLim'] = [Controls['size'][0]/scalex,Controls['size'][1]/scaley]
-    Ring = np.array(makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)).T   #returns x,y,dsp for each point in ring
+    Ring = np.array(makeRing2(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],Controls,Image)).T
     if len(Ring):
         ring['ImxyObs'] = copy.copy(Ring[:2])
 #        TA = GetTthAzm(Ring[0],Ring[1],Controls)       #convert x,y to tth,azm
@@ -1714,9 +1812,9 @@ def FitStrSta(Image,StrSta,Controls):
             ring['Esig'] = esd
             ellipse = FitEllipse(R['ImxyObs'].T)
             if any(np.isnan(ellipse[2])):
-                print('hyperbola for d=%.5f not fit, suggest deleting it'%dset)
-                continue
-            ringxy = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
+                print('hyperbola for d=%.5f'%dset)
+                ellipse = FitHyperbola(R['ImxyObs'])
+            ringxy = makeRing2(ring['Dset'],ellipse,0,0.,Controls,Image)
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringixy = [[int(x*scalex),int(y*scaley)] for y,x in np.array(ringxy)[:,:2]]
             ringint = np.array([float(Image[ix,iy]) if (0 <= ix < isze) and (0 <= iy < jsze) else 0.0 for ix,iy in ringixy])
@@ -1740,7 +1838,10 @@ def IntStrSta(Image,StrSta,Controls):
         Ring,R = MakeStrStaRing(ring,Image,StaControls)
         if len(Ring):
             ellipse = FitEllipse(R['ImxyObs'].T)
-            ringxy = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
+            if any(np.isnan(ellipse[2])):
+                ellipse = FitHyperbola(R['ImxyObs'])
+            ringxy = makeRing2(ring['Dcalc'],ellipse,0,0.,Controls,Image)
+#            ringxy = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
             RXA = np.array(ringxy)
             MRXA = np.array([rxa if (0.<=rxa[0]<=xyLim[0] and 0.<=rxa[1]<=xyLim[1]) else [0.,0.,0.] for rxa in RXA])
             Th,Azm,G = GetTthAzmG(MRXA.T[0],MRXA.T[1],Controls)      #TODO: deal with break in rings - make min < azm < max continuous

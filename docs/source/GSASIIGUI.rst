@@ -1,3 +1,5 @@
+.. _GSASIIGUI_chapter:
+
 *GSAS-II GUI Components*
 ========================
 
@@ -8,21 +10,57 @@ graphical user interface (GUI).
 *G2.py: Routine to start GSAS-II*
 --------------------------------------
 
-`G2.py` is a short python file that can be used to start the GSAS-II
-GUI. When GSAS-II is installed into Python (or in the path), the GUI
-can also be started with command ``python -m GSASII``.
+`G2.py` is a short Python file that can be used to start the GSAS-II
+GUI, particularly when GSAS-II has been installed
+in a location outside of Python and thus requires changing the Python
+path.
+
+
+Note that when GSAS-II is installed in a location that is on the
+default Python path (or the current working directory is the one that
+contains the `GSASII` directory) either of these two commands is
+sufficient to start the GSAS-II GUI:
+
+``python -c "from GSASII.GSASIIGUI import main; main()"``
+
+``python -m GSASII``
 
 .. automodule:: GSASII.G2
         :members:
 
 --------------------------------------
-*GSASIIdataGUI: Main GUI for GSAS-II*
+*GSASIIGUI: Main GUI for GSAS-II*
 --------------------------------------
 
-Module that defines GUI routines and classes for the main GUI Frame (window)
-and the main routines that define the GSAS-II tree panel and much of the
-data editing panel. 
+The `GSASIIGUI.py` module imports GSASIIpath, which does some minor initialization
+and then (before any wxPython calls can be made) creates a wx.App application. 
+At this point :func:`GSASIIpath.SetBinaryPath` is called to establish
+the directory where GSAS-II binaries are found. If the binaries 
+are not installed or are incompatible with the OS/Python packages, 
+the user is asked if they should be updated from the subversion site. 
+The wxPython app is then passed to :func:`GSASIIdataGUI.GSASIImain`, 
+which creates the GSAS-II GUI and finally the event loop is started.
 
+.. automodule:: GSASII.GSASIIGUI
+    :members: 
+    :private-members:
+    :special-members:
+
+
+----------------------------------------
+*GSASIIdataGUI: overall GUI components*
+----------------------------------------
+
+This module that defines GUI routines and classes for the main GUI Frame (window)
+including the routines that define the GSAS-II tree panel and much of the
+data editing panel. Most menus are defined here but are not invoked
+until later to reduce the GUI startup time. 
+
+Routine :func:`GSASIIdataGUI.SelectDataTreeItem` is called
+to respond to selections in the data tree and invoke the routines that
+display the appropriate information in the Data Window. 
+Two of the simpler data tree items (Notebook and Controls) are
+implemented from here, but most are defined in other modules. 
 
 GSASIIdataGUI Classes & Routines
 ---------------------------------------

@@ -5681,6 +5681,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             for N,ring in enumerate(StrSta['d-zero']):
                 if 'ImxyCalc' in ring:
                     xringc,yringc = ring['ImxyCalc']
+                    nr = np.where(np.diff(xringc) > 5)[0]+1
+                    xringc = np.roll(xringc,-nr)
+                    yringc = np.roll(yringc,-nr)
                     Plot.plot(xringc,yringc,Colors[N%NC])
                 xring,yring = ring['ImxyObs']
                 Plot.plot(xring,yring,'.',color=Colors[N%NC])

@@ -398,7 +398,9 @@ def getGitHubVersion():
     as saved by saveGitHubVersion
     '''
     import configparser
-    cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+    localdir = LocalG2Dir()
+    if localdir is None: return None,None
+    cfgfile = os.path.join(localdir,'config.ini')
     if not os.path.exists(cfgfile):
         if GetConfigValue('debug'): print(f"{cfgfile} not found")
         return None,None
@@ -1400,14 +1402,8 @@ def WriteConfig(configDict):
     '''
     import configparser
 
-    localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
-    if not os.path.exists(localdir):
-        try:
-            os.mkdir(localdir)
-            print(f'Created directory {localdir}')
-        except Exception as msg:
-            print(f'Error trying to create directory {localdir}\n{msg}')
-            return True
+    localdir = LocalG2Dir()
+    if localdir is None: return True
     cfgfile = os.path.join(localdir,'config.ini')
     try:
         cfgP = configparser.ConfigParser()
@@ -1456,14 +1452,16 @@ def LoadConfig(printInfo=True):
     import configparser
     global configDict
     configDict = {}
-    cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+    localdir = LocalG2Dir()
+    if localdir is None: return
+    cfgfile = os.path.join(localdir,'config.ini')
     if not os.path.exists(cfgfile):
         print(f'N.B. Configuration file {cfgfile} does not exist')
         # patch 2/7/25: transform GSAS-II config.py contents to config.ini
         try:
             XferConfigIni()
         except:
-            print('transfer of config.py failed')
+            print('transfer of config.py failed') # end patch
     try:
         from . import config_example
     except ImportError:
@@ -1550,27 +1548,6 @@ end tell
 #==============================================================================
 #==============================================================================
 # conda/pip routines
-def findConda():
-    '''Determines if GSAS-II has been installed as g2conda or gsas2full
-    with conda located relative to this file.
-    We could also look for conda relative to the python (sys.executable)
-    image, but I don't want to muck around with python that someone else
-    installed.
-
-    Not currently in use.
-    '''
-    parent = os.path.split(path2GSAS2)[0]
-    if sys.platform != "win32":
-        activate = os.path.join(parent,'bin','activate')
-        conda = os.path.join(parent,'bin','conda')
-    else:
-        activate = os.path.join(parent,'Scripts','activate.bat')
-        conda = os.path.join(parent,'condabin','conda.bat')
-    if os.path.exists(activate) and os.path.exists(conda):
-        return conda,activate
-    else:
-        return None
-
 def condaTest(requireAPI=False):
     '''Returns True if it appears that Python is being run with 
     conda present. Tests for conda environment vars and that 
@@ -1582,7 +1559,7 @@ def condaTest(requireAPI=False):
     '''
     if not any([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]): return False
     if requireAPI:
-        print('condaTest(requireAPI=True) is obsolete')
+        print('condaTest(requireAPI=True) is obsolete. Ignoring arg.')
         # # is the conda package available?
         # try:
         #     import conda.cli
@@ -1619,49 +1596,6 @@ def condaTest(requireAPI=False):
     except:
         return False
     return True
-        
-# def condaInstall(packageList):
-#     '''Installs one or more packages using the anaconda conda package
-#     manager. Can be used to install multiple packages and optionally
-#     use channels.
-
-#     :param list packageList: a list of strings with name(s) of packages
-#       and optionally conda options.
-#       Examples::
-
-#        packageList=['gsl']
-#        packageList=['-c','conda-forge','wxpython']
-#        packageList=['numpy','scipy','matplotlib']
-
-#     :returns: None if the the command ran normally, or an error message
-#       if it did not.
-#     '''
-#     try:
-#         import conda.cli.python_api
-#     except:
-#         print('You do not have the conda package installed in this environment',
-#                   '\nConsider using the "conda install conda" command')
-#         return None
-#     try:
-#         print(f'Preparing to install package(s): {" ,".join(packageList)}'+
-#                   '\nThis can take a while')
-#         # the next line works, but the subsequent cli is considered more stable
-#         #conda.cli.main('install',  '-y', *packageList)
-#         # this is considered to be supported in the long term
-#         (out, err, rc) = conda.cli.python_api.run_command(
-#             conda.cli.python_api.Commands.INSTALL,packageList,
-# #            search_path=('conda-forge'),   # broken!
-# #    use_exception_handler=True#, stdout=sys.stdout,
-#             stderr=sys.stderr)
-#         #print('rc=',rc)
-#         print('Ran conda. output follows...')
-#         print(70*'='+'\n'+out+'\n'+70*'=')
-#         #print('err=',err)
-#         if rc != 0: return str(out)
-#     except Exception as msg:
-#         print(f"\nConda error occurred, see below\n{msg}")
-#         return "error occurred"
-#     return None
 
 def condaInstall(packageList):
     '''Installs one or more packages using the anaconda conda package
@@ -1773,110 +1707,69 @@ def pipInstall(packageList):
         return msg
     return None
 
-#
-# This is out of date. Needs a fix here and in GSASIIphsGUI.checkPDFfit()
-#
-# def condaEnvCreate(envname, packageList, force=False):
-#     '''Create a Python interpreter in a new conda environment. Use this
-#     when there is a potential conflict between packages and it would
-#     be better to keep the packages separate (which is one of the reasons
-#     conda supports environments). Note that conda should be run from the
-#     base environment; this attempts to deal with issues if it is not.
+def condaCreate(envpath, packageList):
+    '''Create a Python interpreter in a new conda environment. This has the 
+    advantage of keeping the Python environment separate from the one used
+    by GSAS-II. It has the disadvantage of requiring more disk space. 
 
-#     Currently, this is used only to install diffpy.PDFfit2.
+    Currently, this is used only to install diffpy.PDFfit2.
 
-#     :param str envname: the name of the environment to be created.
-#       If the environment exists, it will be overwritten only if force is True.
-#     :param list packageList: a list of conda install create command
-#       options, such as::
+    :param str envpath: the directory where the environment will be created.
+       If the environment exists, it will be overwritten only if force is True.
+    :param list packageList: a list of conda install create command
+       options, such as::
 
-#             ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
-#                 '-c', 'conda-forge', '-c', 'diffpy']
+             ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
+                 '-c', 'conda-forge', '-c', 'diffpy']
 
-#     :param bool force: if False (default) an error will be generated
-#       if an environment exists
-
-#     :returns: (status,msg) where status is True if an error occurs and
-#       msg is a string with error information if status is True or the
-#       location of the newly-created Python interpreter.
-#     '''
-#     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV',
-#                             'CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-#         p = sys.exec_prefix
-#     else:
-#         # workaround for bug that avoids nesting packages if running from an
-#         # environment (see https://github.com/conda/conda/issues/11493)
-#         p = os.path.dirname(os.path.dirname(os.environ['CONDA_EXE']))
-#     try:
-#         import conda.cli.python_api
-#     except:
-#         return True,'conda package not available (in environment)'
-#     if not os.path.exists(os.path.join(p,'envs')):
-#         msg = ('Error derived installation path not found: '+
-#                   os.path.join(p,'envs'))
-#         print(msg)
-#         return True,msg
-#     newenv = os.path.join(p,'envs',envname)
-#     if os.path.exists(newenv) and not force:
-#         msg = 'path '+newenv+' already exists and force is not set, aborting'
-#         print(msg)
-#         return True,msg
-#     pathList = ['-p',newenv]
-#     try:
-#         (out, err, rc) = conda.cli.python_api.run_command(
-#             conda.cli.python_api.Commands.CREATE,
-#             packageList + pathList,
-#             use_exception_handler=True) # ,stdout=sys.stdout, stderr=sys.stderr)
-#         print(out)
-#         if rc != 0:
-#             print(err)
-#             return True,str(out+err)
-#         if sys.platform == "win32":
-#             newpython = os.path.join(newenv,'python.exe')
-#         else:
-#             newpython = os.path.join(newenv,'bin','python')
-#         if os.path.exists(newpython):
-#             return False,newpython
-#         return True,'Unexpected, '+newpython+' not found'
-#     except Exception as msg:
-#         print("Error occurred, see below\n",msg)
-#         return True,'Error: '+str(msg)
-
-# def addCondaPkg():
-#     '''Install the conda API into the current conda environment using the
-#     command line, so that the API can be used in the current Python interpreter
-
-#     Attempts to do this without a shell failed on the Mac because it seems that
-#     the environment was inherited; seems to work w/o shell on Windows.
-#     '''
-#     if not any([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
-#                         'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-#         return None
-#     #condaexe = os.environ['CONDA_EXE']
-#     currenv = os.environ['CONDA_DEFAULT_ENV']
-#     if sys.platform == "win32":
-#         cmd = [os.environ['CONDA_EXE'],'install','conda','-n',currenv,'-y']
-#         with subprocess.Popen(cmd,
-#                          #stdout=subprocess.PIPE,
-#                          stderr=subprocess.PIPE,
-#                          encoding='UTF-8') as p:
-#             out,err = p.communicate()
-#     else:
-#         script = 'source ' + os.path.join(
-#             os.path.dirname(os.environ['CONDA_PYTHON_EXE']),
-#             'activate') + ' base; '
-#         script += 'conda install conda -n '+currenv+' -y'
-#         with subprocess.Popen(script,shell=True,env={},
-#                          #stdout=subprocess.PIPE,
-#                          stderr=subprocess.PIPE,
-#                          encoding='UTF-8') as p:
-#             out,err = p.communicate()
+    :returns: (status,msg,pyexe) where status is True if an error occurs and
+      msg is a string with error information if status is True (or None)
+      and pyexe is the location of the newly-created Python interpreter.
+    '''
+    import os, shutil, subprocess, sys
     
-#     if out is not None and GetConfigValue('debug'): print('Output from adding conda:\n',out)
-#     if err and err is not None:
-#         print('Note error/warning from running conda:\n',err)
-#     if currenv == "base":
-#         print('\nUnexpected action: adding conda to base environment???')
+    # find conda
+    conda_exe = os.environ.get("CONDA_EXE")
+    if sys.platform == "win32" and not conda_exe:
+        conda_exe = shutil.which('conda.exe')
+    if not conda_exe:
+        conda_exe = shutil.which('conda')
+
+    if not conda_exe:
+        # could try as a fallback to see if executing
+        #   [sys.executable, "-m", "conda", "info"]
+        # works even if conda is not present
+        print('conda not found, if you are using conda and get this error,\nplease contact Brian Toby')
+        return (True,'Conda executable not found',None)
+    
+    if not os.path.exists(conda_exe):
+        return (True,f'Conda executable located but not found ({conda_exe})',None)
+    
+    cmd = [conda_exe, "create", "-p", envpath, "-y", *packageList]  # <- auto-confirm
+    try:
+        print('Running conda to install Python interpreter',
+              f'using command\n\t{" ".join(cmd)}\nconda output follows...\n\n')
+        subprocess.run(
+            cmd,
+            #stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,check=True
+        )
+    except subprocess.CalledProcessError as e:
+        msg = f"conda error, output:\n{e.stderr} (code {e.returncode})"
+        print(msg)
+        return (True,msg,None)
+    except Exception as msg:
+        print('Unknown conda error',msg)
+        return (True,msg,None)
+    if sys.platform == "win32":
+        newpython = os.path.join(envpath,'python.exe')
+    else:
+        newpython = os.path.join(envpath,'bin','python')
+    if os.path.exists(newpython):
+        return False,None,newpython
+    return True,f'Unexpected error, {newpython} not found'
+
 #==============================================================================
 #==============================================================================
 # routines for reorg of GSAS-II directory layout
@@ -2177,6 +2070,25 @@ end tell
             fp.write(f"{script}\n")
         fp.close()
         subprocess.Popen(cmds,start_new_session=True)
+
+def LocalG2Dir():
+    '''Finds the directory used for storage of local GSAS-II files
+
+    :returns: the path to the directory or None, if it does not 
+      exist and can't be created.
+    '''
+    localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
+    if os.path.exists(localdir): return localdir 
+    try:
+        print(f'Creating directory {localdir}')
+        os.mkdir(localdir)
+        if os.path.exists(localdir): return localdir
+        print(f'Unexpected: unable to create {localdir} and no error')
+        return None
+    except Exception as msg:
+        print(f'Error trying to create directory {localdir}\n{msg}')
+        return None
+    return
 
 #===========================================================================
 # routines used for gsas_query (Query-gsas-II, LLM Documentation searching) 
@@ -2502,17 +2414,13 @@ to update/regress repository from git repository:
         lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]
         #print('tags=',lastver,lastnum)
         # make directory for config file if needed
-        localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
-        if not os.path.exists(localdir):
-            try:
-                os.mkdir(localdir)
-                print(f'Created directory {localdir}')
-            except Exception as msg:
-                print(f'Error trying to create directory {localdir}\n{msg}')
-                sys.exit()
+        localdir = LocalG2Dir()
+        if localdir is None: sys.exit()
         # add tag info to config file
         import configparser
-        cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+        localdir = LocalG2Dir()
+        if localdir is None: sys.exit()
+        cfgfile = os.path.join(localdir,'config.ini')
         try:
             cfg = configparser.ConfigParser()
             cfg.read(cfgfile, encoding='utf-8')

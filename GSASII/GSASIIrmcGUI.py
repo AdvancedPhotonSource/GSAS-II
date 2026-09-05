@@ -6,13 +6,16 @@ Routines for Phase/RMC follow. Only the UpdateRMC routine is here.
 All others are in GSASIIphsGUI.py
 '''
 import os
-import wx
-import wx.grid as wg
+import sys
 import copy
 import time
 import shutil
+import subprocess
 
+import wx
+import wx.grid as wg
 import numpy as np
+from . import GSASIIpath
 from . import GSASIIlattice as G2lat
 from . import GSASIIspc as G2spc
 from . import GSASIIElem as G2elem
@@ -23,6 +26,7 @@ from . import GSASIIpwd as G2pwd
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIphsGUI as G2phsG
 from . import atmdata
+from . import GSASIIfiles as G2fil
 
 try:
     wx.NewIdRef
@@ -1683,7 +1687,7 @@ def UpdateRMC(G2frame,data):
 
         G2G.HorizontalLine(mainSizer,G2frame.FRMC)
         mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit starting atom variables:'))
-        G2pwd.GetPDFfitAtomVar(data,RMCPdict)
+        GetPDFfitAtomVar(data,RMCPdict)
         mainSizer.Add(AtomVarSizer())
 
         G2G.HorizontalLine(mainSizer,G2frame.FRMC)
@@ -1756,7 +1760,7 @@ def UpdateRMC(G2frame,data):
     wx.CallAfter(G2frame.dataWindow.SetDataSize)
     G2phsG.SetPhaseWindow(G2frame.FRMC,mainSizer)
 
-    if G2frame.RMCchoice == 'PDFfit' and not G2phsG.checkPDFfit(G2frame):
+    if G2frame.RMCchoice == 'PDFfit' and checkPDFfit2(G2frame) is None:
         RMCmisc['RMCnote'].SetLabel('PDFfit may not be installed or operational')
     elif G2frame.RMCchoice == 'fullrmc' and G2pwd.findfullrmc() is None:
         msg = ('The fullrmc Python image is not found.'+
@@ -1775,3 +1779,703 @@ def UpdateRMC(G2frame,data):
             wx.EndBusyCursor()
         else:
             RMCmisc['RMCnote'].SetLabel('Note that fullrmc is not installed or was not located')
+
+def checkPDFfit2(G2frame):
+    '''Checks to see if PDFfit2 is available or can be imported or
+    tries to install it.
+    If PDFfit2 is installed in a separate Python interpreter (the
+    location is saved in the pdffit2_exec config variable.
+
+    :param wx.Frame G2frame: main GSAS-II window. Needed to 
+      install PDFfit2.
+
+    :returns: None if PDFfit2 cannot be run/accessed. Otherwise a file
+      name for the Python interpreter than contains PDFfit2. This will
+      be sys.executable if PDFfit2 is installed into the current Python
+      interpreter.
+    '''
+    PDFpython = G2fil.findPDFfit()
+    if PDFpython is not None and os.path.exists(PDFpython) and is_exe(PDFpython):
+        return PDFpython
+    
+    # did not find PDFfit2, install it?
+    if not GSASIIpath.condaTest():
+        G2G.G2MessageBox(G2frame,'''conda not found. You will need to install PDFfit2 manually
+and define the "pdffit2_exe" config variable to use this.''')
+        return
+    
+    localdir = GSASIIpath.LocalG2Dir()
+    if localdir is None:
+        G2G.G2MessageBox(G2frame,'Directory ~/.GSASII not found. Unexpected')
+        return
+    pdffitDir = os.path.join(localdir,'PDFfit2')
+    msg =  '''
+PDFfit2 needs to be installed. If you are very concerned 
+about your use of disk space, this is best done by installing 
+PDFfit2 into the current Python interpreter. If so, press "No" 
+and use Help/"Add packages...". If it is OK to install an 
+additional Python installation for PDFfit2, press "Yes" to 
+proceed.'''
+    dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
+                                   style=wx.YES_NO|wx.ICON_QUESTION)
+    if dlg.ShowModal() != wx.ID_YES:
+        G2fil.NeededPackage({'PDFfit2 for small-box PDF fitting':['diffpy.pdffit2']})
+        return False
+    try:
+        wx.BeginBusyCursor()
+        print('Preparing to create a conda environment. This may take a few minutes...')
+        #     conda create -p {pdfpath} python conda gsl diffpy.pdffit2 -c conda-forge
+        res,errmsg,PDFpython = GSASIIpath.condaCreate(pdffitDir,
+                     ['python', 'conda', 'gsl', 'diffpy.pdffit2','-c', 'conda-forge'])
+    finally:
+         wx.EndBusyCursor()
+    if os.path.exists(PDFpython) and is_exe(PDFpython):
+        vars = G2G.GetConfigValsDocs()
+        vars['pdffit2_exec'][1] = PDFpython
+        print('pdffit2_exec config set with ',GSASIIpath.GetConfigValue('pdffit2_exec'))
+        GSASIIpath.SetConfigValue(vars)
+        G2G.SaveConfigVars(vars)
+        print('\n\nframe.addPkgMenu.')
+        return True
+    else:
+        print(f'Failed to install PDFfit2 with error:\n{errmsg}')
+        G2fil.NeededPackage({'PDFfit2 for small-box PDF fitting':['diffpy.pdffit2']})
+        msg = 'If you install PDFfit2 yourself, set the pdffit2_exec config variable to the install location'
+        G2G.G2MessageBox(G2frame,
+                'PDFfit2 Install failed. See console for error message\n\n'+msg,
+                'PDFfit2 install error')
+        return False
+
+def RunPDFfit2(G2frame,data,event):
+    '''Run PDFfit2 in a separate process
+    '''
+    generalData = data['General']
+    ISOdict = data['ISODISTORT']
+    PDFfit_exec = G2fil.findPDFfit()  #returns location of python with PDFfit installed
+    if not PDFfit_exec:
+        wx.MessageBox(''' PDFfit2 is not currently installed for this platform.
+Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
+        return
+    RMCPdict = data['RMC']['PDFfit']
+    pName = generalData['Name'].replace(' ','_')
+    if 'sequential' in RMCPdict['refinement']:
+        rname = 'Seq_PDFfit.py'
+    else:
+        rname = pName+'-PDFfit.py'
+        if not os.path.exists(rname):
+            wx.MessageBox(f'File {rname} does not exist. Has the Operations/"Setup RMC" menu command been run?',
+                              caption='Run setup',style=wx.ICON_WARNING)
+            return
+    wx.MessageBox(' For use of PDFfit2, please cite:\n\n'+
+                      G2G.GetCite('PDFfit2'),
+                      caption='PDFfit2',style=wx.ICON_INFORMATION)
+    G2frame.OnFileSave(event)
+    print (' GSAS-II project saved')
+    if sys.platform.lower().startswith('win'):
+        batch = open('pdffit2.bat','w')
+        # Include an activate command here
+        p = os.path.split(PDFfit_exec)[0]
+        while p:
+            if os.path.exists(os.path.join(p,'Scripts','activate')):
+                batch.write('call '+os.path.join(p,'Scripts','activate')+'\n')
+                break
+            prevp = p
+            p = os.path.split(p)[0]
+            if prevp == p:
+                print('Note, no activate command found')
+                break
+        batch.write(PDFfit_exec+' '+rname+'\n')
+        # batch.write('pause')
+        if 'normal' in RMCPdict['refinement']:
+            batch.write('pause')
+        batch.close()
+    else:
+        batch = open('pdffit2.sh','w')
+        batch.write('#!/bin/bash\n')
+        # include an activate command here
+        p = os.path.split(PDFfit_exec)[0]
+        while p:
+            if os.path.exists(os.path.join(p,'bin','activate')):
+                batch.write('source '+os.path.join(p,'Scripts','activate')+'\n')
+                break
+            prevp = p
+            p = os.path.split(p)[0]
+            if prevp == p:
+                print('Note, no activate command found')
+                break
+
+        batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
+        batch.write(PDFfit_exec + ' ' + os.path.abspath(rname) + '\n')
+        batch.close()
+    if 'sequential' in RMCPdict['refinement']:
+        Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential PDFfit2 results')
+#            if Id:
+#                saveSeqResult = G2frame.GPXtree.GetItemPyData(Id)
+#            else:
+        if not Id:
+            SeqResult = {}
+            Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDFfit2 results')
+        G2Names = [item.name for item in ISOdict['G2ModeList']]
+        SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
+        SeqResult['histNames'] = []         #this clears the previous seq. result!
+        SeqNames = []
+        for itm in range(len(RMCPdict['seqfiles'])):
+            SeqNames.append([itm,RMCPdict['seqfiles'][itm][0]])
+        if RMCPdict['SeqReverse']:
+            SeqNames.reverse()
+        nPDF = len(SeqNames)
+        pgbar = wx.ProgressDialog('Sequential PDFfit','PDF G(R) done = 0',nPDF+1,
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        newParms = {}
+        for itm,Item in enumerate(SeqNames):
+            PDFfile = RMCPdict['seqfiles'][Item[0]]
+            pfdata = PDFfile[1]['G(R)'][1].T
+#                    pfname = PDFfile[0].replace(' ','_')
+            pfname = 'Seq_PDF.gr'
+            pfile = open(pfname,'w')
+            for dp in pfdata:
+                pfile.write('%12.5f%12.5f\n'%(dp[0],dp[1]))
+            pfile.close()
+            rfile = open('Seq_PDFfit_template.py','r')
+            lines = rfile.readlines()       #template lines
+            rfile.close()
+            newlines = []
+            parms = {}
+            Np = 0
+            for line in lines:
+                if '#sequential' in line:
+                    newlines += "pf.read_data('%s', '%s', 30.0, %.4f)\n"%(pfname,PDFfile[1]['Type'][0],PDFfile[1]['qdamp'][0])
+                    newlines += 'pf.setdata(1)\n'
+                    newlines += 'pf.pdfrange(1, %6.2f, %6.2f)\n'%(PDFfile[1]['Fitrange'][0],PDFfile[1]['Fitrange'][1])
+                    for item in ['dscale','qdamp','qbroad']:
+                        if PDFfile[1][item][1]:
+                            Np += 1
+                            newlines += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
+                            parms[item] = '%d'%Np
+                            if itm and RMCPdict['SeqCopy']:
+                                newParms[parms[item]] = RMCPdict['Parms'][parms[item]]
+                            else:
+                                if not itm and 'result' not in PDFfile[1]:
+                                    newParms[parms[item]] = PDFfile[1][item][0]
+                                else:
+                                    newParms[parms[item]] = PDFfile[1]['result'][parms[item]][0]
+                elif '#parameters' in line:
+                    startParms = RMCPdict['Parms']
+                    if newParms or RMCPdict['SeqCopy']:
+                        if newParms:
+                            startParms = newParms
+                        for iprm in startParms:
+                            if int(iprm) > 9:
+                                break
+                            newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm])
+                        print('Begin dscale: %d %.4f'%(itm,startParms['1']))
+                        for iprm in RMCPdict['Parms']:
+                            if isinstance(RMCPdict['Parms'][iprm],float):
+                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm])
+                            else:
+                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm][0])
+                    elif not RMCPdict['SeqCopy']:
+                        startParms = PDFfile[1]['result']
+                        for iprm in startParms:
+                            newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
+                        print('Begin dscale: %d %.4f'%(itm,startParms['1']))
+                else:
+                    newlines += line
+            rfile= open('Seq_PDFfit.py','w')
+            rfile.writelines(newlines)
+            rfile.close()
+            fName = 'Sequential_PDFfit'     #clean out old PDFfit output files
+            if os.path.isfile(fName+'.res'):
+                os.remove(fName+'.res')
+            if os.path.isfile(fName+'.rstr'):
+                os.remove(fName+'.rstr')
+            if os.path.isfile(fName+'.fgr'):
+                os.remove(fName+'.fgr')
+
+            if sys.platform.lower().startswith('win'):
+                Proc = subprocess.Popen('pdffit2.bat',creationflags=subprocess.CREATE_NEW_CONSOLE)
+                Proc.wait()     #for it to finish before continuing on
+            else:
+                if sys.platform == "darwin":
+                    GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
+                else:
+                    Proc = subprocess.Popen(['/bin/bash','pdffit2.sh'])
+                    Proc.wait()
+
+            newParms,Rwp =  UpdatePDFfit(data,RMCPdict)
+            if isinstance(newParms,str):
+                wx.MessageBox('Singular matrix in PDFfit',caption='PDFfit2 failed',style=wx.ICON_INFORMATION)
+                break
+            for item in ['dscale','qdamp','qbroad']:
+                if PDFfile[1][item][1]:
+                    PDFfile[1][item][0] = newParms[parms[item]][0]
+            PDFfile[1]['result'] = copy.deepcopy(newParms)
+            parmDict = copy.deepcopy(newParms)
+            parmDict.update({'Temperature':PDFfile[1]['Temp']})
+            tempList = ['%s-%s'%(parms[item],item) for item in parms]       #these come first
+            parmkeys = [int(item) for item in RMCPdict['ParmNames']]
+            parmkeys.sort()
+            tempList += ['%s-%s'%(item,RMCPdict['ParmNames'][item]) for item in parmkeys]
+            print('result dscale: ',parmDict['1'],' Rw: ',Rwp)
+            atParms = [str(i+21) for i in range(len(G2Names))]
+            varyList = []
+            for item in tempList:
+                pid = item.split('-')[0]
+                if pid in atParms:
+                    item = '%s-%s'%(pid,G2Names[int(pid)-21])
+                varyList.append(item)
+            result = np.array(list(newParms.values())).T
+            SeqResult[PDFfile[0]] = {'variables':result[0],'varyList':varyList,'sig':result[1],'Rvals':{'Rwp':Rwp,},
+                'covMatrix':[],'title':PDFfile[0],'parmDict':parmDict}
+
+            pfile = open('Sequential_PDFfit.fgr')
+            XYcalc = np.loadtxt(pfile).T[:2]
+            pfile.close()
+            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFfile[0])
+            PDFctrl = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'))
+            XYobs = PDFctrl['G(R)'][1]
+            if XYobs.shape[0] < 4:
+                XYobs = np.concatenate((XYobs,np.zeros_like(XYobs)),axis=0)
+            ibeg = np.searchsorted( XYobs[0],XYcalc[0][0])
+            ifin = ibeg+XYcalc.shape[1]
+            XYobs[2][ibeg:ifin] = XYcalc[1]
+            XYobs[3] = XYobs[1]-XYobs[2]
+            PDFctrl['G(R)'][1] = XYobs
+            SeqResult['histNames'].append(Item[1])
+            GoOn = pgbar.Update(itm,newmsg='PDF G(R) done = %d'%(itm))
+            if not GoOn[0]:
+                print(' Sequential PDFfit aborted')
+                break
+
+        pgbar.Destroy()
+        G2frame.GPXtree.SetItemPyData(Id,SeqResult)
+        G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
+        G2frame.GPXtree.SelectItem(Id)
+
+    else: #normal
+        #remove any old PDFfit output files
+        fName = generalData['Name'].replace(' ','_')+'-PDFfit'
+        if os.path.isfile(fName+'.res'):
+            os.remove(fName+'.res')
+        if os.path.isfile(fName+'.rstr'):
+            os.remove(fName+'.rstr')
+        if os.path.isfile(fName+'N.fgr'):
+            os.remove(fName+'N.fgr')
+        if os.path.isfile(fName+'X.fgr'):
+            os.remove(fName+'X.fgr')
+
+        if sys.platform.lower().startswith('win'):
+            Proc = subprocess.Popen('pdffit2.bat',creationflags=subprocess.CREATE_NEW_CONSOLE)
+            Proc.wait()     #for it to finish before continuing on
+        else:
+            if sys.platform == "darwin":
+                GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
+            else:
+                Proc = subprocess.Popen(['/bin/bash','pdffit2.sh'])
+                Proc.wait()     #for it to finish before continuing on
+        #update choice? here?
+        dlg = wx.MessageDialog(G2frame,'Check PDFfit console for results; do you want to update?',
+            'PDFfit run finished',wx.YES|wx.NO)
+        try:
+            dlg.CenterOnParent()
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result == wx.ID_YES:
+            Error =  UpdatePDFfit(data,RMCPdict)
+            if Error:
+                wx.MessageBox('PDFfit failed',caption='%s not found'%Error[0],style=wx.ICON_EXCLAMATION)
+        UpdateRMC(G2frame,data)
+
+def MakePDFfitAtomsFile(Phase,RMCPdict):
+    '''Make the PDFfit atoms file
+    '''
+    General = Phase['General']
+    if General['SGData']['SpGrp'] != 'P 1':
+        return 'Space group symmetry must be lowered to P 1 for PDFfit'
+    fName = General['Name']+'-PDFfit.stru'
+    fName = fName.replace(' ','_')
+    if 'sequential' in RMCPdict['refinement']:
+        fName = 'Sequential_PDFfit.stru'
+    fatm = open(fName,'w')
+    fatm.write('title  structure of '+General['Name']+'\n')
+    fatm.write('format pdffit\n')
+    fatm.write('scale   1.000000\n')    #fixed
+    sharp = '%10.6f,%10.6f,%10.6f,%10.6f\n'%(RMCPdict['delta2'][0],RMCPdict['delta1'][0],RMCPdict['sratio'][0],RMCPdict['rcut'])
+    fatm.write('sharp '+sharp)
+    shape = ''
+    if RMCPdict['shape'] == 'sphere' and RMCPdict['spdiameter'][0] > 0.:
+        shape = '   sphere, %10.6f\n'%RMCPdict['spdiameter'][0]
+    elif RMCPdict['stepcut'] > 0.:
+        shape = 'stepcut, %10.6f\n'%RMCPdict['stepcut']
+    if shape:
+        fatm.write('shape  '+shape)
+    fatm.write('spcgr   %s\n'%RMCPdict['SGData']['SpGrp'].replace(' ',''))
+    cell = General['Cell'][1:7]
+    fatm.write('cell  %10.6f,%10.6f,%10.6f,%10.6f,%10.6f,%10.6f\n'%(
+        cell[0],cell[1],cell[2],cell[3],cell[4],cell[5]))
+    fatm.write('dcell '+5*'  0.000000,'+'  0.000000\n')
+    Atoms = Phase['Atoms']
+    fatm.write('ncell %8d,%8d,%8d,%10d\n'%(1,1,1,len(Atoms)))
+    fatm.write('atoms\n')
+    cx,ct,cs,cia = General['AtomPtrs']
+    for atom in Atoms:
+        fatm.write('%4s%18.8f%18.8f%18.8f%13.4f\n'%(atom[ct][:2].ljust(2),atom[cx],atom[cx+1],atom[cx+2],atom[cx+3]))
+        fatm.write('    '+'%18.8f%18.8f%18.8f%13.4f\n'%(0.,0.,0.,0.))
+        fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(atom[cia+2],atom[cia+3],atom[cia+4]))
+        fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(0.,0.,0.,))
+        fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(atom[cia+5],atom[cia+6],atom[cia+7]))
+        fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(0.,0.,0.))
+    fatm.close()
+
+def MakePDFfitRunFile(Phase,RMCPdict):
+    '''Make the PDFfit python run file
+    '''
+
+    def GetCellConstr(SGData):
+        if SGData['SGLaue'] in ['m3', 'm3m']:
+            return [1,1,1,0,0,0]
+        elif SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:
+            return [1,1,2,0,0,0]
+        elif SGData['SGLaue'] in ['3R','3mR']:
+            return [1,1,1,2,2,2]
+        elif SGData['SGLaue'] == 'mmm':
+            return [1,2,3,0,0,0]
+        elif SGData['SGLaue'] == '2/m':
+            if SGData['SGUniq'] == 'a':
+                return [1,2,3,4,0,0]
+            elif SGData['SGUniq'] == 'b':
+                return [1,2,3,0,4,0]
+            elif SGData['SGUniq'] == 'c':
+                return [1,2,3,0,0,4]
+        else:
+            return [1,2,3,4,5,6]
+
+    General = Phase['General']
+    Cell = General['Cell'][1:7]
+    rundata = '''#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import sys,os
+datadir = r'{:}'
+pathWrap = lambda f: os.path.join(datadir,f)
+'''.format(os.path.abspath(os.getcwd()))
+    PDFfit_exe = G2fil.findPDFfit()  # returns python loc
+    if not PDFfit_exe:
+        print('PDFfit2 is not found. Creating .sh file without paths.')
+    rundata += 'from diffpy.pdffit2 import PdfFit\n'
+    rundata += 'pf = PdfFit()\n'
+    Nd = 0
+    Np = 0
+    parms = {}
+    parmNames = {}
+    if 'sequential' in RMCPdict['refinement']:
+        Np = 3
+        rundata += '#sequential data here\n'
+    else:
+        for fil in RMCPdict['files']:
+            filNam = RMCPdict['files'][fil][0]
+            if 'Select' in filNam:
+                continue
+            if 'Neutron' in fil:
+                Nd += 1
+                dType = 'Ndata'
+            else:
+                Nd += 1
+                dType = 'Xdata'
+            rundata += "pf.read_data(pathWrap(r'%s'), '%s', 30.0, %.4f)\n"%(filNam,dType[0],RMCPdict[dType]['qdamp'][0])
+            rundata += 'pf.setdata(%d)\n'%Nd
+            rundata += 'pf.pdfrange(%d, %6.2f, %6.2f)\n'%(Nd,RMCPdict[dType]['Fitrange'][0],RMCPdict[dType]['Fitrange'][1])
+            for item in ['dscale','qdamp','qbroad']:
+                if RMCPdict[dType][item][1]:
+                    Np += 1
+                    rundata += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
+                    parms[Np] = RMCPdict[dType][item][0]
+                    parmNames[Np] = item
+    fName = General['Name']+'-PDFfit.stru'
+    fName = fName.replace(' ','_')
+    if 'sequential' in RMCPdict['refinement']:
+        fName = 'Sequential_PDFfit.stru'
+    Np = 9
+    rundata += "pf.read_struct(pathWrap(r'{:}'))\n".format(fName)
+    for item in ['delta1','delta2','sratio']:
+        if RMCPdict[item][1]:
+            Np += 1
+            rundata += 'pf.constrain(pf.%s,"@%d")\n'%(item,Np)
+            parms[Np] = RMCPdict[item][0]
+            parmNames[Np] = item
+    if 'sphere' in RMCPdict['shape'] and RMCPdict['spdiameter'][1]:
+        Np += 1
+        rundata += 'pf.constrain(pf.spdiameter,"@%d")\n'%Np
+        parms[Np] = RMCPdict['spdiameter'][0]
+        parmNames[Np] = 'spdiameter'
+
+    if RMCPdict['cellref']:
+        cellconst = GetCellConstr(RMCPdict['SGData'])
+        used = []
+        cellNames = ['a','b','c','alpha','beta','gamma']
+        for ic in range(6):
+            if cellconst[ic]:
+                rundata += 'pf.constrain(pf.lat(%d), "@%d")\n'%(ic+1,Np+cellconst[ic])
+                if cellconst[ic] not in used:
+                    parms[Np+cellconst[ic]] = Cell[ic]
+                    parmNames[Np+cellconst[ic]] = cellNames[ic]
+                used.append(cellconst[ic])
+#Atom constraints here -------------------------------------------------------
+    AtomVar = RMCPdict['AtomVar']
+    used = []
+    for iat,atom in enumerate(RMCPdict['AtomConstr']):
+        for it,item in enumerate(atom):
+            names = ['pf.x(%d)'%(iat+1),'pf.y(%d)'%(iat+1),'pf.z(%d)'%(iat+1),'pf.occ(%d)'%(iat+1)]
+            if it > 1 and item:
+                itms = item.split('@')
+                once = False
+                for itm in itms[1:]:
+                    try:
+                        itnum = int(itm[:2])
+                    except ValueError:
+                        print(' *** ERROR - invalid string in atom constraint %s ***'%(item))
+                        return None
+                    if it < 6:
+                        if not once:
+                            rundata += 'pf.constrain(%s,"%s")\n'%(names[it-2],item)
+                            once = True
+                        if itnum not in used:
+                            parms[itnum] = AtomVar['@%d'%itnum]
+                            parmNames[itnum] = names[it-2].split('.')[1]
+                            used.append(itnum)
+                    else:
+                        uijs = ['pf.u11(%d)'%(iat+1),'pf.u22(%d)'%(iat+1),'pf.u33(%d)'%(iat+1)]
+                        for i in range(3):
+                            rundata += 'pf.constrain(%s,"%s")\n'%(uijs[i],item)
+                            if itnum not in used:
+                                parms[itnum] = AtomVar['@%d'%itnum]
+                                parmNames[itnum] = uijs[i].split('.')[1]
+                                used.append(itnum)
+
+    if 'sequential' in RMCPdict['refinement']:
+        rundata += '#parameters here\n'
+        RMCPdict['Parms'] = parms           #{'n':val,...}
+        RMCPdict['ParmNames'] = parmNames   #{'n':name,...}
+    else:
+# set parameter values
+        for iprm in parms:
+            rundata += 'pf.setpar(%d,%.6f)\n'%(iprm,parms[iprm])
+
+# Save results ---------------------------------------------------------------
+    rundata += 'pf.refine()\n'
+    if 'sequential' in RMCPdict['refinement']:
+        fName = 'Sequential_PDFfit'
+        rfile = open('Seq_PDFfit_template.py','w')
+        rundata += 'pf.save_pdf(1, pathWrap("%s"))\n'%(fName+'.fgr')
+    else:
+        fName = General['Name'].replace(' ','_')+'-PDFfit'
+        rfile = open(fName+'.py','w')
+        Nd = 0
+        for file in RMCPdict['files']:
+            if 'Select' in RMCPdict['files'][file][0]:      #skip unselected
+                continue
+            Nd += 1
+            rundata += 'pf.save_pdf(%d, pathWrap("%s"))\n'%(Nd,fName+file[0]+'.fgr')
+
+    rundata += 'pf.save_struct(1, pathWrap("%s"))\n'%(fName+'.rstr')
+    rundata += 'pf.save_res(pathWrap("%s"))\n'%(fName+'.res')
+
+    rfile.writelines(rundata)
+    rfile.close()
+
+    return fName+'.py'
+
+def GetPDFfitAtomVar(Phase,RMCPdict):
+    ''' Find dict of independent "@n" variables for PDFfit in atom constraints
+    '''
+    General = Phase['General']
+    Atoms = Phase['Atoms']
+    cx,ct,cs,cia = General['AtomPtrs']
+    AtomVar = RMCPdict['AtomVar']
+    varnames = []
+    for iat,atom in enumerate(RMCPdict['AtomConstr']):
+        for it,item in enumerate(atom):
+            if it > 1 and item:
+                itms = item.split('@')
+                for itm in itms[1:]:
+                    itnum = itm[:2]
+                    varname = '@%s'%itnum
+                    varnames.append(varname)
+                    if it < 6:
+                        if varname not in AtomVar:
+                            AtomVar[varname] = 0.0      #put ISODISTORT mode displ here?
+                    else:
+                        for i in range(3):
+                            if varname not in AtomVar:
+                                AtomVar[varname] = Atoms[iat][cia+i+2]
+    varnames = set(varnames)
+    for name in list(AtomVar.keys()):       #clear out unused parameters
+        if name not in varnames:
+            del AtomVar[name]
+
+def UpdatePDFfit(Phase,RMCPdict):
+    ''' Updates various PDFfit parameters held in GSAS-II
+    '''
+
+    General = Phase['General']
+    if RMCPdict['refinement'] == 'normal':
+        fName = General['Name']+'-PDFfit.rstr'
+        try:
+            rstr = open(fName.replace(' ','_'),'r')
+        except FileNotFoundError:
+            return [fName,'Not found - PDFfit failed']
+        lines = rstr.readlines()
+        rstr.close()
+        header = [line[:-1].split(' ',1) for line in lines[:7]]
+        resdict = dict(header)
+        for item in ['sharp','cell']:
+            resdict[item] = [float(val) for val in resdict[item].split(',')]
+        General['Cell'][1:7] = resdict['cell']
+        for inam,name in enumerate(['delta2','delta1','sratio']):
+            RMCPdict[name][0] = float(resdict['sharp'][inam])
+        if 'shape' in resdict:
+            if 'sphere' in resdict['shape']:
+                RMCPdict['spdiameter'][0] = float(resdict['shape'].split()[-1])
+            else:
+                RMCPdict['stepcut'][0] = float(resdict['shape'][-1])
+        cx,ct,cs,ci = G2mth.getAtomPtrs(Phase)
+        Atoms = Phase['Atoms']
+        atmBeg = 0
+        for line in lines:
+            atmBeg += 1
+            if 'atoms' in line:
+                break
+        for atom in Atoms:
+            atstr = lines[atmBeg][:-1].split()
+            Uiistr = lines[atmBeg+2][:-1].split()
+            Uijstr = lines[atmBeg+4][:-1].split()
+            atom[cx:cx+4] = [float(atstr[1]),float(atstr[2]),float(atstr[3]),float(atstr[4])]
+            atom[ci] = 'A'
+            atom[ci+2:ci+5] = [float(Uiistr[0]),float(Uiistr[1]),float(Uiistr[2])]
+            atom[ci+5:ci+8] = [float(Uijstr[0]),float(Uijstr[1]),float(Uijstr[2])]
+            atmBeg += 6
+        fName = General['Name']+'-PDFfit.res'
+    else:
+        fName = 'Sequential_PDFfit.res'
+    try:
+        res = open(fName.replace(' ','_'),'r')
+    except FileNotFoundError:
+        return [fName,'Not found - PDFfit failed']
+    lines = res.readlines()
+    res.close()
+    Ibeg = False
+    resline = ''
+    XNdata = {'Xdata':RMCPdict['Xdata'],'Ndata':RMCPdict['Ndata']}
+    for line in lines:
+        if 'Radiation' in line and 'X-Rays' in line:
+            dkey = 'Xdata'
+        if 'Radiation' in line and'Neutrons' in line:
+            dkey = 'Ndata'
+        if 'Qdamp' in line and '(' in line:
+            XNdata[dkey]['qdamp'][0] = float(line.split()[4])
+        if 'Qbroad' in line and '(' in line:
+            XNdata[dkey]['qbroad'][0] = float(line.split()[4])
+        if 'Scale' in line and '(' in line:
+            XNdata[dkey]['dscale'][0] = float(line.split()[3])
+
+    for iline,line in enumerate(lines):
+        if 'Refinement parameters' in line:
+            Ibeg = True
+            continue
+        if Ibeg:
+            if '---------' in line:
+                break
+            resline += line[:-1]
+    for iline,line in enumerate(lines):
+        if 'Rw - ' in line:
+            if 'nan' in line:
+                Rwp = 100.0
+            else:
+                Rwp = float(line.split(':')[1])
+    results = resline.replace('(','').split(')')[:-1]
+    results = ['@'+result.lstrip() for result in results]
+    results = [item.split() for item in results]
+    RMCPdict['Parms'] = dict([[item[0][1:-1],float(item[1])] for item in results])      #{'n':val,...}
+    if RMCPdict['refinement'] == 'normal':
+        fName = General['Name']+'-PDFfit.py'
+        py = open(fName.replace(' ','_'),'r')
+        pylines = py.readlines()
+        py.close()
+        py = open(fName.replace(' ','_'),'w')
+        newpy = []
+        for pyline in pylines:
+            if 'setpar' in pyline:
+                parm = pyline.split('(')[1].split(',')[0]
+                newpy.append('pf.setpar(%s,%.5f)\n'%(parm,RMCPdict['Parms'][parm]))
+            else:
+                newpy.append(pyline)
+        py.writelines(newpy)
+        py.close()
+        RMCPdict.update(XNdata)
+        results = dict([[item[0][:-1],float(item[1])] for item in results if item[0][:-1] in RMCPdict['AtomVar']])
+        RMCPdict['AtomVar'].update(results)
+        return None
+    else:   #sequential
+        newParms = dict([[item[0][1:-1],[float(item[1]),float(item[2])]] for item in results])  #{'n':[val,esd],...}
+        return newParms,Rwp
+
+def ISO2PDFfit(Phase):
+    ''' Creates new phase structure to be used for PDFfit from an ISODISTORT mode displacement phase.
+    It builds the distortion mode parameters to be used as PDFfit variables for atom displacements from
+    the original parent positions as transformed to the child cell wiht symmetry defined from ISODISTORT.
+
+    :param Phase: dict GSAS-II Phase structure; must contain ISODISTORT dict. NB: not accessed otherwise
+
+    :returns: dict: GSAS-II Phase structure; will contain ['RMC']['PDFfit'] dict
+    '''
+
+    Trans = np.eye(3)
+    Uvec = np.zeros(3)
+    Vvec = np.zeros(3)
+    Phase = copy.deepcopy(Phase)
+    Atoms = Phase['Atoms']
+    parentXYZ = Phase['ISODISTORT']['G2parentCoords']           #starting point for mode displacements
+    cx,ct,cs,cia = Phase['General']['AtomPtrs']
+    for iat,atom in enumerate(Atoms):
+        atom[cx:cx+3] = parentXYZ[iat]
+    SGData = copy.deepcopy(Phase['General']['SGData'])
+    SGOps = SGData['SGOps']
+    newPhase = copy.deepcopy(Phase)
+    newPhase['ranId'] = rand.randint(0,sys.maxsize)
+    newPhase['General']['Name'] += '_PDFfit'
+    newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]    #this is for filled unit cell
+    newPhase,atCodes = G2lat.TransformPhase(Phase,newPhase,Trans,Uvec,Vvec,False)
+    newPhase['Histograms'] = {}
+    newPhase['Drawing'] = []
+    Atoms = newPhase['Atoms']
+    RMCPdict = newPhase['RMC']['PDFfit']
+    ISOdict = newPhase['ISODISTORT']
+    RMCPdict['AtomConstr'] = []
+    RMCPdict['SGData'] = copy.deepcopy(SGData)      #this is from the ISODISTORT child; defines PDFfit constraints
+    Norms = ISOdict['NormList']
+    ModeMatrix = ISOdict['Mode2VarMatrix']
+    RMCPdict['AtomVar'] = {'@%d'%(itm+21):val for itm,val in enumerate(ISOdict['modeDispl'])}
+    for iatm,[atom,atcode] in enumerate(zip(Atoms,atCodes)):
+        pid,opid = [int(item) for item in atcode.split(':')]
+        atmConstr = [atom[ct-1],atom[ct],'','','','','',atcode]
+        for ip,pname in enumerate(['%s_d%s'%(atom[ct-1],x) for x in ['x','y','z']]):
+            try:
+                conStr = ''
+                if Atoms[iatm][cx+ip]:
+                    conStr += '%.5f'%Atoms[iatm][cx+ip]
+                pid = ISOdict['IsoVarList'].index(pname)
+                consVec = ModeMatrix[pid]
+                for ic,citm in enumerate(consVec):      #NB: this assumes orthorhombic or lower symmetry
+                    if opid < 0:
+                        citm *= -SGOps[100-opid%100-1][0][ip][ip]   #remove centering, if any
+                    else:
+                        citm *= SGOps[opid%100-1][0][ip][ip]
+                    if citm > 0.:
+                        conStr += '+%.5f*@%d'%(citm*Norms[ic],ic+21)
+                    elif citm < 0.:
+                        conStr += '%.5f*@%d'%(citm*Norms[ic],ic+21)
+                atmConstr[ip+2] = conStr
+            except ValueError:
+                atmConstr[ip+2] = ''
+        RMCPdict['AtomConstr'].append(atmConstr)
+    return newPhase

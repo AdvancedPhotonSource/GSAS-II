@@ -67,16 +67,17 @@ Details for GSAS-II use on these specific platforms follows below:
   **Raspberry Pi** (ARM) Linux: GSAS-II has been installed on both 32-bit
   and the 64-bit version of the Raspberry Pi OS (formerly
   called Raspbian) and some older compiled binaries are provided at present for
-  both, but 32-bit support may not continue. It is expected that
+  both. It is expected that
   these binaries will also function on Ubuntu Linux for Raspberry Pi,
-  but this has not been tried.
+  but this has not been tried. Updated 64-bit binaries will be created if someone requests them, 
+  but 32-bit support, probably not. 
   The performance of GSAS-II on a Raspberry Pi is not blindingly fast,
   but one can indeed run GSAS-II on a motherboard that costs only $15
   (perhaps even one that costs $5) and uses <5 Watts!
 
   Note that the 64-bit OS is preferred on the models where it can be run
   (currently including models 3A+, 3B, 3B+, 4, 400, CM3, CM3+, CM4,
-  and Zero 2 W) .  With the 32-bit Raspberry Pi OS, which does run on
+  and Zero 2 W).  With the 32-bit Raspberry Pi OS, which does run on
   all Raspberry Pi models, it is necessary to use the OS distribution's
   versions of Python and its packages, `see here   for more information
   <https://advancedphotonsource.github.io/GSAS-II-tutorials/install-pip.html>`_.
@@ -146,9 +147,9 @@ interpreter/package versions:
    and did not see any problems.
  * pybaselines: no version issues are known.
    
-For more details on problems noted with specific versions of Python
-and Python packages, see comments below and details here:
-:attr:`GSASIIdataGUI.versionDict`,
+Details on problems noted with specific versions of Python
+and Python packages are noted in global `versionDict` in 
+`GSASIIdataGUI`, see https://github.com/AdvancedPhotonSource/GSAS-II/blob/main/GSASII/GSASIIdataGUI.py.
 
 Note that GSAS-II is currently being developed using Python 3.11
 through 3.13. 
@@ -171,9 +172,9 @@ Far fewer packages are required to run GSAS-II on a
 compute server via the scripting interface
 and without a GUI.
 
-------------------
- GUI Requirements
-------------------
+--------------------------
+ GUI Package Requirements
+--------------------------
 
 When using the GSAS-II graphical user interface (GUI), the following
 Python extension packages are required:
@@ -242,7 +243,8 @@ optional packages are:
   the base miniconda and anaconda installations, but if you create an
   environment for GSAS-II
   (`conda create -n <env> package-list...`), it will not be added
-  to that environment unless you request it specifically.
+  to that environment unless you request it specifically. This is
+  recommended. 
   
 * pybaselines: Determines a background for a powder pattern in the
   "autobackground" option. See https://pybaselines.readthedocs.io and
@@ -264,6 +266,30 @@ optional packages are:
 * sympy: This package performs symbolic computations and is used
   for k-vector searching with ISODISTORT.
 
+* chromaDB: The chromaDB package is used for LLM (AI-based)
+  documentation searching. It is needed with both the llama and ollama
+  backends.  ("Help via LLM Docs Search" command.)
+
+* llama-cpp-python: this provides the llama backend used for LLM
+  (AI-based) documentation searching. The alternate is to use the
+  ollama backend for the used for the "Help via LLM Docs Search"
+  command.
+
+* huggingface_hub: This is used to install the LLM model used in the
+  llama backend used for LLM (AI-based) documentation searching. If
+  the model is downloaded in some other manner (to
+  ~/.GSASII/llama_models) then huggingface_hub is not needed.
+
+* ollama: The ollama package in conda and pip does not appear to work,
+  at least not on all platforms, but can be used as an alternate
+  backend to llama-cpp for LLM (AI-based) documentation searching with
+  the "Help via LLM Docs Search" command.
+  To use ollama rather than llama, you are recommended to install ollama directly from
+  https://ollama.com/download/. Then either start this as a server
+  process or define the ``OLLAMA_BIN`` environment variable and
+  GSAS-II will start the server when the help window is opened and close down the server
+  process when the window is closed or GSAS-II is ended.
+  
 *Conda command*:
   Should you wish to install Python and the desired packages yourself,
   this is certainly possible. For Linux, ``apt`` or ``yum`` is an option, as is

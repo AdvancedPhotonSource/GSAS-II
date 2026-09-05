@@ -612,7 +612,9 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                 if reader.UseReader:
                     readerlist.append(reader)
     # Now look for modules in the "user-defined" area (~/.GSASII/imports)
-    fnam = os.path.expanduser(os.path.normpath(f'~/.GSASII/imports/G2{prefix}*.py'))
+    localdir = GSASIIpath.LocalG2Dir()
+    if localdir is None: return readerlist
+    fnam = os.path.join(localdir,'imports',f'G2{prefix}*.py')
     import importlib.util
     for f in sorted(glob.glob(fnam)):
         nam = os.path.splitext(os.path.split(f)[1])[0]
@@ -683,7 +685,9 @@ def LoadExportRoutines(parent, usetraceback=False):
                     import traceback
                     traceback.print_exc(file=sys.stdout)
     # Now look for modules in the "user-defined" area (~/.GSASII/exports)
-    fnam = os.path.expanduser(os.path.normpath('~/.GSASII/exports/G2export*.py'))
+    localdir = GSASIIpath.LocalG2Dir()
+    if localdir is None: return exporterlist
+    fnam = os.path.join(localdir,'exports','G2export*.py')
     import importlib.util
     for f in sorted(glob.glob(fnam)):
         nam = os.path.splitext(os.path.split(f)[1])[0]
@@ -2537,6 +2541,50 @@ class ExportBaseclass(object):
                     td.append((val,sig))
             atomslist.append((label,typ,mult,xyz,td))
         return atomslist
+
+def findPDFfit():
+    '''Checks to see if PDFfit2 is available or can be imported. If the 
+    pdffit2_exec config variable is defined, the files is checked to see
+    it exists, but no attempt is made to check that it actually runs.
+    Otherwise, if diffpy.PDFfit has been installed into with conda/pip 
+    into the current Python interpreter, it is checked via an import. 
+
+    This is here rather than in GSASIIrmcGUI in case it needs to be 
+    used in a non-GUI setting.
+
+    :returns: None if PDFfit2 cannot be run/accessed. Otherwise a file 
+      name for the Python interpreter than contains PDFfit2. This will 
+      be sys.executable if PDFfit2 is installed into the current Python 
+      interpreter.
+    '''
+    # if a separate Python interpreter has been specified, just use it,
+    # minimal checking
+    PDFpython = GSASIIpath.GetConfigValue('pdffit2_exec')
+    if PDFpython is not None and os.path.exists(PDFpython):
+        return PDFpython
+
+    # see if diffpy has been installed directly
+    try:
+        from diffpy.pdffit2 import PdfFit
+        PdfFit
+        #import diffpy
+        #diffpy
+        return sys.executable
+    except:
+        pass
+
+    # test default install location
+    localdir = GSASIIpath.LocalG2Dir()
+    if localdir is None:
+        print('Directory ~/.GSASII not found. Unexpected')
+        return
+    pdffitDir = os.path.join(localdir,'PDFfit2')
+    if sys.platform == "win32":
+        newpython = os.path.join(pdffitDir,'python.exe')
+    else:
+        newpython = os.path.join(pdffitDir,'bin','python')
+    if os.path.exists(newpython): return newpython
+    return None
 
 if __name__ == '__main__':
     for i in (1.23456789e-129,1.23456789e129,1.23456789e-99,1.23456789e99,-1.23456789e-99,-1.23456789e99):

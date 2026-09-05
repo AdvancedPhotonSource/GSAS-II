@@ -13,7 +13,7 @@ to control scrolling.
 Routines for Phase dataframes follow.
 '''
 from __future__ import division, print_function
-import platform
+#import platform
 import os
 import wx
 import wx.grid as wg
@@ -5986,7 +5986,6 @@ to use these entries'''
             binimage = 'Dysnomia64.exe'
         else:
             binimage = 'Dysnomia'
-        is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
         #path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
         pathlist = (GSASIIpath.path2GSAS2,
@@ -6160,11 +6159,11 @@ at one of the following locations:
                 return
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['PDFfit']
-            msg = G2pwd.MakePDFfitAtomsFile(data,RMCPdict)
+            msg = G2rmcG.MakePDFfitAtomsFile(data,RMCPdict)
             if msg:
                 G2G.G2MessageBox(G2frame,'ERROR: '+msg,'PDFfit setup failure')
                 return
-            fname = G2pwd.MakePDFfitRunFile(data,RMCPdict)
+            fname = G2rmcG.MakePDFfitRunFile(data,RMCPdict)
             if fname is None:
                 wx.MessageDialog(G2frame,'ERROR: failure to setup PDFfit; check console','PDFfit setup failure',wx.ICON_ERROR).ShowModal()
             else:
@@ -6172,243 +6171,8 @@ at one of the following locations:
                 print('PDFfit file build completed')
 
     def RunPDFfit(event):
-        generalData = data['General']
-        ISOdict = data['ISODISTORT']
-        PDFfit_exec = G2pwd.findPDFfit()  #returns location of python with PDFfit installed
-        if not PDFfit_exec:
-            wx.MessageBox(''' PDFfit2 is not currently installed for this platform.
-    Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
-            return
-        RMCPdict = data['RMC']['PDFfit']
-        pName = generalData['Name'].replace(' ','_')
-        if 'sequential' in RMCPdict['refinement']:
-            rname = 'Seq_PDFfit.py'
-        else:
-            rname = pName+'-PDFfit.py'
-            if not os.path.exists(rname):
-                wx.MessageBox(f'File {rname} does not exist. Has the Operations/"Setup RMC" menu command been run?',
-                                  caption='Run setup',style=wx.ICON_WARNING)
-                return
-        wx.MessageBox(' For use of PDFfit2, please cite:\n\n'+
-                          G2G.GetCite('PDFfit2'),
-                          caption='PDFfit2',style=wx.ICON_INFORMATION)
-        G2frame.OnFileSave(event)
-        print (' GSAS-II project saved')
-        if sys.platform.lower().startswith('win'):
-            batch = open('pdffit2.bat','w')
-            # Include an activate command here
-            p = os.path.split(PDFfit_exec)[0]
-            while p:
-                if os.path.exists(os.path.join(p,'Scripts','activate')):
-                    batch.write('call '+os.path.join(p,'Scripts','activate')+'\n')
-                    break
-                prevp = p
-                p = os.path.split(p)[0]
-                if prevp == p:
-                    print('Note, no activate command found')
-                    break
-            batch.write(PDFfit_exec+' '+rname+'\n')
-            # batch.write('pause')
-            if 'normal' in RMCPdict['refinement']:
-                batch.write('pause')
-            batch.close()
-        else:
-            batch = open('pdffit2.sh','w')
-            batch.write('#!/bin/bash\n')
-            # include an activate command here
-            p = os.path.split(PDFfit_exec)[0]
-            while p:
-                if os.path.exists(os.path.join(p,'bin','activate')):
-                    batch.write('source '+os.path.join(p,'Scripts','activate')+'\n')
-                    break
-                prevp = p
-                p = os.path.split(p)[0]
-                if prevp == p:
-                    print('Note, no activate command found')
-                    break
-
-            batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
-            batch.write(PDFfit_exec + ' ' + os.path.abspath(rname) + '\n')
-            batch.close()
-        if 'sequential' in RMCPdict['refinement']:
-            Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential PDFfit2 results')
-#            if Id:
-#                saveSeqResult = G2frame.GPXtree.GetItemPyData(Id)
-#            else:
-            if not Id:
-                SeqResult = {}
-                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDFfit2 results')
-            G2Names = [item.name for item in ISOdict['G2ModeList']]
-            SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
-            SeqResult['histNames'] = []         #this clears the previous seq. result!
-            SeqNames = []
-            for itm in range(len(RMCPdict['seqfiles'])):
-                SeqNames.append([itm,RMCPdict['seqfiles'][itm][0]])
-            if RMCPdict['SeqReverse']:
-                SeqNames.reverse()
-            nPDF = len(SeqNames)
-            pgbar = wx.ProgressDialog('Sequential PDFfit','PDF G(R) done = 0',nPDF+1,
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-            newParms = {}
-            for itm,Item in enumerate(SeqNames):
-                PDFfile = RMCPdict['seqfiles'][Item[0]]
-                pfdata = PDFfile[1]['G(R)'][1].T
-#                    pfname = PDFfile[0].replace(' ','_')
-                pfname = 'Seq_PDF.gr'
-                pfile = open(pfname,'w')
-                for dp in pfdata:
-                    pfile.write('%12.5f%12.5f\n'%(dp[0],dp[1]))
-                pfile.close()
-                rfile = open('Seq_PDFfit_template.py','r')
-                lines = rfile.readlines()       #template lines
-                rfile.close()
-                newlines = []
-                parms = {}
-                Np = 0
-                for line in lines:
-                    if '#sequential' in line:
-                        newlines += "pf.read_data('%s', '%s', 30.0, %.4f)\n"%(pfname,PDFfile[1]['Type'][0],PDFfile[1]['qdamp'][0])
-                        newlines += 'pf.setdata(1)\n'
-                        newlines += 'pf.pdfrange(1, %6.2f, %6.2f)\n'%(PDFfile[1]['Fitrange'][0],PDFfile[1]['Fitrange'][1])
-                        for item in ['dscale','qdamp','qbroad']:
-                            if PDFfile[1][item][1]:
-                                Np += 1
-                                newlines += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
-                                parms[item] = '%d'%Np
-                                if itm and RMCPdict['SeqCopy']:
-                                    newParms[parms[item]] = RMCPdict['Parms'][parms[item]]
-                                else:
-                                    if not itm and 'result' not in PDFfile[1]:
-                                        newParms[parms[item]] = PDFfile[1][item][0]
-                                    else:
-                                        newParms[parms[item]] = PDFfile[1]['result'][parms[item]][0]
-                    elif '#parameters' in line:
-                        startParms = RMCPdict['Parms']
-                        if newParms or RMCPdict['SeqCopy']:
-                            if newParms:
-                                startParms = newParms
-                            for iprm in startParms:
-                                if int(iprm) > 9:
-                                    break
-                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm])
-                            print('Begin dscale: %d %.4f'%(itm,startParms['1']))
-                            for iprm in RMCPdict['Parms']:
-                                if isinstance(RMCPdict['Parms'][iprm],float):
-                                    newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm])
-                                else:
-                                    newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm][0])
-                        elif not RMCPdict['SeqCopy']:
-                            startParms = PDFfile[1]['result']
-                            for iprm in startParms:
-                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
-                            print('Begin dscale: %d %.4f'%(itm,startParms['1']))
-                    else:
-                        newlines += line
-                rfile= open('Seq_PDFfit.py','w')
-                rfile.writelines(newlines)
-                rfile.close()
-                fName = 'Sequential_PDFfit'     #clean out old PDFfit output files
-                if os.path.isfile(fName+'.res'):
-                    os.remove(fName+'.res')
-                if os.path.isfile(fName+'.rstr'):
-                    os.remove(fName+'.rstr')
-                if os.path.isfile(fName+'.fgr'):
-                    os.remove(fName+'.fgr')
-
-                if sys.platform.lower().startswith('win'):
-                    Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
-                    Proc.wait()     #for it to finish before continuing on
-                else:
-                    if sys.platform == "darwin":
-                        GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
-                    else:
-                        Proc = subp.Popen(['/bin/bash','pdffit2.sh'])
-                        Proc.wait()
-
-                newParms,Rwp =  G2pwd.UpdatePDFfit(data,RMCPdict)
-                if isinstance(newParms,str):
-                    wx.MessageBox('Singular matrix in PDFfit',caption='PDFfit2 failed',style=wx.ICON_INFORMATION)
-                    break
-                for item in ['dscale','qdamp','qbroad']:
-                    if PDFfile[1][item][1]:
-                        PDFfile[1][item][0] = newParms[parms[item]][0]
-                PDFfile[1]['result'] = copy.deepcopy(newParms)
-                parmDict = copy.deepcopy(newParms)
-                parmDict.update({'Temperature':PDFfile[1]['Temp']})
-                tempList = ['%s-%s'%(parms[item],item) for item in parms]       #these come first
-                parmkeys = [int(item) for item in RMCPdict['ParmNames']]
-                parmkeys.sort()
-                tempList += ['%s-%s'%(item,RMCPdict['ParmNames'][item]) for item in parmkeys]
-                print('result dscale: ',parmDict['1'],' Rw: ',Rwp)
-                atParms = [str(i+21) for i in range(len(G2Names))]
-                varyList = []
-                for item in tempList:
-                    pid = item.split('-')[0]
-                    if pid in atParms:
-                        item = '%s-%s'%(pid,G2Names[int(pid)-21])
-                    varyList.append(item)
-                result = np.array(list(newParms.values())).T
-                SeqResult[PDFfile[0]] = {'variables':result[0],'varyList':varyList,'sig':result[1],'Rvals':{'Rwp':Rwp,},
-                    'covMatrix':[],'title':PDFfile[0],'parmDict':parmDict}
-
-                pfile = open('Sequential_PDFfit.fgr')
-                XYcalc = np.loadtxt(pfile).T[:2]
-                pfile.close()
-                pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFfile[0])
-                PDFctrl = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'))
-                XYobs = PDFctrl['G(R)'][1]
-                if XYobs.shape[0] < 4:
-                    XYobs = np.concatenate((XYobs,np.zeros_like(XYobs)),axis=0)
-                ibeg = np.searchsorted( XYobs[0],XYcalc[0][0])
-                ifin = ibeg+XYcalc.shape[1]
-                XYobs[2][ibeg:ifin] = XYcalc[1]
-                XYobs[3] = XYobs[1]-XYobs[2]
-                PDFctrl['G(R)'][1] = XYobs
-                SeqResult['histNames'].append(Item[1])
-                GoOn = pgbar.Update(itm,newmsg='PDF G(R) done = %d'%(itm))
-                if not GoOn[0]:
-                    print(' Sequential PDFfit aborted')
-                    break
-
-            pgbar.Destroy()
-            G2frame.GPXtree.SetItemPyData(Id,SeqResult)
-            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-            G2frame.GPXtree.SelectItem(Id)
-
-        else: #normal
-            #remove any old PDFfit output files
-            fName = generalData['Name'].replace(' ','_')+'-PDFfit'
-            if os.path.isfile(fName+'.res'):
-                os.remove(fName+'.res')
-            if os.path.isfile(fName+'.rstr'):
-                os.remove(fName+'.rstr')
-            if os.path.isfile(fName+'N.fgr'):
-                os.remove(fName+'N.fgr')
-            if os.path.isfile(fName+'X.fgr'):
-                os.remove(fName+'X.fgr')
-
-            if sys.platform.lower().startswith('win'):
-                Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
-                Proc.wait()     #for it to finish before continuing on
-            else:
-                if sys.platform == "darwin":
-                    GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
-                else:
-                    Proc = subp.Popen(['/bin/bash','pdffit2.sh'])
-                    Proc.wait()     #for it to finish before continuing on
-            #update choice? here?
-            dlg = wx.MessageDialog(G2frame,'Check PDFfit console for results; do you want to update?',
-                'PDFfit run finished',wx.YES|wx.NO)
-            try:
-                dlg.CenterOnParent()
-                result = dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            if result == wx.ID_YES:
-                Error =  G2pwd.UpdatePDFfit(data,RMCPdict)
-                if Error:
-                    wx.MessageBox('PDFfit failed',caption='%s not found'%Error[0],style=wx.ICON_EXCLAMATION)
-            G2rmcG.UpdateRMC(G2frame,data)
+        'Run PDFfit2 in a separate process'
+        G2rmcG.RunPDFfit2(G2frame,data,event)
 
     def Runfullrmc(event):
         fullrmc_exec = G2pwd.findfullrmc()
@@ -6604,11 +6368,13 @@ at one of the following locations:
         original cell
         '''
         fullrmcLoadPhase(super=False)
+
     def OnLoadRMCsuper(event):
         '''Used to load the output from fullrmc with atoms in the simulation
         supercell cell
         '''
         fullrmcLoadPhase(super=True)
+
     def fullrmcLoadPhase(super):
         '''Used to load the output from fullrmc. Creates a new phase,
         reads all atoms & converts coordinates to fractional.
@@ -9749,7 +9515,7 @@ at one of the following locations:
                 # update equivalent TL terms here
                 if 'T' in model[0]: #for 'T','TL' & 'TLS'
                     np = tc.key
-                    vals =  tc.result
+                    #vals =  tc.result
                     cid = CSI[0][np%6]
                     for i,tls in enumerate(TLSobj):
                         if i <= np:
@@ -14003,82 +13769,6 @@ def CheckAddHKLF(G2frame,data):
     wx.EndBusyCursor()
     return result
 
-def checkPDFfit(G2frame):
-    '''Checks to see if PDFfit2 is available and can be imported. PDFfit2 can be installed
-    in a separate Python interpreter (saved in the pdffit2_exec config variable). If this is
-    defined, no attempt is made to check that it actually runs.
-    Otherwise, if diffpy.PDFfit has been installed with conda/pip, it is checked if the
-    install command.
-
-    :returns: False if PDFfit2 cannot be run/accessed. True if it appears it can be run.
-    '''
-    # if a separate Python interpreter has been specified, just use it, no checking
-    if GSASIIpath.GetConfigValue('pdffit2_exec') is not None and is_exe(
-            GSASIIpath.GetConfigValue('pdffit2_exec')):
-        return True
-
-    # see if diffpy has been installed directly
-    try:
-        from diffpy.pdffit2 import PdfFit
-        PdfFit
-        return True
-    except:
-        pass
-
-    G2G.G2MessageBox(G2frame,
-                'PDFfit2 Install needs update. The code used for this is out of date. Please install manually or request this be updated',
-                'PDFfit2 install not available')
-    # Last effort: With conda we should be able to create a separate
-    # Python in a separate environment
-    # try:     # have conda. Can we access it programmatically?
-    #     import conda.cli.python_api
-    #     conda.cli.python_api
-    # except:
-    #     G2G.G2MessageBox(G2frame,'You are running a directly installed Python. You will need to install PDFfit2 directly as well, preferably in a separate virtual environment.')
-    #     return
-
-    # msg = ('Do you want to use conda to install PDFfit2 into a separate environment? '+
-    #            '\n\nIf successful, the pdffit2_exec configuration option will be set to the '+
-    #            'this new Python environment.')
-    # dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-    #                                style=wx.YES_NO|wx.ICON_QUESTION)
-    # if dlg.ShowModal() != wx.ID_YES:
-    #     return False
-    # try:
-    #     wx.BeginBusyCursor()
-    #     print('Preparing to create a conda environment. This may take a few minutes...')
-    #     # for now use the older diffpy version of pdffit:
-    #     #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.3.4 -c conda-forge -c diffpy
-    #     res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
-    #                 ['python', 'conda', 'gsl', 'diffpy.pdffit2>=1.4.3',
-    #                      '-c', 'conda-forge']) #  not needed , '-c', 'diffpy'])
-    # finally:
-    #     wx.EndBusyCursor()
-    if os.path.exists(PDFpython) and is_exe(PDFpython):
-        vars = G2G.GetConfigValsDocs()
-        vars['pdffit2_exec'][1] = PDFpython
-        GSASIIpath.SetConfigValue(vars)
-        G2G.SaveConfigVars(vars)
-        print('pdffit2_exec config set with ',GSASIIpath.GetConfigValue('pdffit2_exec'))
-        print('\n\nSuccess: PDFfit2 installed.')
-        return True
-    else:
-        print(f'Failed to install PDFfit2 with error:\n{PDFpython}')
-        if ('PackagesNotFoundError' in PDFpython
-                and 'darwin' in sys.platform
-                and 'arm' in platform.machine()):
-            msg = ('It appears that PDFfit2 is not yet available as a conda package for Macs with arm processors. '+
-                       '\n\nYou could install PDFfit2 with x86 Python and use that '+
-                       'in compatibility mode.')
-        else:
-            msg = ('An attempt to install PDFfit2 has failed. '+
-                       'Do you have write access to where GSAS-II is installed? '+
-                       'You may be able to install PDFfit2 manually.')
-        msg += '\n\nIf you install PDFfit2 yourself, set the pdffit2_exec config variable to the install location'
-        G2G.G2MessageBox(G2frame,
-                'PDFfit2 Install failed. See console for error message\n\n'+msg,
-                'PDFfit2 install error')
-        return False
 
 def makeIsoNewPhase(phData,cell,atomList,sglbl,sgnum):
     '''create a new phase from a supergroup structure generated by ISOCIF

@@ -66,6 +66,8 @@ GSAS-II-provided Dialog (full window) routines:
 Class or function name             Description
 ================================  =================================================================
 :func:`G2MessageBox`               Displays text typically used for errors or warnings. 
+:class:`G2ModelessMessage`         Displays text similar to :func:`G2MessageBox`but in a
+                                   non-modal dialog.
 :func:`ShowScrolledInfo`           Dialog to display longer text where scrolling is
                                    possibly needed
 :class:`gpxFileSelector`           File browser dialog for opening existing .gpx files
@@ -129,6 +131,7 @@ Class or function name             Description
 :func:`MultipleChoicesSelector`    Dialog for displaying fairly complex choices, used for 
                                    CIF powder histogram imports only
 :func:`PhaseSelector`              Select a phase from a list (used for phase importers)
+:func:`LLMsearch`                  Checks for prerequisites & opens a Query_gsas LLM search window
 ================================  =================================================================
 
 Miscellaneous GUI support routines:

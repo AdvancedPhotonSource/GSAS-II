@@ -10549,6 +10549,7 @@ def LLMsearch(event,repeat=False):
                 'Download(s) are in progress. The "LLM\n'+
                 'Docs Search" window will open when complete.',
                 'Download in progress')
+            dlg.CenterOnParent()
             thread = threading.Thread(target=DownloadLLMfiles,
                                       args=(G2frame,dlg,installIndex))
             thread.start()

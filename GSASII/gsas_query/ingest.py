@@ -120,21 +120,30 @@ def ingest_html_source(source: dict, collection, model):
             return 0,0
 
     sections,word_count = extract_html_sections(resp.text, title)
-    # Use a dict keyed by doc_id to deduplicate identical chunks within the source.
-    records: dict[str, tuple] = {}
+    # Collect all unique chunks first, then embed in one batch per page.
+    pending: list[tuple[str, str, dict]] = []  # (doc_id, chunk, metadata)
+    seen: set[str] = set()
 
     for section in sections:
         chunks = chunk_text(section["text"])
         for chunk in chunks:
             doc_id = hashlib.md5(f"{url}|{section['heading']}|{chunk}".encode()).hexdigest()
-            if doc_id not in records:
-                records[doc_id] = (chunk, model([chunk])[0], {
+            if doc_id not in seen:
+                seen.add(doc_id)
+                pending.append((doc_id, chunk, {
                     "url": url,
                     "title": title,
                     "section": section["heading"],
                     "category": category,
                     "source_type": "html",
-                })
+                }))
+
+    records: dict[str, tuple] = {}
+    if pending:
+        texts = [p[1] for p in pending]
+        embeddings = model(texts)          # single batch call for the whole page
+        for (doc_id, chunk, meta), emb in zip(pending, embeddings):
+            records[doc_id] = (chunk, emb, meta)
 
     if records:
         ids = list(records)
@@ -176,7 +185,7 @@ def ingest_pdf_source(source: dict, collection, model):
         print(f"  ERROR parsing PDF: {e}")
         return 0
 
-    ids, docs, embeddings, metadatas = [], [], [], []
+    pending_ids, pending_docs, pending_metas = [], [], []
     total_pages = len(reader.pages)
     print(f"    {total_pages} pages")
 
@@ -189,11 +198,9 @@ def ingest_pdf_source(source: dict, collection, model):
         section_label = f"Pages {page_start + 1}-{page_end}"
         for i, chunk in enumerate(chunk_text(combined_text)):
             doc_id = hashlib.md5(f"{url}|{section_label}|{i}".encode()).hexdigest()
-            embedding = model([chunk])[0]
-            ids.append(doc_id)
-            docs.append(chunk)
-            embeddings.append(embedding)
-            metadatas.append({
+            pending_ids.append(doc_id)
+            pending_docs.append(chunk)
+            pending_metas.append({
                 "url": url,
                 "title": title,
                 "section": section_label,
@@ -201,11 +208,17 @@ def ingest_pdf_source(source: dict, collection, model):
                 "source_type": "pdf",
             })
 
-    if ids:
-        collection.upsert(ids=ids, documents=docs, embeddings=embeddings, metadatas=metadatas)
-        print(f"    -> {len(ids)} chunks stored")
+    if pending_ids:
+        embeddings = model(pending_docs)
+        collection.upsert(
+            ids=pending_ids,
+            documents=pending_docs,
+            embeddings=embeddings,
+            metadatas=pending_metas,
+        )
+        print(f"    -> {len(pending_ids)} chunks stored")
 
-    return len(ids)
+    return len(pending_ids)
 
 
 def main():

@@ -453,7 +453,7 @@ class GSASQueryDialog(wx.Frame):
         src_box = wx.StaticBox(self, label="Sources")
         src_box.SetForegroundColour(_MUTED)
         self._src_sizer = wx.StaticBoxSizer(src_box, wx.VERTICAL)
-        self._src_panel = wx.ScrolledWindow(self, style=wx.BORDER_NONE)
+        self._src_panel = wx.ScrolledWindow(src_box, style=wx.BORDER_NONE)
         self._src_panel.SetScrollRate(0, 12)
         self._src_panel.SetBackgroundColour(_BG)
         self._src_inner = wx.BoxSizer(wx.VERTICAL)

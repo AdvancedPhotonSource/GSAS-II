@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#config.py - Variables used to set optional configuration options
+#config_example.py - Variables used to set optional configuration options
 '''
 This file contains optional configuration options for GSAS-II. The 
 values for the variables named here will be set in file ~/.GSASII/config.ini
@@ -78,8 +78,6 @@ As another example, to use ~/.G2tutorials do this::
     Tutorial_location = '~/.G2tutorials'
 
 Note that os.path.expanduser is run on Tutorial_location before it is used.
-Also note that GSASIIpath is imported inside config.py; other imports should be
-avoided.
 '''
 
 Save_paths=False

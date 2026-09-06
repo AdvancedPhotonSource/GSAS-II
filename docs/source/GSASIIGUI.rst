@@ -133,8 +133,9 @@ GSASIIrmcGUI Classes & Routines
 
 Module to create the GUI for display of HAP items (where there is
 an entry for each histogram & phase). This is shown when the
-Phase "Data" tab is selected or may appear as if in a separate
-data tree item (see SeparateHistPhaseTreeItem in config.py).
+Phase "Data" tab is selected, or can appear as in a separate
+data tree item if the SeparateHistPhaseTreeItem configuration variable
+is set (described in `config_example.py`).
 
 GSASIIddataGUI Classes & Routines
 ---------------------------------------

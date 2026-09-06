@@ -1426,29 +1426,6 @@ def LoadConfig(printInfo=True):
     :param bool printInfo: if printInfo is True (default) then a message
       is shown with the number of settings read (upon startup).
     '''
-    def XferConfigIni():
-        '''copy the contents of the config.py file to file ~/.GSASII/config.ini.
-        This "patch code" used for master->main transition and can eventually
-        be removed.
-        '''
-        import types
-        configDict = {}
-        try:
-            import config
-            #import config_example as config
-            for i in config.__dict__:
-                if i.startswith('__') and i.endswith('__'): continue
-                if isinstance(config.__dict__[i],types.ModuleType): continue
-                configDict.update({i:str(config.__dict__[i])})
-        except ImportError:
-            print("New install: start without a config.py file")
-            return
-        except Exception as err:
-            print("Error reading config.py file\n",err)
-            return
-        print(f"Contents of {config.__file__} to be written from config.py...")
-        WriteConfig(configDict)
-
     import configparser
     global configDict
     configDict = {}
@@ -1457,11 +1434,6 @@ def LoadConfig(printInfo=True):
     cfgfile = os.path.join(localdir,'config.ini')
     if not os.path.exists(cfgfile):
         print(f'N.B. Configuration file {cfgfile} does not exist')
-        # patch 2/7/25: transform GSAS-II config.py contents to config.ini
-        try:
-            XferConfigIni()
-        except:
-            print('transfer of config.py failed') # end patch
     try:
         from . import config_example
     except ImportError:

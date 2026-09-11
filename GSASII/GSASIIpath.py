@@ -2044,7 +2044,9 @@ end tell
         subprocess.Popen(cmds,start_new_session=True)
 
 def LocalG2Dir():
-    '''Finds the directory used for storage of local GSAS-II files
+    '''Finds the directory used for storage of local GSAS-II files.
+    At present this is always .GSASII in the user's home directory,
+    `~/.GSASII` on Linux/MacOS and `%HOMEPATH%\\.GSASII` on Windows.
 
     :returns: the path to the directory or None, if it does not 
       exist and can't be created.

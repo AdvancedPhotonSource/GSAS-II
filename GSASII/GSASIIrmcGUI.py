@@ -1832,10 +1832,9 @@ proceed.'''
     if os.path.exists(PDFpython) and is_exe(PDFpython):
         vars = G2G.GetConfigValsDocs()
         vars['pdffit2_exec'][1] = PDFpython
-        print('pdffit2_exec config set with ',GSASIIpath.GetConfigValue('pdffit2_exec'))
+        print(f'pdffit2_exec config set to {PDFpython}')
         GSASIIpath.SetConfigValue(vars)
         G2G.SaveConfigVars(vars)
-        print('\n\nframe.addPkgMenu.')
         return True
     else:
         print(f'Failed to install PDFfit2 with error:\n{errmsg}')

@@ -7530,7 +7530,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 if phaseId:         #is phase deleted?
                     General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
                     G,g = G2lat.cell2Gmat(General['Cell'][1:7])
-                    GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
+                    GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matrices
                     SGData = General['SGData']
                     if General.get('Modulated',False):
                         Super = 1

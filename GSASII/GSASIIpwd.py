@@ -1264,7 +1264,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
                 alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
                 bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*sinPos)
                 Wd,fmin,fmax = getWidthsCWB(pkP,alp,bet,pkS,pkG)
-            elif 'A'' in dataType':
+            elif 'A' in dataType:
                 shl = parmDict[hfx+'SH/L']
                 sinPos = npsind(pkP/2.0)
                 alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)

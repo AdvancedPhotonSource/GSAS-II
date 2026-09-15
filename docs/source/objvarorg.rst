@@ -48,14 +48,14 @@ GSAS-II Data Tree
 
 A GSAS-II project is stored in a data file and is loaded into a
 wxPython data tree (wx.TreeCtrl) defined by
-:class:`GSASIIctrlGUI.G2TreeCtrl`. Each entry in the tree has a text
+:class:`~GSASII.GSASIIctrlGUI.G2TreeCtrl`. Each entry in the tree has a text
 label and a data object associated with it. Note that all information
 used in a GSAS-II project is stored in the data tree, with the
 exception of images (which are too large). For images, a reference to
 the file location is saved and images are loaded from the file when
 needed.
 
-To save a GSAS-II project, routine :func:`GSASIImiscGUI.ProjFileSave` is
+To save a GSAS-II project, routine :func:`~GSASII.GSASIImiscGUI.ProjFileSave` is
 used to convert the tree contents to a "flat" format and write it to a
 file. The tree is transversed, and for each first-level tree item, a
 list is created, where the first item in that list is a two-element
@@ -67,12 +67,12 @@ objects. Finally the outermost list is converted to a binary
 representation and written to disk with the Python pickle
 function. Note that GSAS-II does not use any data tree items other
 than first-level and second-level. 
-Routine :func:`GSASIImiscGUI.ProjFileOpen` is used to read a GSAS-II
+Routine :func:`~GSASII.GSASIImiscGUI.ProjFileOpen` is used to read a GSAS-II
 project file and populate the data tree. GSAS-II project files are
 written with the ``.gpx`` extension.
 
 Two pointers are kept for a selected tree entry in the GSAS-II data
-tree, saved as class variables in :class:`GSASIIdataGUI.GSASII` (often
+tree, saved as class variables in :class:`~GSASII.GSASIIdataGUI.GSASII` (often
 referenced as ``G2frame``). These are ``G2frame.PickId``, which points to
 the selected data tree item, and ``G2frame.PatternId``, which points to
 the parent of the data tree item, when ``G2frame.PickId`` points to a
@@ -160,7 +160,7 @@ Each constraint is defined as an item in a list. Each constraint is of form::
 Where the variable pair list item containing two values [<mult>, <var>], where:
 
   * <mult> is a multiplier for the constraint (float)
-  * <var> a :class:`G2VarObj` object. (Note that in very old .gpx files this might be a str with a variable name of form 'p:h:name[:at]')
+  * <var> a :class:`~GSASII.GSASIIobj.G2VarObj` object. (Note that in very old .gpx files this might be a str with a variable name of form 'p:h:name[:at]')
 
 Note that the last three items in the list play a special role:
 
@@ -207,7 +207,7 @@ are stored in a dict with these keys:
   key            sub-key        explanation
 =============  ===============  ===========================================================================
 newCellDict    \                (dict) lattice parameters computed by
-                                :func:`.GSASIIstrMath.GetNewCellParms`
+                                :func:`~GSASII.GSASIIstrMath.GetNewCellParms`
 title          \                (str) Name of gpx file
 variables      \                (list) Values for refined variables
                                 (list of float values, length N,
@@ -218,7 +218,7 @@ sig            \                (list) Standard uncertainty values for refined v
 varyList       \                (list of str values, length N) List of directly refined variables
 varyListStart  \                (list) initial refined variables before dependent vars are removed
 newAtomDict    \                (dict) atom position values computed in
-                                :func:`.GSASIIstrMath.ApplyXYZshifts`
+                                :func:`~GSASII.GSASIIstrMath.ApplyXYZshifts`
 Lastshft       \                (list) The shifts applied to each variable in the last refinement
                                 run. (list of float values, length N,
                                 ordered to match varyList)
@@ -318,7 +318,7 @@ General         \               (dict) Overall information for the phase
   \         Pawley neg wt       (float) Restraint value for negative Pawley intensities
   \         SGData              (object) Space group details as a 
                                 :ref:`space group (SGData) <SGData_table>` 
-                                object, as defined in :func:`GSASIIspc.SpcGroup`.
+                                object, as defined in :func:`~GSASII.GSASIIspc.SpcGroup`.
   \         SH Texture          (dict) Spherical harmonic preferred orientation parameters
   \         Super               (int) dimension of super group (0,1 only)
   \         Type                (str) phase type (e.g. 'nuclear')
@@ -503,7 +503,7 @@ RBIds           \               (dict) unique Ids generated upon creation of eac
 Space Group Objects
 -------------------
 
-Space groups are interpreted by :func:`GSASIIspc.SpcGroup`
+Space groups are interpreted by :func:`~GSASII.GSASIIspc.SpcGroup`
 and the information is placed in a SGdata object
 which is a dict with these keys. Magnetic ones are marked "mag"
 
@@ -564,7 +564,7 @@ SpnFlp      mag - (list) Magnetic spin flips for every magnetic space group oper
    single: Superspace Group Data description
    single: Data object descriptions; Superspace Group Data
 
-Superspace groups [3+1] are interpreted by :func:`GSASIIspc.SSpcGroup`
+Superspace groups [3+1] are interpreted by :func:`~GSASII.GSASIIspc.SSpcGroup`
 and the information is placed in a SSGdata object
 which is a dict with these keys:
 
@@ -751,8 +751,8 @@ Every powder diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "PWDR ". The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
-routines :func:`GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
-and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
+routines :func:`GSASII.GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
+and :func:`GSASII.GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
 a key of ``Data``, as outlined below.
@@ -1026,8 +1026,8 @@ Every single crystal diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "HKLF ". The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
-routines :func:`GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
-and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
+routines :func:`~GSASII.GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
+and :func:`~GSASII.GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
 a key of ``Data``, as outlined below.
@@ -1126,8 +1126,8 @@ Image Data Structure
 Every 2-dimensional image is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "IMG ". The
 image data are directly associated with that tree item and there
-are a series of children to that item. The routines :func:`GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
-and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
+are a series of children to that item. The routines :func:`~GSASII.GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
+and :func:`~GSASII.GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
 a key of ``Data``, as outlined below.
@@ -1185,8 +1185,8 @@ Image Controls              azmthOff            (float) The offset to be applied
 \                           outChannels         (int) The number of 2-theta steps.
 \                           pixelSize           (list:ints) The X,Y dimensions (microns) of each pixel.
 \                           pixLimit            (int) A box in the image with 2*pixLimit+1 edges is searched to find the maximum.
-                                                This value (I) along with the minimum (Ib) in the box is reported by :func:`GSASIIimage.ImageLocalMax`
-                                                and subject to cutoff in :func:`GSASIIimage.makeRing`.
+                                                This value (I) along with the minimum (Ib) in the box is reported by :func:`~GSASII.GSASIIimage.ImageLocalMax`
+                                                and subject to cutoff in :func:`~GSASII.GSASIIimage.makeRing`.
                                                 Locations are used to construct rings of points for calibration calcualtions.
 \                           PolaVal             (list:float,bool) If type='SASD' and if True, apply polarization correction to intensities from
                                                 integration using value.
@@ -1252,8 +1252,8 @@ Stress/Strain               Sample phi          (float) Sample rotation about ve
 Controls used for Distance/Angle computation
 ----------------------------------------------
 
-Two arrays are used as input to :func:`GSASIIstrMain.RetDistAngle` and
-:func:`GSASIIstrMain.PrintDistAngle`, DisAglCtls and DisAglData. 
+Two arrays are used as input to :func:`~GSASII.GSASIIstrMain.RetDistAngle` and
+:func:`~GSASII.GSASIIstrMain.PrintDistAngle`, DisAglCtls and DisAglData. 
 
   *  DisAglCtls is a dict with has keys ``Name``, ``AtomTypes``,
      ``BondRadii``, ``AngleRadii`` which are  atomic radii to be used
@@ -1301,12 +1301,12 @@ Parameter Dictionary
 The parameter dictionary contains all of the variable parameters for the refinement.
 The dictionary keys are the name of the parameter (<phase>:<hist>:<name>:<atom>).
 It is prepared in two ways. When loaded from the tree
-(in :meth:`GSASIIdataGUI.GSASII.MakeLSParmDict` and
-:meth:`GSASIIfiles.ExportBaseclass.loadParmDict`),
+(in :meth:`~GSASII.GSASIIdataGUI.GSASII.MakeLSParmDict` and
+:meth:`~GSASII.GSASIIfiles.ExportBaseclass.loadParmDict`),
 the values are lists with two elements: ``[value, refine flag]``
 
 When loaded from the GPX file (in
-:func:`GSASIIstrMain.Refine` and :func:`GSASIIstrMain.SeqRefine`), the value in the
+:func:`~GSASII.GSASIIstrMain.Refine` and :func:`~GSASII.GSASIIstrMain.SeqRefine`), the value in the
 dict is the actual parameter value (usually a float, but sometimes a
 letter or string flag value (such as I or A for iso/anisotropic).
 
@@ -1403,9 +1403,9 @@ Displacive modes
 ------------------------------
 
 The coordinate variables, as named by ISODISTORT, are placed in ``.Phase['ISODISTORT']['IsoVarList']`` and the 
-corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2VarList']``. 
+corresponding :class:`~GSASII.GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2VarList']``. 
 The mode variables, as named by ISODISTORT, are placed in ``.Phase['ISODISTORT']['IsoModeList']`` and the 
-corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2ModeList']``.
+corresponding :class:`~GSASII.GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2ModeList']``.
 [Use ``str(G2VarObj)`` to get the variable name from the G2VarObj object, but note that the phase number, *n*, for the prefix 
 "*n*::" cannot be determined as the phase number is not yet assigned.]
 
@@ -1425,7 +1425,7 @@ order as as ``...['IsoModeList']`` and ``...['G2ModeList']``.
 The CIF contains a sparse matrix, from the ``loop_`` containing ``_iso_displacivemodematrix_value`` which provides the equations 
 for determining the mode values from the coordinates, that matrix is placed in ``.Phase['ISODISTORT']['Mode2VarMatrix']``. 
 The matrix is inverted to produce ``.Phase['ISODISTORT']['Var2ModeMatrix']``, which determines how to compute the
-mode values from the delta coordinate values. These values are used for the in :func:`GSASIIconstrGUI.ShowIsoDistortCalc`,
+mode values from the delta coordinate values. These values are used for the in :func:`~GSASII.GSASIIconstrGUI.ShowIsoDistortCalc`,
 which shows coordinate and mode values, the latter with s.u. values. 
 
 Occupancy modes
@@ -1433,9 +1433,9 @@ Occupancy modes
 
 
 The delta occupancy variables, as named by ISODISTORT, are placed in 
-``.Phase['ISODISTORT']['OccVarList']`` and the corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed 
+``.Phase['ISODISTORT']['OccVarList']`` and the corresponding :class:`~GSASII.GSASIIobj.G2VarObj` objects for each are placed 
 in ``.Phase['ISODISTORT']['G2OccVarList']``. The mode variables, as named by ISODISTORT, are placed in 
-``.Phase['ISODISTORT']['OccModeList']`` and the corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed 
+``.Phase['ISODISTORT']['OccModeList']`` and the corresponding :class:`~GSASII.GSASIIobj.G2VarObj` objects for each are placed 
 in ``.Phase['ISODISTORT']['G2OccModeList']``.
 
 Occupancy modes, like Displacive modes, are also refined as delta values.  However, GSAS-II directly refines the fractional 
@@ -1454,17 +1454,17 @@ mode values from the delta coordinate values.
 Mode Computations
 ------------------------------
 
-Constraints are processed after the CIF has been read in :meth:`GSASIIdataGUI.GSASII.OnImportPhase` or  
-:meth:`GSASIIscriptable.G2Project.add_phase` by moving them from the reader object's ``.Constraints`` 
+Constraints are processed after the CIF has been read in :meth:`~GSASII.GSASIIdataGUI.GSASII.OnImportPhase` or  
+:meth:`~GSASII.GSASIIscriptable.G2Project.add_phase` by moving them from the reader object's ``.Constraints`` 
 class variable to the Constraints tree entry's ['Phase'] list (for list items defining constraints) or
 the Constraints tree entry's ['_Explain'] dict (for dict items defining constraint help information)
 
-The information in ``.Phase['ISODISTORT']`` is used in :func:`GSASIIconstrGUI.ShowIsoDistortCalc` which shows coordinate and mode
+The information in ``.Phase['ISODISTORT']`` is used in :func:`~GSASII.GSASIIconstrGUI.ShowIsoDistortCalc` which shows coordinate and mode
 values, the latter with s.u. values. This can be called from the Constraints and Phase/Atoms tree items. 
 
 Before each refinement, constraints are processed as :ref:`described elsewhere <Constraints_processing>`. After a refinement
-is complete, :func:`GSASIIstrIO.PrintIndependentVars` shows the shifts and s.u.'s on the refined modes, 
-using GSAS-II values, but :func:`GSASIIstrIO.PrintISOmodes` prints the ISODISTORT modes as computed in the web site.
+is complete, :func:`~GSASII.GSASIIstrIO.PrintIndependentVars` shows the shifts and s.u.'s on the refined modes, 
+using GSAS-II values, but :func:`~GSASII.GSASIIstrIO.PrintISOmodes` prints the ISODISTORT modes as computed in the web site.
 
 
 .. _ParameterLimits:
@@ -1513,22 +1513,22 @@ that works by disabling
 refinement of parameters that refine beyond either a lower limit or an upper limit, where 
 either or both may be optionally specified. Parameters limits are specified in the Controls 
 tree entry in dicts named as ``Controls['parmMaxDict']`` and ``Controls['parmMinDict']``, where 
-the keys are :class:`G2VarObj` objects corresponding to standard GSAS-II variable 
-(see :func:`getVarDescr` and :func:`CompileVarDesc`) names, where a 
+the keys are :class:`~GSASII.GSASIIobj.G2VarObj` objects corresponding to standard GSAS-II variable 
+(see :func:`~GSASII.GSASIIobj.getVarDescr` and :func:`~GSASII.GSASIIobj.CompileVarDesc`) names, where a 
 wildcard ('*') may optionally be used for histogram number or atom number 
 (phase number is intentionally not  allowed as a wildcard as it makes little sense 
 to group the same parameter together different phases). Note
 that :func:`prmLookup` is used to see if a name matches a wildcard. The upper or lower limit
 is placed into these dicts as a float value. These values can be edited using the window 
 created by the Calculate/"View LS parms" menu command or in scripting with the 
-:meth:`GSASIIscriptable.G2Project.set_Controls` function. 
+:meth:`~GSASII.GSASIIscriptable.G2Project.set_Controls` function. 
 In the GUI, a checkbox labeled "match all histograms/atoms" is used to insert a wildcard
 into the appropriate part of the variable name.
 
-When a refinement is conducted, routine :func:`GSASIIstrMain.dropOOBvars` is used to 
+When a refinement is conducted, routine :func:`~GSASII.GSASIIstrMain.dropOOBvars` is used to 
 find parameters that have refined to values outside their limits. If this occurs, the parameter
 is set to the limiting value and the variable name is added to a list of frozen variables 
-(as a :class:`G2VarObj` objects) kept in a list in the
+(as a :class:`~GSASII.GSASIIobj.G2VarObj` objects) kept in a list in the
 ``Controls['parmFrozen']`` dict. In a sequential refinement, this is kept separate for 
 each histogram as a list in 
 ``Controls['parmFrozen'][histogram]`` (where the key is the histogram name) or as a list in 
@@ -1536,28 +1536,28 @@ each histogram as a list in
 This allows different variables
 to be frozen in each section of a sequential fit. 
 Frozen parameters are not included in refinements through removal from the 
-list of parameters to be refined (``varyList``) in :func:`GSASIIstrMain.Refine` or 
-:func:`GSASIIstrMain.SeqRefine`. 
+list of parameters to be refined (``varyList``) in :func:`~GSASII.GSASIIstrMain.Refine` or 
+:func:`~GSASII.GSASIIstrMain.SeqRefine`. 
 The data window for the Controls tree item shows the number of Frozen variables and
 the individual variables can be viewed with the Calculate/"View LS parms" menu window or 
-obtained with :meth:`GSASIIscriptable.G2Project.get_Frozen`.
+obtained with :meth:`~GSASII.GSASIIscriptable.G2Project.get_Frozen`.
 Once a variable is frozen, it will not be refined in any 
 future refinements unless the the variable is removed (manually) from the list. This can also 
 be done with the Calculate/"View LS parms" menu window or 
-:meth:`GSASIIscriptable.G2Project.set_Frozen`.
+:meth:`~GSASII.GSASIIscriptable.G2Project.set_Frozen`.
 
 
 .. seealso::
-  :class:`G2VarObj`
-  :func:`getVarDescr` 
-  :func:`CompileVarDesc`
-  :func:`prmLookup`
-  :class:`GSASIIctrlGUI.ShowLSParms`
-  :class:`GSASIIctrlGUI.VirtualVarBox`
-  :func:`GSASIIstrIO.SaveUsedHistogramsAndPhases`
-  :func:`GSASIIstrIO.SaveUpdatedHistogramsAndPhases`
-  :func:`GSASIIstrIO.SetSeqResult`
-  :func:`GSASIIstrMain.dropOOBvars`
-  :meth:`GSASIIscriptable.G2Project.set_Controls`
-  :meth:`GSASIIscriptable.G2Project.get_Frozen`
-  :meth:`GSASIIscriptable.G2Project.set_Frozen`
+  :class:`~GSASII.GSASIIobj.G2VarObj`
+  :func:`~GSASII.GSASIIobj.getVarDescr` 
+  :func:`~GSASII.GSASIIobj.CompileVarDesc`
+  :func:`~GSASII.GSASIIobj.prmLookup`
+  :class:`GSASII.GSASIIctrlGUI.ShowLSParms`
+  :class:`GSASII.GSASIIctrlGUI.VirtualVarBox`
+  :func:`GSASII.GSASIIstrIO.SaveUsedHistogramsAndPhases`
+  :func:`GSASII.GSASIIstrIO.SaveUpdatedHistogramsAndPhases`
+  :func:`GSASII.GSASIIstrIO.SetSeqResult`
+  :func:`GSASII.GSASIIstrMain.dropOOBvars`
+  :meth:`GSASII.GSASIIscriptable.G2Project.set_Controls`
+  :meth:`GSASII.GSASIIscriptable.G2Project.get_Frozen`
+  :meth:`GSASII.GSASIIscriptable.G2Project.set_Frozen`

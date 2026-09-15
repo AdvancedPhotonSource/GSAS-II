@@ -79,6 +79,8 @@ the parent of the data tree item, when ``G2frame.PickId`` points to a
 histogram. The two pointer may be the same when the first-level tree
 item for a histogram is selected. 
 
+.. _Constraints_tree:
+
 Constraints Tree Item
 ----------------------
 
@@ -91,7 +93,7 @@ number is omitted.
 Note that the contents of each dict item is a List where each element in the
 list is a :ref:`constraint definition objects <Constraint_definitions_table>`.
 The constraints in this form are converted in
-:func:`GSASIImapvars.ProcessConstraints` to the form used in :mod:`GSASIImapvars`
+:func:`~GSASII.GSASIImapvars.ProcessConstraints` to the form used in :mod:`~GSASII.GSASIImapvars`
 
 The keys in the Constraints dict are:
 
@@ -126,6 +128,24 @@ _OffsetVals  A list of offset values (as floats) that will be
              offsets are used only for ISODISTORT occupancy
              modes, currently.
 ===========  ====================================================
+
+For `_seqmode` the meaning of the settings for constrained HAP and
+histogram parameters is:
+
+  *  'auto-wildcard' (Set hist # to \*): Any constraint specified with
+    a specific histogram number will be changed to apply to each
+    histogram as it is processed.
+ 
+  *  'wildcards-only' (Ignore unless hist=\*): Only constraints
+     specified with a wildcard for the histogram will be
+     used and will be applied to each histogram as it is
+     processed. Contraints that include a specific histogram number
+     will be ignored.
+
+  *  'use-all' (Use as supplied): This uses both wildcard histograms
+     and those where specific histograms are specified. Wildcards are
+     applied to each histogram as it is processed. Contraints that
+     include a specific histogram number are used only for that histogram.
 
 .. _Constraint_definitions_table:
 

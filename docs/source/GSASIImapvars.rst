@@ -6,22 +6,30 @@
    
 *Summary/Contents*
 ----------------------------
+This module implements algebraic contraints, parameter redefinition
+and parameter simplification contraints.
+Constraints are initially defined in :mod:`GSASII.GSASIIconstrGUI` and
+placed in the GSAS-II data tree, as defined in
+:ref:`Constraints_tree`. 
 
-Module to implements algebraic contraints, parameter redefinition
-and parameter simplification contraints. 
+The constraints in that form are converted in
+:func:`ProcessConstraints` to the form used in :mod:`GSASIImapvars`.
+This defines a set of constrained and unconstrained relations, 
+a list of dicts that defines constraint parameters and their
+values, a list of fixed values for each constraint and a list of
+parameters to be varied. See the :ref:`Constraints Processing section<Constraints_processing>` for details on how 
+processing of constraints is done.
+For processing of symmetry equivalences, :func:`StoreEquivalence` is
+used to define sets of parameters that are equivalent, where one
+(or more) parameters is defined from from another. This is also used
+for where parameters are made equivalent via an entry in the
+:ref:`Constraints_tree`, with a flag set to indicate that the
+constraint has not been generated from symmetry. 
 
 .. contents:: Section Contents 
 
 *Externally-Accessible Routines*
 ---------------------------------
-
-To define a set of constrained and unconstrained relations, one
-defines a list of dictionary defining constraint parameters and their
-values, a list of fixed values for each constraint and a list of
-parameters to be varied. In addition, one uses
-:func:`StoreEquivalence` to define parameters that are equivalent. 
-See the :ref:`Constraints Processing section<Constraints_processing>` for details on how 
-processing of constraints is done. 
 
 .. tabularcolumns:: |l|p{4in}|
 
@@ -39,7 +47,7 @@ processing of constraints is done.
 :func:`ProcessConstraints`     Initially constraints of all types are maintained in lists of 
                                dict entries that are stored in the data tree, 
                                with parameters are stored as 
-                               :class:`~GSASIIobj.G2VarObj` objects so that they can 
+                               :class:`~GSASII.GSASIIobj.G2VarObj` objects so that they can 
                                be resolved if the phase/histogram order changes. 
                                :func:`ProcessConstraints` processes this list of dict entries,
                                separating the "Equivalence", "Hold", “Const” and “New Var” 

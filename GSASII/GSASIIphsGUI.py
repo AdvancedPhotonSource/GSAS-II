@@ -13243,7 +13243,6 @@ tab, use Operations->"Pawley create")''')
         on a Phase data item window
         '''
         page = event.GetSelection()
-        G2frame.phaseDisplay.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         # force edits in open grids to complete
         newlist = []
         for p in G2frame.phaseDisplay.gridList:
@@ -13253,9 +13252,14 @@ tab, use Operations->"Pawley create")''')
                 newlist.append(p)
             except:
                 pass
-        G2frame.phaseDisplay.gridList = newlist  # remove deleted grids from lis
-        # let the pending events clear before posting the new NB page
-        wx.CallAfter(ChangePage,page)
+        G2frame.phaseDisplay.gridList = newlist  # remove deleted grids from list
+        try:
+            G2frame.phaseDisplay.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
+
+            # let the pending events clear before posting the new NB page
+            wx.CallAfter(ChangePage,page)
+        except:
+            pass
 
     def ChangePage(page):
         text = G2frame.phaseDisplay.GetPageText(page)

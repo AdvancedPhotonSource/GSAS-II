@@ -66,7 +66,7 @@ GSAS-II-provided Dialog (full window) routines:
 Class or function name             Description
 ================================  =================================================================
 :func:`G2MessageBox`               Displays text typically used for errors or warnings. 
-:class:`G2ModelessMessage`         Displays text similar to :func:`G2MessageBox`but in a
+:class:`G2ModelessMessage`         Displays text similar to :func:`G2MessageBox` but in a
                                    non-modal dialog.
 :func:`ShowScrolledInfo`           Dialog to display longer text where scrolling is
                                    possibly needed

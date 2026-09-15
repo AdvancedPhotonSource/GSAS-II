@@ -132,17 +132,17 @@ _OffsetVals  A list of offset values (as floats) that will be
 For `_seqmode` the meaning of the settings for constrained HAP and
 histogram parameters is:
 
-  *  'auto-wildcard' (Set hist # to \*): Any constraint specified with
-    a specific histogram number will be changed to apply to each
-    histogram as it is processed.
+  * 'auto-wildcard' (Set hist # to \*): Any constraint specified with
+     a specific histogram number will be changed to apply to each
+     histogram as it is processed.
  
-  *  'wildcards-only' (Ignore unless hist=\*): Only constraints
+  * 'wildcards-only' (Ignore unless hist=\*): Only constraints
      specified with a wildcard for the histogram will be
      used and will be applied to each histogram as it is
      processed. Contraints that include a specific histogram number
      will be ignored.
 
-  *  'use-all' (Use as supplied): This uses both wildcard histograms
+  * 'use-all' (Use as supplied): This uses both wildcard histograms
      and those where specific histograms are specified. Wildcards are
      applied to each histogram as it is processed. Contraints that
      include a specific histogram number are used only for that histogram.
@@ -207,7 +207,7 @@ are stored in a dict with these keys:
   key            sub-key        explanation
 =============  ===============  ===========================================================================
 newCellDict    \                (dict) lattice parameters computed by
-                                :func:`GSASIIstrMath.GetNewCellParms`
+                                :func:`.GSASIIstrMath.GetNewCellParms`
 title          \                (str) Name of gpx file
 variables      \                (list) Values for refined variables
                                 (list of float values, length N,
@@ -218,7 +218,7 @@ sig            \                (list) Standard uncertainty values for refined v
 varyList       \                (list of str values, length N) List of directly refined variables
 varyListStart  \                (list) initial refined variables before dependent vars are removed
 newAtomDict    \                (dict) atom position values computed in
-                                :func:`GSASIIstrMath.ApplyXYZshifts`
+                                :func:`.GSASIIstrMath.ApplyXYZshifts`
 Lastshft       \                (list) The shifts applied to each variable in the last refinement
                                 run. (list of float values, length N,
                                 ordered to match varyList)

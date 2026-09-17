@@ -10437,7 +10437,7 @@ If "Yes", GSAS-II will reopen the project after the update.
     sys.exit()
 
 def StringSearchTemplate(parent,title,prompt,start,help=None):
-    '''Dialog to obtain a single string value from user
+    '''Dialog to obtain a string value for grouping histograms
 
     :param wx.Frame parent: name of parent frame
     :param str title: title string for dialog

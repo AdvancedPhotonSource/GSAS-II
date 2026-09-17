@@ -212,7 +212,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             parmDict = SetupParmDict(G2frame)
             dlg = G2exG.ExpressionDialog(G2frame,parmDict,
                            header="Create a restraint expression",
-                           fit=False,wildCard=G2frame.testSeqRefineMode())
+                           fit=False,wildCard=bool(G2frame.testSeqRefineMode()))
             restobj = dlg.Show(True)
             if restobj:
                 restrData['General']['General'].append([restobj,0.0,1.0])
@@ -2129,7 +2129,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             dlg = G2exG.ExpressionDialog(G2frame,parmDict,
                 exprObj=generalRestData['General'][n][0],
                 header="Edit a restraint expression",
-                fit=False,wildCard=G2frame.testSeqRefineMode())
+                fit=False,wildCard=bool(G2frame.testSeqRefineMode()))
             restobj = dlg.Show(True)
             if restobj:
                 generalRestData['General'][n][0] = restobj

@@ -854,6 +854,33 @@ def UpdatePeakGrid(G2frame, data):
             G2frame.GPXtree.SetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,Id,'Peak List'),copy.deepcopy(data))
 
+    def OnCopyPeakFlags(event):
+        'Copy peak refinement flags to other histograms'
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
+            return
+        copyList = []
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy peak refinement flags from\n'+str(hst[5:])+' to...',
+            'Copy peak ref flags', histList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections():
+                    copyList.append(histList[i])
+        finally:
+            dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            pksId = G2gd.GetGPXtreeItemId(G2frame,Id,'Peak List')
+            pksTbl = G2frame.GPXtree.GetItemPyData(pksId)
+            for i,pk in enumerate(data['peaks']):
+                for col in range(1,len(pk),2):
+                    try:
+                        pksTbl['peaks'][i][col] = pk[col]
+                    except:
+                        pass
+
     def OnLoadPeaks(event):
         'Load peak list from file'
         pth = G2G.GetExportPath(G2frame)
@@ -875,6 +902,11 @@ def UpdatePeakGrid(G2frame, data):
                         break
                     S = File.readline()
                 File.close()
+        except Exception as msg:
+            G2G.G2MessageBox(G2frame,
+                    'Error reading file. See console for more info',
+                    'Read error')
+            print('File read error:\n',msg)
         finally:
             dlg.Destroy()
         data = {'peaks':peaks,'sigDict':{}}
@@ -896,7 +928,8 @@ def UpdatePeakGrid(G2frame, data):
                 for item in data:
                     if item == 'peaks':
                         for pk in data[item]:
-                            File.write(str(pk)+'\n')
+                            pk = ', '.join([str(i) for i in pk]) # remove numpy data types from values
+                            File.write(f'[{pk}]\n')
                 File.close()
                 print ('PWDR peaks list saved to: '+filename)
         finally:
@@ -1323,6 +1356,7 @@ def UpdatePeakGrid(G2frame, data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)
     G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2G.wxID_AUTOSEARCH)
     G2frame.Bind(wx.EVT_MENU, OnCopyPeaks, id=G2G.wxID_PEAKSCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnCopyPeakFlags, id=G2G.wxID_PEAKSCOPYFLAG)
     G2frame.Bind(wx.EVT_MENU, OnSavePeaks, id=G2G.wxID_PEAKSAVE)
     G2frame.Bind(wx.EVT_MENU, OnLoadPeaks, id=G2G.wxID_PEAKLOAD)
     G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_UNDO)
@@ -1526,13 +1560,11 @@ def UpdatePeakGrid(G2frame, data):
         cRef = G2G.G2CheckBox(G2frame.dataWindow,'ref',data['LaueFringe'],'clat-ref')
         prmSizer.Add(cRef,0,WACV)
         prmSizer.Add((15,-1))
-        siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'lmin',
-                                       'l min')
+        siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'lmin','l min')[0]
         prmSizer.Add(siz,0,WACV)
         prmSizer.Add((15,-1))
-        siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'ncell',
-                                       'Laue ncell',
-                                       onChange=RefreshPeakGrid,onChangeArgs=[None])
+        siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'ncell','Laue ncell',
+            onChange=RefreshPeakGrid,onChangeArgs=[None])[0]
         prmSizer.Add(siz,0,WACV)
         # prmSizer.Add((15,-1))
         # prmSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
@@ -1802,6 +1834,10 @@ def UpdateBackground(G2frame,data):
         G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         # show the updated background values
         wx.CallLater(100,UpdateBackground,G2frame,data)
+
+    def OnBkgCh(event):
+        'Change in Background mode, display it'
+        wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
 
     def OnBkgClear(event):
         'Clear fixed points from background'
@@ -2236,6 +2272,8 @@ def UpdateBackground(G2frame,data):
     G2frame.Bind(wx.EVT_MENU,OnBackLoad,id=G2G.wxID_BACKLOAD)
     G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2G.wxID_BACKPEAKSMOVE)
     G2frame.Bind(wx.EVT_MENU,OnMakeRDF,id=G2G.wxID_MAKEBACKRDF)
+    for k in 'Add', 'Move', 'Delete':
+        G2frame.Bind(wx.EVT_MENU,OnBkgCh,id=G2frame.dataWindow.wxID_BackPts[k])
     G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataWindow.wxID_BackPts['Fit'])
     G2frame.Bind(wx.EVT_MENU,OnBkgClear,id=G2frame.dataWindow.wxID_BackPts['Clear'])
     BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
@@ -2601,9 +2639,9 @@ def UpdateInstrumentGrid(G2frame,data):
                 binwid = cw[np.searchsorted(xye[0],peak[0])]
                 if const:
                     if 'Debye' in Sample['Type']:
-                        shft -= const*(Sample['DisplaceX'][0]*npcosd(calcPos)+Sample['DisplaceY'][0]*npsind(calcPos))
+                        shft -= const*(Sample['DisplaceX'][0]*npcosd(calcPos)+Sample['DisplaceY'][0]*npsind(calcPos))-data['Zero'][1]
                     else:
-                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(calcPos/2.0)
+                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(calcPos/2.0)-data['Zero'][1]
                 XY.append([peak[-1],peak[0]-shft,binwid])
                 Sigs.append(IndexPeaks[1][ip])
         if len(XY):
@@ -3849,27 +3887,120 @@ def UpdateSampleGrid(G2frame,data):
         # TODO: check if values need to be copied to editing widgets
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
+    def OnSearchComments(event):
+        '''Set a selected Sample parameter from a selected entry in the comments
+        for a selected set of histograms
+        '''
+        def commentDict(G2frame,Id):
+            Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                G2frame, Id, 'Comments'))
+            keyDict = {}
+            for line in Comments:
+                if ':' in line:
+                    key,val = line.split(':')[0:2]
+                elif '=' in line:
+                    key,val = line.split('=')[0:2]
+                else:
+                    continue
+                try:
+                    #keyList.append(key.strip())
+                    keyDict[key.strip()] = float(val)
+                except:
+                    pass
+            return keyDict
+        # get possible keys from current histogram's comments
+        keyDict = commentDict(G2frame, G2frame.PatternId)
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     from importlib import reload
+        #     reload(G2G)
+        #     print(f'reloading {G2G}')
+        sampleVar,commentKey = G2G.SelectSearchVars(G2frame,labelLst,keyDict)
+        if sampleVar is None or commentKey is None: return
+        # find the array element tied to the sample var
+        if sampleVar not in labelLst:
+            print(f'OnSearchComments: how did we get {sampleVar} not in {labelLst}?')
+            return
+            
+        i = labelLst.index(sampleVar)
+        sampleArrKeys = elemKeysLst[i]
+        # need to select histograms to search/set        
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        histList.insert(0,hst)
+        if len(histList) == 1: # only current histogram present -- don't ask
+            selection = [0]
+        else:
+            dlg = G2G.G2MultiChoiceDialog(G2frame,f'Set "{sampleVar}" value in histograms...',
+                                      'Set value from comments', histList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    selection = dlg.GetSelections()
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+        # cycle through selected histograms, get comments & values
+        count = 0
+        for i in selection:
+            hist = histList[i]
+            hId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, hist)
+            if not hId:
+                print(f'{hist} not found! strange')
+                continue
+            keyDict = commentDict(G2frame, hId)
+            if hasattr(commentKey,'EvalExpression'):
+                commentKey.SetupCalc(keyDict)
+                value = commentKey.EvalExpression()
+            elif commentKey in keyDict:
+                value = keyDict[commentKey]
+            else:
+                print(f'"{commentKey}" not in Comments for {hist}')
+                continue
+            Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hId, 'Sample Parameters'))
+            # set the value in the selected entry in Sample Parameters
+            try:
+                d = Sample
+                for k in sampleArrKeys[:-1]:
+                    d = d[k]
+                d[sampleArrKeys[-1]]
+            except KeyError:
+                print(f'Strange: "keys {sampleArrKeys}" not in Sample Parameters for {hist}')
+                continue
+            count += 1
+            d[sampleArrKeys[-1]] = value
+        print(f'Set from comments done. Set "{sampleVar}" in {count} of {len(selection)} histograms')
+        wx.CallAfter(UpdateSampleGrid,G2frame,data)
+
     def SearchAllComments(value,tc,*args,**kwargs):
-        '''Called when the label for a FreePrm is changed: the comments for all PWDR
-        histograms are searched for a "label=value" pair that matches the label (case
-        is ignored) and the values are then set to this value, if it can be converted
-        to a float.
+        '''Called when the label for a FreePrm is changed: the comments 
+        for all PWDR histograms are searched for a "label=value" or 
+        "label:value" pair that matches the label (case is ignored) and 
+        the values are then set to this value, if it can be converted
+        to a float. Stop after the first item that matches.
         '''
         Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+        count = 0
         while Id:
             name = G2frame.GPXtree.GetItemText(Id)
             if 'PWDR' in name:
                 Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'))
                 Sample =   G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Sample Parameters'))
                 for i,item in enumerate(Comments):
-                    itemSp = item.split('=')
-                    if value.lower() == itemSp[0].lower():
+                    if '=' in item:
+                        itemSp = item.split('=')
+                    elif ':' in item:
+                        itemSp = item.split(':')
+                    else:
+                        continue
+                    if value.lower() in itemSp[0].lower():
                         try:
                             Sample[tc.key] = float(itemSp[1])
+                            count += 1
+                            break
                         except:
-                            print('"{}" has an invalid value in Comments from {}'
-                                  .format(item.strip(),name))
+                            print('"{item.strip()}" has an invalid value in Comments from {name}')
             Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        print(f'{count} values were found in the histogram comments')
         wx.CallLater(100,UpdateSampleGrid,G2frame,data)
 
     # start of UpdateSampleGrid
@@ -3886,6 +4017,7 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2G.wxID_SAMPLESAVE)
     G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2G.wxID_SAMPLELOAD)
     G2frame.Bind(wx.EVT_MENU, OnCopy1Val, id=G2G.wxID_SAMPLE1VAL)
+    G2frame.Bind(wx.EVT_MENU, OnSearchComments, id=G2G.wxID_SEARCHVAL)
     G2frame.Bind(wx.EVT_MENU, OnAllSampleLoad, id=G2G.wxID_ALLSAMPLELOAD)
     G2frame.Bind(wx.EVT_MENU, OnRescaleAll, id=G2G.wxID_RESCALEALL)
     if histName[:4] in ['SASD','REFD','PWDR']:
@@ -4341,8 +4473,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
     def OnHklShow(event=None,Print=True,Plot=True,indexFrom=''):
         '''Compute the location of powder diffraction peaks from the
-        cell in controls[6:12] and the space group in ssopt['SGData'] if
-        defined, or controls[13], if not.
+        cell in controls[6:12]. If the structure is modulated (ssopt['Use'] 
+        is True), then the space group in ssopt['SGData'] if defined. 
+        Otherwise, the space group is taken from controls[13].
+        Magnetic space group information is placed separately into SGData,
+        so space group information is added to this dict to not replace that.
 
         Reflections are placed in G2frame.HKL
 
@@ -4369,9 +4504,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         A = G2lat.cell2A(cell)
         spc = controls[13]
         if ssopt.get('Use',False):  #modulated
-            SGData = ssopt.get('SGData',G2spc.SpcGroup(spc)[1])
+            SGData.update(ssopt.get('SGData',G2spc.SpcGroup(spc)[1]))
         else:                       #not modulated
-            SGData = G2spc.SpcGroup(spc)[1]
+            SGData.update(G2spc.SpcGroup(spc)[1])
         Symb = SGData['SpGrp']
         M20 = X20 = 0.
         if ssopt.get('Use',False) and ssopt.get('ssSymb',''):
@@ -4471,12 +4606,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
     def LoadUnitCell(event):
         '''Called in response to a Load Phase menu command'''
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
-        data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
-        if len(data) < 5:
-            data.append({})
-        controls,bravais,cells,dminx,ssopt = data[:5]
+        #data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        #if len(data) < 5:
+        #    data.append({})
+        #controls,bravais,cells,dminx,ssopt = data[:5]
         magcells = []           #clear away old mag cells list (if any)
-        controls = controls[:14]+[['0','0','0',' ',' ',' '],[],]
+        controls[15:] = [['0','0','0',' ',' ',' '],[],]
         data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases')
@@ -4988,44 +5123,52 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
-        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
-            ' Use whole star',' Filter by','preserve axes','max unique'],
-            values=kvec+[False,'',True,100],
-            limits=[[Kx[1:],Ky[1:],Kz[1:]],[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
+        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',
+            prompts=[' k-vector 1', \
+                ' Use whole star',' Filter by','preserve axes','max unique'],
+            values=kvec[0:1]+[False,'',True,100],
+            limits=[[Kx[1:],Ky[1:],Kz[1:]],[True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],[1,100]],
-            formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
+            formats=[['choice','choice','choice'],'bool','choice',
                     'bool','%d',])
         dlg.CenterOnParent()
-        if dlg.ShowModal() == wx.ID_OK:
-            magcells = []
-            newVals = dlg.GetValues()
-            kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
-            nkvec = kvec.index(' ')
-            star = newVals[3]
-            filterby = newVals[4]
-            keepaxes = newVals[5]
-            maxequiv = newVals[6]
-            if 'maximal' in filterby:
-                maximal = True
-                Landau = False
-            elif 'Landau' in filterby:
-                maximal = False
-                Landau = True
-            else:
-                maximal = False
-                Landau = False
-            if nkvec not in [0,3,6,9]:
-                wx.MessageBox('Error: check your propagation vector(s)',
-                    caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
-                return
-            if nkvec in [6,9] and Landau:
-                wx.MessageBox('Error, multi k-vectors & Landau not compatible',
-                    caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
-                return
-            wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
-                              G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
-                              caption='Bilbao SUBGROUPS',
-                              style=wx.ICON_INFORMATION)
+        if dlg.ShowModal() != wx.ID_OK: return
+        magcells = []
+        newVals = dlg.GetValues()
+        kvec = newVals[0]+7*[' ']
+        star = newVals[1]
+        filterby = newVals[2]
+        keepaxes = newVals[3]
+        maxequiv = newVals[4]
+        nkvec = kvec.index(' ')
+        if 'maximal' in filterby:
+            maximal = True
+            Landau = False
+        elif 'Landau' in filterby:
+            maximal = False
+            Landau = True
+        else:
+            maximal = False
+            Landau = False
+        if nkvec not in [0,3,6,9]:
+            wx.MessageBox('Error: check your propagation vector(s)',
+                caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+            return
+        if nkvec in [6,9] and Landau:
+            wx.MessageBox('Error, multi k-vectors & Landau not compatible',
+                caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+            return
+        dlg = wx.ProgressDialog('SUBGROUPS results',
+                            'Searching for subgroups',11,
+                            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        if kSUB.RegisterProgressDialog(dlg):
+            dlg.Destroy()
+            return
+        wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
+                          G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
+                          caption='Bilbao SUBGROUPS',
+                          style=wx.ICON_INFORMATION)
+        try:
             wx.BeginBusyCursor()
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
@@ -5047,10 +5190,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 controls[16] = baseList
             except IndexError:
                 controls.append(baseList)
-            dlg = wx.ProgressDialog('SUBGROUPS results',f'Processing {SubGroups[0][0]}',len(SubGroups),
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
             for ir,result in enumerate(SubGroups):
-                dlg.Update(ir,newmsg='Processing '+result[0])
+                dlg.Update(ir%10,newmsg=f'Processing {result[0]}')
                 Trans = np.array(eval(result[1][0]))
                 Uvec = np.array(eval(result[1][1]))
                 phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
@@ -5067,12 +5208,14 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 phase['maxequiv'] = maxequiv
                 phase['nAtoms'] = len(TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv,maximal))
                 magcells.append(phase)
+        finally:
             dlg.Destroy()
-            magcells[0]['Use'] = True
-            SGData = magcells[0]['SGData']
-            A = G2lat.cell2A(magcells[0]['Cell'][:6])
-            G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,SGData,A,Inst))
-            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
+            kSUB.RegisterProgressDialog()
+        magcells[0]['Use'] = True
+        SGData = magcells[0]['SGData']
+        A = G2lat.cell2A(magcells[0]['Cell'][:6])
+        G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,SGData,A,Inst))
+        G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
@@ -5119,36 +5262,42 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                      ['testfxn','testfxn','testfxn'],
                      'bool','choice','bool','choice','bool','%d',],
             header=msg)
-        if dlg.ShowModal() == wx.ID_OK:
-            magcells = []
-            newVals = dlg.GetValues()
-            kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
-            nkvec = kvec.index(' ')
-            star = newVals[3]
-            filterby = newVals[4]
-            keepaxes = newVals[5]
-            atype = newVals[6]
-            allmom = newVals[7]
-            maxequiv = newVals[8]
-            if 'maximal' in filterby:
-                maximal = True
-                Landau = False
-            elif 'Landau' in filterby:
-                maximal = False
-                Landau = True
-            else:
-                maximal = False
-                Landau = False
-            if nkvec not in [0,3,6,9]:
-                wx.MessageBox('Error: check your propagation vector(s)',
-                    caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
+        if dlg.ShowModal() != wx.ID_OK: return
+        magcells = []
+        newVals = dlg.GetValues()
+        kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
+        nkvec = kvec.index(' ')
+        star = newVals[3]
+        filterby = newVals[4]
+        keepaxes = newVals[5]
+        atype = newVals[6]
+        allmom = newVals[7]
+        maxequiv = newVals[8]
+        if 'maximal' in filterby:
+            maximal = True
+            Landau = False
+        elif 'Landau' in filterby:
+            maximal = False
+            Landau = True
+        else:
+            maximal = False
+            Landau = False
+        if nkvec not in [0,3,6,9]:
+            wx.MessageBox('Error: check your propagation vector(s)',
+                caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
+            return
+        if nkvec in [6,9] and Landau:
+            wx.MessageBox('Error, multi k-vectors & Landau not compatible',
+                caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
+            return
+        magAtms = [atom for atom in controls[15] if atom[1] == atype]
+        try:
+            dlg = wx.ProgressDialog('k-SUBGROUPSMAG results',
+                                'Searching for magnetic subgroups',11,
+                                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+            if kSUB.RegisterProgressDialog(dlg):
+                dlg.Destroy()
                 return
-            if nkvec in [6,9] and Landau:
-                wx.MessageBox('Error, multi k-vectors & Landau not compatible',
-                    caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
-                return
-            magAtms = [atom for atom in controls[15] if atom[1] == atype]
-            wx.BeginBusyCursor()
             wx.MessageBox(
                 ' For use of k-SUBGROUPSMAG in GSAS-II, please cite:\n\n'+
                 G2G.GetCite('Bilbao: k-SUBGROUPSMAG')+
@@ -5156,9 +5305,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 G2G.GetCite('Bilbao+GSAS-II magnetism'),
                 caption='Bilbao/GSAS-II Magnetism',
                 style=wx.ICON_INFORMATION)
-
             MAXMAGN,baseList = kSUB.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau)
-            wx.EndBusyCursor()
             if MAXMAGN is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
                 return
@@ -5175,12 +5322,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 controls[16] = baseList
             except IndexError:
                 controls.append(baseList)
-            dlg = wx.ProgressDialog('k-SUBGROUPSMAG results','Processing '+MAXMAGN[0][0],len(MAXMAGN),
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
-
             for ir,result in enumerate(MAXMAGN):
                 # result is SPGP,BNS,MV,itemList,altList,superList
-                dlg.Update(ir,newmsg='Processing '+result[0])
+                dlg.Update(ir%10,newmsg=f'Processing {result[0]}')
                 Trans = np.array(eval(result[2][0]))
                 Uvec = np.array(eval(result[2][1]))
                 phase = G2lat.makeBilbaoPhase(result[:2],Uvec,Trans,True)
@@ -5200,12 +5344,14 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 phase['maxequiv'] = maxequiv
                 phase['nAtoms'] = len(TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv,maximal))
                 magcells.append(phase)
+        finally:
             dlg.Destroy()
-            magcells[0]['Use'] = True
-            SGData = magcells[0]['SGData']
-            A = G2lat.cell2A(magcells[0]['Cell'][:6])
-            G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,SGData,A,Inst))
-            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
+            kSUB.RegisterProgressDialog()
+        magcells[0]['Use'] = True
+        SGData = magcells[0]['SGData']
+        A = G2lat.cell2A(magcells[0]['Cell'][:6])
+        G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,SGData,A,Inst))
+        G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
@@ -7384,7 +7530,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 if phaseId:         #is phase deleted?
                     General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
                     G,g = G2lat.cell2Gmat(General['Cell'][1:7])
-                    GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
+                    GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matrices
                     SGData = General['SGData']
                     if General.get('Modulated',False):
                         Super = 1

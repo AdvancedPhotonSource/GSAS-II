@@ -156,10 +156,7 @@ class TextElement(object):
         """
         # get a memory dc and assign a temporary bitmap
         dc = wx.MemoryDC()
-        if 'phoenix' in wx.version():
-            dc.SelectObject(wx.Bitmap(100, 100))
-        else:
-            dc.SelectObject(wx.EmptyBitmap(100, 100))
+        dc.SelectObject(wx.Bitmap(100, 100))
         
         # set our font
         dc.SetFont(self._font)
@@ -174,10 +171,7 @@ class TextElement(object):
         
         self._text_size = wx.Size(ow,oh)
         self._texture_size = wx.Size(w,h)
-        if 'phoenix' in wx.version():
-            bmp = wx.Bitmap(wx.Size(w,h))
-        else:
-            bmp = wx.EmptyBitmap(w,h)
+        bmp = wx.Bitmap(wx.Size(w,h))
         
         
         #Draw in b/w mode to bmp so we can use it as alpha channel
@@ -205,30 +199,20 @@ class TextElement(object):
         in 'bmp' directly, but the iterator given by it is much slower than
         first converting to an image and using wx.Image.GetData().
         """
-        if 'phoenix' in wx.version():
-            img = wx.Bitmap.ConvertToImage(bmp)
-            alpha = img.GetData()
-        else:
-            img = wx.ImageFromBitmap(bmp)
-            alpha = img.GetData()
+        img = wx.Bitmap.ConvertToImage(bmp)
+        alpha = img.GetData()
         
 #        if isinstance(self._foreground, wx.Colour):  
-            """
-            If we have a static color...  
-            """    
+        """
+        If we have a static color...  
+        """    
         r,g,b = self._foreground.Get()[:3]
         
-        if '2' in platform.python_version_tuple()[0]:
-            color = "%c%c%c" % (chr(r), chr(g), chr(b))
-        else:
-            color = st.pack('3B',r,g,b)
+        color = st.pack('3B',r,g,b)
         
         data = b''
         for i in range(0, len(alpha)-1, 3):
-            if '2' in platform.python_version_tuple()[0]:
-                data += (color + str(alpha[i]))
-            else:
-                data += (color + st.pack('B',alpha[i]))
+            data += (color + st.pack('B',alpha[i]))
 #        elif isinstance(self._foreground, wx.Bitmap):
 #            """
 #            If we have a bitmap...

@@ -72,6 +72,7 @@ py.install_sources([
 )
 
 subdir('NIST_profile')
+subdir('Bilbao')
 subdir('imports')
 subdir('exports')
 subdir('icons')

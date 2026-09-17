@@ -149,6 +149,9 @@ def ReadConstraints(GPXfile, seqHist=None):
     for item in ConstraintsItem[1]:
         if item.startswith('_'): continue
         constList += ConstraintsItem[1][item]
+    d = {str(k):v for k,v in zip(ConstraintsItem[1].get('_OffsetKeys',[]),
+                                 ConstraintsItem[1].get('_OffsetVals',[]))}
+    G2mv.ProcessOffsets(d)
     constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList,seqmode,seqHist)
     #if ignored:
     #    G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
@@ -1056,7 +1059,6 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
             pFile.write(i)
         pFile.write('Orientation defined by: atom %s -> atom %s & atom %s -> atom %s\n'%
             (RBModel['rbRef'][0],RBModel['rbRef'][1],RBModel['rbRef'][0],RBModel['rbRef'][2]))
-
     if Print and pFile is None: raise Exception("specify pFile or Print=False")
     rbVary = []
     rbDict = {}
@@ -1419,6 +1421,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
         pFile.write(135*'-'+'\n')
         for i,at in enumerate(Atoms):
+            G2el.AddWave2atm(at)
             AtomSS = at[-1]['SS1']
             for Stype in ['Sfrac','Spos','Sadp','Smag']:
                 Waves = AtomSS[Stype]
@@ -1555,22 +1558,52 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
 
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
+        SytSym = RB['SytSym']
+        CSI = G2spc.GetCSuinel(SytSym)
         tlstr = ['11','22','33','12','13','23']
         sstr = ['12','13','21','23','31','32','AA','BB']
         if 'T' in RB['ThermalMotion'][0]:
+            names = []
             pfxRB = pfx+'RB'+rbKey+'T'
             for i in range(6):
                 name = pfxRB+tlstr[i]+':'+str(iRB)+':'+rbid
+                names.append(name)
                 phaseDict[name] = RB['ThermalMotion'][1][i]
                 if RB['ThermalMotion'][2][i]:
                     phaseVary += [name,]
+            equivs = {1:[],2:[],3:[],4:[],5:[],6:[]}
+            for j in range(6):
+                if CSI[0][j] > 0:
+                    if names[j] not in phaseVary: phaseVary.append(names[j])
+                    equivs[CSI[0][j]].append([names[j],CSI[1][j]])
+            for equiv in equivs:
+                if len(equivs[equiv]) > 1:
+                    name = equivs[equiv][0][0]
+                    coef = equivs[equiv][0][1]
+                    for eqv in equivs[equiv][1:]:
+                        eqv[1] /= coef
+                        G2mv.StoreEquivalence(name,(eqv,))
         if 'L' in RB['ThermalMotion'][0]:
+            names = []
             pfxRB = pfx+'RB'+rbKey+'L'
             for i in range(6):
                 name = pfxRB+tlstr[i]+':'+str(iRB)+':'+rbid
+                names.append(name)
                 phaseDict[name] = RB['ThermalMotion'][1][i+6]
                 if RB['ThermalMotion'][2][i+6]:
                     phaseVary += [name,]
+            equivs = {1:[],2:[],3:[],4:[],5:[],6:[]}
+            for j in range(6):
+                if CSI[0][j] > 0:
+                    if names[j] not in phaseVary: phaseVary.append(names[j])
+                    equivs[CSI[0][j]].append([names[j],CSI[1][j]])
+            for equiv in equivs:
+                if len(equivs[equiv]) > 1:
+                    name = equivs[equiv][0][0]
+                    coef = equivs[equiv][0][1]
+                    for eqv in equivs[equiv][1:]:
+                        eqv[1] /= coef
+                        G2mv.StoreEquivalence(name,(eqv,))
         if 'S' in RB['ThermalMotion'][0]:
             pfxRB = pfx+'RB'+rbKey+'S'
             for i in range(8):
@@ -1604,6 +1637,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 phaseDict[name] = RB['Radius'][ish][0]
                 if RB['Radius'][ish][1]:
                     phaseVary += [name,]
+            if not len(Shcof):
+                continue
             pfxRB = '%sRBSSh;%d;'%(pfx,ish)
             for i,shcof in enumerate(Shcof):
                 SHcof = Shcof[shcof]
@@ -1802,6 +1837,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                 eqv[1] /= coef
                                 G2mv.StoreEquivalence(name,(eqv,))
                 if General.get('Modulated',False):
+                    G2el.AddWave2atm(at)
                     AtomSS = at[-1]['SS1']
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
@@ -1835,7 +1871,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                     pfx+'U12cos:'+stiw,pfx+'U13cos:'+stiw,pfx+'U23cos:'+stiw]
                                 equivs = {1:[],2:[],3:[],4:[],5:[],6:[], 7:[],8:[],9:[],10:[],11:[],12:[]}
                             elif Stype == 'Sfrac':
-                                equivs = {1:[],2:[]}
+                                equivs = {}
                                 if 'Crenel' in waveType and not iw:
                                     names = [pfx+'Fzero:'+stiw,pfx+'Fwid:'+stiw]
                                 else:
@@ -1934,9 +1970,6 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         (Vec[0],Vec[1],Vec[2],maxH,vRef))
                 if seqHistName is not None:
                     PrintTexture(textureData)
-                if name in RestraintDict:
-                    PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
-                        textureData,RestraintDict[name],pFile)
 
         elif PawleyRef:
             if Print:
@@ -2043,122 +2076,6 @@ def cellFill(pfx,SGData,parmDict,sigDict):
         sigA = [0,0,0,0,0,0]
     return A,sigA
 
-def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):
-    '''Documents Restraint settings in .lst file
-
-    TODO: pass in parmDict to evaluate general restraints
-    '''
-    if phaseRest:
-        Amat = G2lat.cell2AB(cell)[0]
-        cx,ct,cs = AtPtrs[:3]
-        names = G2obj.restraintNames
-        for name,rest in names:
-            if name not in phaseRest:
-                continue
-            itemRest = phaseRest[name]
-            if rest in itemRest and itemRest[rest] and itemRest['Use']:
-                pFile.write('\n %s restraint weight factor %10.3f Use: %s\n'%(name,itemRest['wtFactor'],str(itemRest['Use'])))
-                if name in ['Bond','Angle','Plane','Chiral']:
-                    pFile.write('     calc       obs      sig   delt/sig  atoms(symOp): \n')
-                    for indx,ops,obs,esd in itemRest[rest]:
-                        try:
-                            AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
-                            AtName = ''
-                            for i,Aname in enumerate(AtNames):
-                                AtName += Aname
-                                if ops[i] == '1':
-                                    AtName += '-'
-                                else:
-                                    AtName += '+('+ops[i]+')-'
-                            XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cx,3))
-                            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
-                            if name == 'Bond':
-                                calc = G2mth.getRestDist(XYZ,Amat)
-                            elif name == 'Angle':
-                                calc = G2mth.getRestAngle(XYZ,Amat)
-                            elif name == 'Plane':
-                                calc = G2mth.getRestPlane(XYZ,Amat)
-                            elif name == 'Chiral':
-                                calc = G2mth.getRestChiral(XYZ,Amat)
-                            pFile.write(' %9.3f %9.3f %8.3f %8.3f   %s\n'%(calc,obs,esd,(obs-calc)/esd,AtName[:-1]))
-                        except KeyError:
-                            del itemRest[rest]
-                elif name in ['Torsion','Rama']:
-                    pFile.write('  atoms(symOp)  calc  obs  sig  delt/sig  torsions: \n')
-                    coeffDict = itemRest['Coeff']
-                    for indx,ops,cofName,esd in itemRest[rest]:
-                        AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
-                        AtName = ''
-                        for i,Aname in enumerate(AtNames):
-                            AtName += Aname+'+('+ops[i]+')-'
-                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cx,3))
-                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
-                        if name == 'Torsion':
-                            tor = G2mth.getRestTorsion(XYZ,Amat)
-                            restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
-                            pFile.write(' %8.3f %8.3f %.3f %8.3f %8.3f %s\n'%(calc,obs,esd,(obs-calc)/esd,tor,AtName[:-1]))
-                        else:
-                            phi,psi = G2mth.getRestRama(XYZ,Amat)
-                            restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])
-                            pFile.write(' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s\n'%(calc,obs,esd,(obs-calc)/esd,phi,psi,AtName[:-1]))
-                elif name == 'ChemComp':
-                    pFile.write('     atoms   mul*frac  factor     prod\n')
-                    for indx,factors,obs,esd in itemRest[rest]:
-                        try:
-                            atoms = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
-                            mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
-                            frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs-1))
-                            mulfrac = mul*frac
-                            calcs = mul*frac*factors
-                            for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
-                                pFile.write(' %10s %8.3f %8.3f %8.3f\n'%(atom,mf,fr,clc))
-                            pFile.write(' Sum:                   calc: %8.3f obs: %8.3f esd: %8.3f\n'%(np.sum(calcs),obs,esd))
-                        except KeyError:
-                            del itemRest[rest]
-                elif name == 'Moments':
-                    for item in itemRest['Moments']:
-                        nMom = len(item[0])
-                        AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,item[0],ct-1)
-                        moms = G2mth.GetAtomItemsById(Atoms,AtLookup,item[0],cx+4,3)
-                        obs = 0.
-                        pFile.write(nMom*' Atom       calc'+'     obs    esd\n')
-                        line = ''
-                        for i,mom in enumerate(moms):
-                            Mom = G2mth.GetMag(mom,cell)
-                            line += ' %s  %8.3f'%(AtNames[i],Mom)
-                            obs += Mom
-                        obs /= nMom
-                        line += '%8.3f %6.3f\n'%(obs,item[-1])
-                        pFile.write(line)
-                elif name == 'Texture' and textureData['Order']:
-                    SHCoef = textureData['SH Coeff'][1]
-                    shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
-                    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-                    pFile.write ('    HKL  grid  neg esd  sum neg  num neg use unit?  unit esd \n')
-                    for hkl,grid,esd1,ifesd2,esd2 in itemRest[rest]:
-                        phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
-                        ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
-                        R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
-                        Z = ma.masked_greater(Z,0.0)
-                        num = ma.count(Z)
-                        sum = 0
-                        if num:
-                            sum = np.sum(Z)
-                        pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
-                elif name == 'General':
-                    pFile.write('  target   sig     obs  expression        variables \n')
-                    for expObj,target,esd in itemRest[rest]:
-                        val = '?'
-                        calcobj = G2obj.ExpressionCalcObj(expObj)
-                        # need to get parmDict to evaluate the value
-                        #calcobj.SetupCalc(parmDict)
-                        #val = ' {:8.3g} '.format(calcobj.EvalExpression())
-                        txt = ''
-                        for i in expObj.assgnVars:
-                            if txt: txt += '; '
-                            txt += str(i) + '=' + str(expObj.assgnVars[i])
-                        if len(txt) > 80: txt = txt[:77]+'...'
-                        pFile.write(f'{target:8.5g}{esd:6.3g}{val:>8s}  {expObj.expression:17s} {txt}\n')
 
 def SummRestraints(restraintDict):
     'Summarize number of Restraints in a single line'
@@ -2319,6 +2236,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
         pFile.write(135*'-'+'\n')
         for i,at in enumerate(Atoms):
+            G2el.AddWave2atm(at)
             AtomSS = at[-1]['SS1']
             for Stype in ['Sfrac','Spos','Sadp','Smag']:
                 Waves = AtomSS[Stype]
@@ -2448,8 +2366,150 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             iFin = min(iBeg+10,nCoeff)
         pFile.write(' Texture index J = %.3f(%d)'%(Tindx,int(1000*np.sqrt(Tvar))))
 
+    def PrintRestraints(cell,AtPtrs,phaseRest):
+        '''Documents Restraint settings in .lst file
+    
+        TODO: pass in parmDict to evaluate general restraints
+        '''
+        if phaseRest:
+            Amat = G2lat.cell2AB(cell)[0]
+            cx,ct,cs = AtPtrs[:3]
+            names = G2obj.restraintNames
+            for name,rest in names:
+                if name not in phaseRest:
+                    continue
+                itemRest = phaseRest[name]
+                if rest in itemRest and itemRest[rest] and itemRest['Use']:
+                    pFile.write('\n %s restraint weight factor %10.3f Use: %s\n'%(name,itemRest['wtFactor'],str(itemRest['Use'])))
+                    if name in ['Bond','Angle','Plane','Chiral']:
+                        pFile.write('     calc       obs      sig   delt/sig  atoms(symOp): \n')
+                        for indx,ops,obs,esd in itemRest[rest]:
+                            try:
+                                AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
+                                AtName = ''
+                                for i,Aname in enumerate(AtNames):
+                                    AtName += Aname
+                                    if ops[i] == '1':
+                                        AtName += '-'
+                                    else:
+                                        AtName += '+('+ops[i]+')-'
+                                XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cx,3))
+                                XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                                if name == 'Bond':
+                                    calc = G2mth.getRestDist(XYZ,Amat)
+                                elif name == 'Angle':
+                                    calc = G2mth.getRestAngle(XYZ,Amat)
+                                elif name == 'Plane':
+                                    calc = G2mth.getRestPlane(XYZ,Amat)
+                                elif name == 'Chiral':
+                                    calc = G2mth.getRestChiral(XYZ,Amat)
+                                pFile.write(' %9.3f %9.3f %8.3f %8.3f   %s\n'%(calc,obs,esd,(obs-calc)/esd,AtName[:-1]))
+                            except KeyError:
+                                del itemRest[rest]
+                    elif name in ['Torsion','Rama']:
+                        pFile.write('  atoms(symOp)  calc  obs  sig  delt/sig  torsions: \n')
+                        coeffDict = itemRest['Coeff']
+                        for indx,ops,cofName,esd in itemRest[rest]:
+                            AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
+                            AtName = ''
+                            for i,Aname in enumerate(AtNames):
+                                AtName += Aname+'+('+ops[i]+')-'
+                            XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cx,3))
+                            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                            if name == 'Torsion':
+                                tor = G2mth.getRestTorsion(XYZ,Amat)
+                                restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
+                                pFile.write(' %8.3f %8.3f %.3f %8.3f %8.3f %s\n'%(calc,obs,esd,(obs-calc)/esd,tor,AtName[:-1]))
+                            else:
+                                phi,psi = G2mth.getRestRama(XYZ,Amat)
+                                restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])
+                                pFile.write(' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s\n'%(calc,obs,esd,(obs-calc)/esd,phi,psi,AtName[:-1]))
+                    elif name == 'ChemComp':
+                        pFile.write('     atoms   mul*frac  factor     prod\n')
+                        for indx,factors,obs,esd in itemRest[rest]:
+                            try:
+                                atoms = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
+                                mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
+                                frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs-1))
+                                mulfrac = mul*frac
+                                calcs = mul*frac*factors
+                                for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
+                                    pFile.write(' %10s %8.3f %8.3f %8.3f\n'%(atom,mf,fr,clc))
+                                pFile.write(' Sum:                   calc: %8.3f obs: %8.3f esd: %8.3f\n'%(np.sum(calcs),obs,esd))
+                            except KeyError:
+                                del itemRest[rest]
+                    elif name == 'Moments':
+                        for item in itemRest['Moments']:
+                            nMom = len(item[0])
+                            AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,item[0],ct-1)
+                            moms = G2mth.GetAtomItemsById(Atoms,AtLookup,item[0],cx+4,3)
+                            obs = 0.
+                            pFile.write(nMom*' Atom       calc'+'     obs    esd\n')
+                            line = ''
+                            for i,mom in enumerate(moms):
+                                Mom = G2mth.GetMag(mom,cell)
+                                line += ' %s  %8.3f'%(AtNames[i],Mom)
+                                obs += Mom
+                            obs /= nMom
+                            line += '%8.3f %6.3f\n'%(obs,item[-1])
+                            pFile.write(line)
+                    elif name == 'Texture' and textureData['Order']:
+                        SHCoef = textureData['SH Coeff'][1]
+                        shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+                        SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+                        pFile.write ('    HKL  grid  neg esd  sum neg  num neg use unit?  unit esd \n')
+                        for hkl,grid,esd1,ifesd2,esd2 in itemRest[rest]:
+                            phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
+                            ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
+                            R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
+                            Z = ma.masked_greater(Z,0.0)
+                            num = ma.count(Z)
+                            sum = 0
+                            if num:
+                                sum = np.sum(Z)
+                            pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
+                    elif name =='SpinRB':
+                        RBData = Phases[phase]['RBModels']
+                        SpinRB = RBData.get('Spin',[])
+                        Npts = 20
+                        PSI,GAM = np.mgrid[0:2*Npts,0:Npts]   #[azm,pol]
+                        PSI = PSI.flatten()*360./(2*Npts)  #azimuth 0-360 ncl
+                        GAM = GAM.flatten()*180./Npts  #polar 0-180 incl
+                        pFile.write ('    atom shell neg esd  sum neg  num neg \n')
+                        for ires,[iAt,esd,ifUnit,esdU] in enumerate(itemRest[rest]):                            
+                            for irb,RBObj in enumerate(SpinRB):
+                                if iAt == RBObj['Ids'][0]:
+                                    atom = Atoms[AtLookup[iAt]]
+                                    for ish in range(len(RBObj['RBId'])):   #do this by shell
+                                        SH = np.zeros(2*Npts*Npts)
+                                        for item in RBObj['SHC'][ish]:
+                                            iRb = SRBIds.index(RBObj['RBId'][ish])
+                                            pName = '%d::RBSSh;%d;%s:%d:%d'%(pId,ish,item,AtLookup[iAt],iRb)
+                                            SH += np.array(G2lat.KslCalc(item,PSI,GAM))*parmDict[pName]
+                                        SH = ma.masked_greater(SH,0.0)
+                                        num = ma.count(SH)
+                                        sum = 0
+                                        if num:
+                                            sum = np.sum(SH)
+                            pFile.write ('   %s  %d %8.3f    %8.3f %6d\n'%(atom[ct-1],ish,esd,sum,num))
+                                            
+                    elif name == 'General':
+                        pFile.write('  target   sig     obs  expression        variables \n')
+                        for expObj,target,esd in itemRest[rest]:
+                            val = '?'
+                            #calcobj = G2obj.ExpressionCalcObj(expObj)
+                            # need to get parmDict to evaluate the value
+                            #calcobj.SetupCalc(parmDict)
+                            #val = ' {:8.3g} '.format(calcobj.EvalExpression())
+                            txt = ''
+                            for i in expObj.assgnVars:
+                                if txt: txt += '; '
+                                txt += str(i) + '=' + str(expObj.assgnVars[i])
+                            if len(txt) > 80: txt = txt[:77]+'...'
+                            pFile.write(f'{target:8.5g}{esd:6.3g}{val:>8s}  {expObj.expression:17s} {txt}\n')
+                            
     ##########################################################################
-    # SetPhaseData starts here
+    #### SetPhaseData starts here
     if pFile: pFile.write('\n Phases:\n')
     for phase in Phases:
         if pFile: pFile.write(' Result for phase: %s\n'%phase)
@@ -2600,6 +2660,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 ind = General['AtomTypes'].index(at[ct])
                 General['Mass'] += General['AtomMass'][ind]*at[cx+3]*at[cx+5]
                 if General.get('Modulated',False):
+                    G2el.AddWave2atm(at)
                     AtomSS = at[-1]['SS1']
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
@@ -2633,6 +2694,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                 AtomSS[Stype][iw+1][0][iname] = parmDict[pfx+name]
                                 if pfx+name in sigDict:
                                     wavesSig[name] = sigDict[pfx+name]
+
+
+
 
             Deformations = Phase.get('Deformations',{})
             for iAt in Deformations:
@@ -2679,8 +2743,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     SHtextureSig[name] = sigDict[aname]
             PrintSHtextureAndSig(textureData,SHtextureSig)
         if phase in RestraintDict and not Phase['General'].get('doPawley'):
-            PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
-                textureData,RestraintDict[phase],pFile)
+            PrintRestraints(cell[1:7],General['AtomPtrs'],RestraintDict[phase])
 
 def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
     '''After a refinement, sets the values for the ISODISTORT modes into
@@ -2995,7 +3058,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     else:                           #'SH' spherical harmonics
                         controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
                         controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
-                        controlDict[pfx+'SHnames'] = G2lat.GenSHCoeff(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
+                        controlDict[pfx+'SHnames'] = G2lat.GenSHCoeffT(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
                         controlDict[pfx+'SHhkl'] = []
                         try: #patch for old Pref.Ori. items
                             controlDict[pfx+'SHtoler'] = 0.1
@@ -4326,6 +4389,7 @@ def WriteVecRBModel(RBModel,sigDict={},irb=None):
 
 atmPattrn = re.compile("::A[xyz]:")
 fmtSplit =  re.compile('%([0-9]+)\\.([0-9]+)(.*)')
+
 def fmtESD(varname,SigDict,fmtcode,ndig=None,ndec=None):
     '''Format an uncertainty value as requested, but surround the
     number by () if the parameter is set by an equivalence

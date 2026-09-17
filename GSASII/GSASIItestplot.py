@@ -33,7 +33,7 @@ class PlotNotebook(wx.Panel):
     'creates a Wx application and a plotting notebook'
     def __init__(self, id = -1):
         self.app = wx.App()
-        self.frame = wx.Frame(None,-1,'Plotter', size=wx.Size(600,600),
+        self.frame = wx.Frame(None,-1,'Plotter', size=wx.Size(1000,800),
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.status = self.frame.CreateStatusBar()
         self.status.SetStatusText('Use K-box to set plot controls')

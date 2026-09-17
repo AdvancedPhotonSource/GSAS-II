@@ -54,7 +54,8 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 if definition == 'NXazint1d':
                     fileItems = {
                         'I':('NXdata','I'),
-                        'unit':('NXparameters','unit'),
+                        'unit':('NXdata','radial_axis','units'),
+                        # 'unit':('NXparameters','unit'),
                         }
                     buffer = {}
                     if not self.readInNeXus(filename,buffer,fileItems,'NXazint1d-validate'):
@@ -67,7 +68,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 if definition == 'NXazint2d':
                     fileItems = {
                         'I':('NXdata','I'),
-                        'unit':('NXparameters','unit'),
+                        'unit':('NXdata','radial_axis','units'),
                         'azimuthal_axis':('NXdata','azimuthal_axis'),
                     }
                     buffer = {}
@@ -176,6 +177,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
 
         see https://nxazint-hdf5-nexus-3229ecbd09ba8a773fbbd8beb72cace6216dfd5063e1.gitlab-pages.esrf.fr/classes/contributed_definitions/NXazint1d.html
         '''
+        #        key:  (NeXus section, dataset name, optional attribute name)
         fileItems = {
             # arrays
             'radial_axis':('NXdata','radial_axis'),
@@ -186,9 +188,13 @@ class HDF5_Reader(G2obj.ImportPowderData):
             'polarization_factor':('NXparameters','polarization_factor'),
             # strings
             'instrument/name':('NXinstrument','name'),
-            'unit':('NXparameters','unit'),
+            'unit':('NXdata','radial_axis','units'),
+            # 'unit':('NXparameters','unit'),
             'sample/name':('NXsample','name'),
             'source/name':('NXsource','name'),
+            # bools
+            'polarization_applied':('NXentry', 'polarization_applied'),
+
         }
         # test if we have what we need in the buffer and if not read it in
         if not self.readInNeXus(filename,fpbuffer,fileItems,'NXazint1d',entry): return False
@@ -207,6 +213,10 @@ class HDF5_Reader(G2obj.ImportPowderData):
         self.powderentry[2] = self.blknum  # bank number
         self.idstring = f'#{self.blknum} {os.path.split(filename)[1][:60]}'
         self.instdict['wave'] = fpbuffer['wavelength']
+        # if the data are already corrected for polarization, set the polarization factor 
+        # to 0.5 (unpolarized) 
+        if fpbuffer['polarization_applied']:
+            self.instdict['Polariz.'] = [0.5,0.5,False]
         # if not, are there more [selected] images that after this to be read?
         self.repeat = False
         if self.blknum < self.numbanks-1:
@@ -232,6 +242,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
         see https://nxazint-hdf5-nexus-3229ecbd09ba8a773fbbd8beb72cace6216dfd5063e1.gitlab-pages.esrf.fr/classes/contributed_definitions/NXazint2d.html
         '''
         self.comments = []
+        #        key:  (NeXus section, dataset name, optional attribute name)
         fileItems = {
             # arrays
             'radial_axis':('NXdata','radial_axis'),
@@ -243,15 +254,19 @@ class HDF5_Reader(G2obj.ImportPowderData):
             'polarization_factor':('NXparameters','polarization_factor'),
             # strings
             'instrument/name':('NXinstrument','name'),
-            'unit':('NXparameters','unit'),
-            'azimuth_bins':('NXparameters','azimuth_bins'),
+            # 'azimuth_bins':('NXparameters','azimuth_bins'),
             'sample/name':('NXsample','name'),
             'source/name':('NXsource','name'),
+            # bools
+            'polarization_applied':('NXentry', 'polarization_applied'),
+            # from attributes
+            'unit':('NXdata','radial_axis','units'),
         }
         # test if we have what we need in the buffer and if not read it in
         if not self.readInNeXus(filename,fpbuffer,fileItems,'NXazint2d',entry): return False
         # now pull the selected dataset from the buffer
-        self.numazimuth = fpbuffer['azimuth_bins']
+        self.numazimuth = fpbuffer['azimuthal_axis'].size
+        # self.numazimuth = fpbuffer['azimuth_bins']
         self.numbanks = self.numparams * self.numazimuth
         # group by parametric variable
         numScan = self.blknum // self.numazimuth
@@ -271,6 +286,10 @@ class HDF5_Reader(G2obj.ImportPowderData):
         self.powderentry[2] = self.blknum  # bank number
         self.idstring = f'#{numScan} Azm={self.Sample["Azimuth"]} {os.path.split(filename)[1][:60]}'
         self.instdict['wave'] = fpbuffer['wavelength']
+        # if the data are already corrected for polarization, set the polarization factor 
+        # to 0.5 (unpolarized) 
+        if fpbuffer['polarization_applied']:
+            self.instdict['Polariz.'] = [0.5,0.5,False]
         # if not, are there more [selected] images that after this to be read?
         self.repeat = False
         if self.blknum < self.numbanks-1:
@@ -318,10 +337,17 @@ class HDF5_Reader(G2obj.ImportPowderData):
                     if nexusDict[loc[0]] is None:
                         fpbuffer[k] = None
                         continue
-                    key = '/'.join((nexusDict[loc[0]],)+loc[1:])
+                    key = '/'.join((nexusDict[loc[0]],)+loc[1:2])
                     savedKeys.append(key)
                     if key not in fp:
                         fpbuffer[k] = None
+                        continue
+                    # check if the value should be read from a dataset attribute rather 
+                    # than the dataset itself
+                    if len(loc) > 2: # attribute
+                        val = fp[key].attrs[loc[2]]
+                        val = val.decode() if isinstance(val, bytes) else val
+                        fpbuffer[k] = val
                         continue
                     val = fp[key]
                     if val.shape:
@@ -332,9 +358,9 @@ class HDF5_Reader(G2obj.ImportPowderData):
                     elif 'int' in str(val.dtype):
                         fpbuffer[k] = int(val[()])
                     else:
-                        fpbuffer[k] = val[()].decode()
+                        fpbuffer[k] = val[()].decode() if isinstance(val[()], bytes) else val[()]
                         self.comments.append(f'{k}={fpbuffer[k]}')
-                if fpbuffer['unit'] != '2th':
+                if fpbuffer['unit'] not in ['degrees','deg','2th', '2theta']:
                     print(f'{fmt} HDF5 file has units',fpbuffer['unit'])
                     self.errors = f'{fmt} only can be read with 2theta units'
                     return False
@@ -343,6 +369,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 # conditions into ParamTrackingVars. These arrays will have 
                 # the same length as the number of datasets (self.numparams)
                 if 'validate' not in fmt: # skip if we are validating the file rather than reading it
+                    parametricValues = []
                     fpbuffer['ParamTrackingVars'] = {}
                     paramItems = []
                     for loc in nexusDict.values():
@@ -361,9 +388,11 @@ class HDF5_Reader(G2obj.ImportPowderData):
                                 # for the first histogram only. If they are changing, note that 
                                 # here and later they will be put into every histogram.
                                 if all(obj[0] == obj):
-                                    self.comments.append(f'{key.split("/")[-1]}={obj[0]}')
+                                    #self.comments.append(f'{key.split("/")[-1]}={obj[0]}')
+                                    parametricValues.append(f'{key.split("/")[-1]}={obj[0]}')
                                 else:
                                     fpbuffer['ParamTrackingVars'][key] = np.array(obj[()])
+                    self.comments = parametricValues + self.comments # put in front
             except IOError:
                 print (f'Cannot open or read file {filename}')
                 self.errors = f'{fmt} Can not open or read file {filename}'
@@ -376,13 +405,14 @@ class HDF5_Reader(G2obj.ImportPowderData):
             else:
                 self.blknum = min(self.selections)
         return True
-
+        
     def FillInParametics(self,fpbuffer,count):
-        '''put changing parametric variables into the comments
+        '''put changing parametric variables into the top of the comments
         '''
+        parametics = []
         for key,arr in fpbuffer['ParamTrackingVars'].items():
             val = arr[count]
-            self.comments.append(f'{key.split("/")[-1]}={val}')
+            parametics.append(f'{key.split("/")[-1]}={val}')
             if 'temperature' in key:
                 self.Sample['Temperature'] = val # in K already
             elif 'time' in key:
@@ -393,6 +423,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 self.Sample['Phi'] = val
             elif 'omega' in key:
                 self.Sample['Omega'] = val
+        self.comments = parametics + self.comments
     
     # HDF5 support routines.
     def RecurseH5Element(self,obj,prefix=[],length=None):
@@ -473,7 +504,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 #     lbl = lbl.split()[0] + '...'
                 if lbl != '(group)': strings.append(f"{'/'.join(k):{m}s} {lbl}")
                 if nxname: print(f"{'/'.join(k):{m}s} {lbl} {nxname}")
-        with open(filename+'_contents.txt', 'w') as fp:
+        with open(filename+'_NeXusMap.txt', 'w') as fp:
             for i in strings: fp.write(f'{i}\n')
 
     def ShowH5Element(self,obj,keylist):
@@ -494,7 +525,12 @@ class HDF5_Reader(G2obj.ImportPowderData):
             datfmt = obj[k].dtype
             if datfmt == 'O' or str(datfmt).startswith('|S'):
                 # byte string
-                return f'value={obj[k][()].decode()}'
+                if hasattr(obj[k][()],'decode'):
+                    return f'value={obj[k][()].decode()}'
+                elif hasattr(obj[k][()],'tobytes'):
+                    return f'value={obj[k][()].tobytes().decode()}'
+                else:
+                    return f'value={obj[k][()]} not decoded'
             elif datfmt == 'bool': # Bool
                 return f'value={bool(obj[k][()])}'
             elif datfmt in ('<f8', 'uint8', 'int64', '<f4'): # scalar value or array of values
@@ -504,7 +540,15 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 except:
                     return f'value={obj[k][()]}'
             else:
-                return f'dataset of type {repr(datfmt)}'
+                l = ''
+                try:
+                    l = f' size {obj[k].shape}'
+                except:
+                    try:
+                        l = f' value={obj[k][()]}'
+                    except:
+                        pass
+                return f'dataset of type {repr(datfmt)}{l}'
         elif ".Group'" in typ:
             return "(group)"
         else:

@@ -120,33 +120,40 @@ def GetISODISTORT(Phase):
         print('method  3 TBD')
         return [],[]
     elif ISOdata['ISOmethod'] == 4:
-        childcif = ISOdata['ChildCIF']
-        if 'Use this phase' in childcif:
-            childcif = MakePhaseCif(Phase)
-        print(' Run ISODISTORT with %s as child cif'%childcif)
-        ISOchildcif = UploadCIF(childcif)
-        data['input'] = 'uploadsubgroupcif'
-        data['filename'] = ISOchildcif
-        out24 = requests.post(isoformsite,data=data).text
-        posB = out24.index('OPTION VALUE=')
-        posF = out24[posB:].index('>')+posB
-        value = out24[posB+13:posF]
-        data['input'] = 'distort'
-        data['origintype'] = 'method4'
-        data['inputbasis'] = 'list'
-        data['basisselect'] = value[1:-1]
-        data['chooseorigin'] = False
-        data['trynearest'] = True
-        data['dmax'] = '1'
-        out25 = requests.post(isoformsite,data=data).text
-        cifout = GetISOcif(out25,4)
-        if cifout is None:
-            return None,None
-        cifFile = '%s_%s.cif'%(Phase['General']['Name'],'child')
-        fl = open(cifFile,'wb')
-        fl.write(cifout.encode("utf-8"))
-        fl.close()
-        return [],cifFile
+        try:
+            childcif = ISOdata['ChildCIF']
+            if 'Use this phase' in childcif:
+                childcif = MakePhaseCif(Phase)
+            print(' Run ISODISTORT with %s as child cif'%childcif)
+            ISOchildcif = UploadCIF(childcif)
+            data['input'] = 'uploadsubgroupcif'
+            data['filename'] = ISOchildcif
+            out24 = requests.post(isoformsite,data=data).text
+            posB = out24.index('OPTION VALUE=')
+            posF = out24[posB:].index('>')+posB
+            value = out24[posB+13:posF]
+            data['input'] = 'distort'
+            data['origintype'] = 'method4'
+            data['inputbasis'] = 'list'
+            data['basisselect'] = value[1:-1]
+            data['chooseorigin'] = False
+            data['trynearest'] = True
+            data['dmax'] = '1'
+            out25 = requests.post(isoformsite,data=data).text
+            cifout = GetISOcif(out25,4)
+            if cifout is None:
+                return None,None
+            cifFile = '%s_%s.cif'%(Phase['General']['Name'],'child')
+            fl = open(cifFile,'wb')
+            fl.write(cifout.encode("utf-8"))
+            fl.close()
+            return [],cifFile
+        except:
+            print('Output from ISODISTORT follows')
+            if '<H1>' in out24: out24 = out24.split('<H1>',1)[1]
+            print(out24)
+            print('Scan of output from ISODISTORT failed, see above')
+            return [],[]
 
     #do the distortion search - result is radio button list of choices
 

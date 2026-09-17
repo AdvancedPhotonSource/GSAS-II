@@ -6,7 +6,7 @@
 from __future__ import division, print_function
 import datetime as dt
 import os.path
-import sys
+#import sys
 import numpy as np
 import pickle
 import copy
@@ -423,7 +423,7 @@ def WriteCIFitem(fp, name, value=''):
                 fp.write(name+'\n')
             fp.write(';\n'+value+'\n')
             fp.write(';'+'\n')
-        elif " " in value:
+        elif " " in value or value.lower().startswith('data_'):
             if len(name)+len(value) > 65:
                 fp.write(name + '\n   ' + '"' + str(value) + '"'+'\n')
             else:
@@ -1044,6 +1044,116 @@ def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
             '\n    _restr_rigid_body.class_id\n    _restr_rigid_body.details')
         for i,l in enumerate(rbAtoms):
             WriteCIFitem(fp,'   {:5d} {}'.format(i+1,l))
+
+def writeBondRestraints(fp,phase,bondList,phaseRestraintDict,
+                        seqParmDict={},cellList=[]):
+    General = phase['General']
+    if 'macro' in General['Type']:
+        print('Distance Restraint export in MM phase not yet supported')
+        return
+    Atoms = phase['Atoms']
+    cx,ct,cs,cia = General['AtomPtrs']
+    AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)
+    if cellList:
+        Amat = G2lat.cell2AB(cellList[:6])[0]
+    else:
+        Amat = G2lat.cell2AB(General['Cell'][1:7])[0]
+    SGData = General['SGData']
+    weight = phaseRestraintDict.get('Bond',{}).get('wtFactor',1.0)
+    if weight <= 0: return # restraints "turned off"
+    first = True
+    for i,[indx,ops,setp,esd] in enumerate(bondList):
+        try:
+            names = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+            XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+            if seqParmDict:  # sequential fit, update coordinates from refinement results
+                for k,aId in enumerate(indx):
+                    atNum = AtLookUp[aId]
+                    xyz = []
+                    for j,lab in enumerate(['x','y','z']):
+                        xyzkey = str(phase['pId'])+'::A'+ lab + ':' +str(atNum)
+                        xyz.append(seqParmDict.get(xyzkey,XYZ[k][j]))
+                    XYZ[k] = xyz
+            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+            calc = G2mth.getRestDist(XYZ,Amat)
+            if first:
+                first = False
+                WriteCIFitem(fp, '\n'.join([
+                    '\nloop_',
+                    '    _restr_distance_atom_site_label_1',
+                    '    _restr_distance_atom_site_label_2',
+                    #'    _restr_distance_site_symmetry_2', # this needs work to get right
+                    # as was done for distances & angles
+                    '    _restr_distance_target',
+                    '    _restr_distance_target_weight_param',
+                    '    _restr_distance_diff',
+                    #'    _restr_distance_details',
+                    ]))
+            s = '  '
+            s += PutInCol(names[0],6)
+            s += PutInCol(names[1],6)
+            s += PutInCol(G2mth.ValEsd(setp,-esd/5),10)
+            s += PutInCol(G2mth.ValEsd(esd/weight,-esd/5),10)
+            s += PutInCol(G2mth.ValEsd(calc-setp,-esd/5),10)
+            WriteCIFitem(fp, s)
+        except:
+            pass
+
+def writeAngleRestraints(fp,phase,angleList,phaseRestraintDict,
+                         seqParmDict={},cellList=[]):
+    General = phase['General']
+    if 'macro' in General['Type']:
+        print('Angle Restraint export in MM phase not yet supported')
+        return
+    Atoms = phase['Atoms']
+    cx,ct,cs,cia = General['AtomPtrs']
+    AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)
+    if cellList:
+        Amat = G2lat.cell2AB(cellList[:6])[0]
+    else:
+        Amat = G2lat.cell2AB(General['Cell'][1:7])[0]
+    SGData = General['SGData']
+    weight = phaseRestraintDict.get('Angle',{}).get('wtFactor',1.0)
+    if weight <= 0: return # restraints "turned off"
+    first = True
+    for i,[indx,ops,setp,esd] in enumerate(angleList):
+        try:
+            names = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+            XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+            if seqParmDict:  # sequential fit, update coordinates from refinement results
+                for k,aId in enumerate(indx):
+                    atNum = AtLookUp[aId]
+                    xyz = []
+                    for j,lab in enumerate(['x','y','z']):
+                        xyzkey = str(phase['pId'])+'::A'+ lab + ':' +str(atNum)
+                        xyz.append(seqParmDict.get(xyzkey,XYZ[k][j]))
+                    XYZ[k] = xyz
+            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+            calc = G2mth.getRestAngle(XYZ,Amat)
+            if first:
+                first = False
+                WriteCIFitem(fp, '\n'.join([
+                    '\nloop_',
+                    '    _restr_angle_atom_site_label_1',
+                    #'    _restr_angle_site_symmetry_1',
+                    '    _restr_angle_atom_site_label_2',
+                    '    _restr_angle_atom_site_label_3',
+                    #'    _restr_angle_site_symmetry_3',
+                    '    _restr_angle_target',
+                    '    _restr_angle_target_weight_param',
+                    '    _restr_angle_diff',
+                    #'    _restr_angle_details',
+                    ]))
+            s = '  '
+            s += PutInCol(names[0],6)
+            s += PutInCol(names[1],6)
+            s += PutInCol(names[2],6)
+            s += PutInCol(G2mth.ValEsd(setp,-esd/5),10)
+            s += PutInCol(G2mth.ValEsd(esd/weight,-esd/5),10)
+            s += PutInCol(G2mth.ValEsd(calc-setp,-esd/5),10)
+            WriteCIFitem(fp, s)
+        except:
+            pass
 
 # Refactored over here to allow access by GSASIIscriptable.py
 def MakeUniqueLabel(lbl, labellist):
@@ -1693,6 +1803,11 @@ class ExportCIF(G2fil.ExportBaseclass):
             CIF template is written out from PyCifRW which of course strips comments.
             In all cases the initial data_ header is stripped (there should only be one!)
             '''
+            pathlist = ( # look for CIF templates in the user's directory
+                # and if not there, in the same location as this file
+                os.getcwd(),
+                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.dirname(__file__))
             CIFobj = G2dict.get(cifKey)
             if CIFobj is None: return
             if defaultname:
@@ -1704,11 +1819,11 @@ class ExportCIF(G2fil.ExportBaseclass):
             templateDefName = 'template_'+tmplate+'.cif'
             if not CIFobj: # copying a template
                 lbl = 'Standard version'
-                for pth in [os.getcwd()]+sys.path:
+                for pth in pathlist:
                     fil = os.path.join(pth,defaultname)
                     if os.path.exists(fil) and defaultname: break
                 else:
-                    for pth in sys.path:
+                    for pth in pathlist:
                         fil = os.path.join(pth,templateDefName)
                         if os.path.exists(fil): break
                     else:
@@ -2415,6 +2530,20 @@ class ExportCIF(G2fil.ExportBaseclass):
                 print("Warning: no export for sequential "+str(phasedict['General']['Type'])+" coordinates implemented")
 #                raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
 
+            # write restraints
+            restraintDict = self.OverallParms.get('Restraints',{})
+            seqParmDict = self.seqData[histname]['parmDict']
+            if phasenam in restraintDict:
+                bondList = restraintDict[phasenam].get('Bond',{}).get('Bonds',[])
+                if bondList:
+                    writeBondRestraints(self.fp,phasedict,
+                                            bondList,restraintDict[phasenam],
+                                            seqParmDict,cellList)
+                angleList = restraintDict[phasenam].get('Angle',{}).get('Angles',[])
+                if angleList:
+                    writeAngleRestraints(self.fp,phasedict,
+                                             angleList,restraintDict[phasenam],
+                                             seqParmDict,cellList)
             if phasedict['General']['Type'] == 'nuclear':
                 WriteSeqDistances(phasenam,histname,phasedict,cellList,self.seqData)
 
@@ -2554,6 +2683,17 @@ class ExportCIF(G2fil.ExportBaseclass):
                 WriteAtomsMagnetic(self.fp, self.Phases[phasenam], phasenam,
                                   self.parmDict, self.sigDict, self.labellist)
 #                raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
+            # write restraints
+            restraintDict = self.OverallParms.get('Restraints',{})
+            if phasenam in restraintDict:
+                bondList = restraintDict[phasenam].get('Bond',{}).get('Bonds',[])
+                if bondList:
+                    writeBondRestraints(self.fp,self.Phases[phasenam],
+                                            bondList,restraintDict[phasenam])
+                angleList = restraintDict[phasenam].get('Angle',{}).get('Angles',[])
+                if angleList:
+                    writeAngleRestraints(self.fp,self.Phases[phasenam],
+                                            angleList,restraintDict[phasenam])
             keV = None
             if oneblock: # get xray wavelength
                 lamlist = []
@@ -3467,9 +3607,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 lbllist.append(hist)
                 dictlist.append(d)
                 keylist.append('InstrName')
-                instrname = d.get('InstrName')
-                if instrname is None:
-                    d['InstrName'] = ''
+                d['InstrName'] = d.get('InstrName','')
                 if hist.startswith("PWDR") and seqmode: break
             return G2G.CallScrolledMultiEditor(
                 self.G2frame,dictlist,keylist,
@@ -4426,6 +4564,11 @@ class ExportCIF(G2fil.ExportBaseclass):
                     # load the constraints specific to the current histogram
                     varyList = copy.copy(list(self.seqData[hist].get('varyListStart',[])))
                     G2mv.InitVars()
+                    # I don't think Offsets are needed here
+                    d = {}
+                    # d = {str(k):v for k,v in zip(consDict.get('_OffsetKeys',[]),
+                    #                              consDict.get('_OffsetVals',[]))}
+                    G2mv.ProcessOffsets(d)
                     constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList,'auto-wildcard',hId)
                     G2mv.EvaluateMultipliers(constrDict,self.parmDict)
                     errmsg,conswarnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)
@@ -4938,6 +5081,9 @@ class ExportPhaseCIF(ExportCIF):
         if self.ExportSelect('ask'):
             return
         else:
+            # this adds the phase name to the file. This is needed when 
+            # exporting multiple phases, but not when doing a quick 
+            # export of a single phase. TODO: How to tell the difference?
             baseFileName, ext=os.path.splitext(self.filename)
             for nameOfPhase in self.phasenam:
                 # strip non-ascii characters & replace white space in filename
@@ -5132,8 +5278,12 @@ def LoadCIFdic():
     :returns: the dict with the definitions
     '''
     cifdic = {}
+    pathlist = ( # look for CIF dictionaries in the user's directory
+                # and if not there, in the same location as this file
+                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.dirname(__file__))
     for ftyp in "cif_core","cif_pd":
-        for loc in sys.path:
+        for loc in pathlist:
             fil = os.path.join(loc,ftyp+".cpickle")
             if not os.path.exists(fil): continue
             fp = open(fil,'rb')
@@ -5144,7 +5294,7 @@ def LoadCIFdic():
             finally:
                 fp.close()
         else:
-            for loc in sys.path:
+            for loc in pathlist:
                 fil = os.path.join(loc,ftyp+".dic")
                 if not os.path.exists(fil): continue
                 #try:
@@ -5195,13 +5345,13 @@ def CIF2dict(cf):
       CIF items and loopstructure is a list of lists that defines
       which items are in which loops.
     '''
-    blk = list(cf)[0] # assume templates are a single CIF block, use the 1st
+    blk = list(cf.keys())[0] # assume templates are a single CIF block, use the 1st
     try:
         loopstructure = cf[blk].loopnames()[:] # copy over the list of loop contents
     except AttributeError:
         loopstructure = [j[:] for j in cf[blk].loops.values()] # method replaced?
     dblk = {}
-    for item in cf[blk]: # make a copy of all the items in the block
+    for item in cf[blk].keys(): # make a copy of all the items in the block
         dblk[item] = cf[blk][item]
     return dblk,loopstructure
 
@@ -5398,10 +5548,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
         self.ValidatedControlsList = []
         # delete any only contents
         if self.vbox:
-            if 'phoenix' in wx.version():
-                self.vbox.Clear(True)
-            else:
-                self.vbox.DeleteWindows()
+            self.vbox.Clear(True)
             self.vbox = None
             self.Update()
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -5619,7 +5766,12 @@ class CIFtemplateSelect(wx.BoxSizer):
         # find default name for template
         resetTemplate = None
         localTemplate = None
-        for pth in [os.path.dirname(__file__)]+sys.path:           # -- search with default name
+        pathlist = ( # look for CIF templates in the user's directory
+                # and if not there, in the same location as this file
+                os.getcwd(),
+                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.dirname(__file__))
+        for pth in pathlist:           # -- search with default name
             fil = os.path.join(pth,templateDefName)
             if os.path.exists(fil):
                 resetTemplate = fil
@@ -5627,7 +5779,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         if not resetTemplate:    # this should not happen!
             print("Default CIF template file",templateDefName,
                           'not found in path!\nProblem with GSAS-II installation?')
-        for pth in [os.getcwd()]+sys.path: # -- search with name based on hist/phase
+        for pth in pathlist: # -- search with name based on hist/phase
             fil = os.path.join(pth,self.defaultname)
             if os.path.exists(fil) and self.defaultname:
                 localTemplate = fil

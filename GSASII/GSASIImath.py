@@ -45,9 +45,11 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atand = lambda x: 180.*np.arctan(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
+vnorm = lambda v: v/nl.norm(v)
 try:  # fails on doc build
     twopi = 2.0*np.pi
     twopisq = 2.0*np.pi**2
+    atepisq = 8.0*np.pi**2
     _double_min = np.finfo(float).min
     _double_max = np.finfo(float).max
 except TypeError:
@@ -792,6 +794,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
         ct,cs = [4,11]         #type & color
     atNum = generalData['AtomTypes'].index(atom[ct])
     atomInfo[cs] = list(generalData['Color'][atNum])
+    if atomInfo[1] == 'Q': atomInfo[cs-2] = 'balls & sticks'
     return atomInfo
 
 def GetAtomsById(atomData,atomLookUp,IdList):
@@ -1118,6 +1121,10 @@ def calcBond(A,Ax,Bx,MTCU):
     return dist
 
 def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
+    ''' Add hydrogen atoms according to "standard" geometry & updates positions upon request if
+    atoms move. Thermal parmameters are set at 1.1-1.5 * atom U
+    distances adapted from ITC C 9.5.1.1
+    '''
 
     def getTransMat(RXYZ,OXYZ,TXYZ,Amat):
         Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T
@@ -1146,7 +1153,10 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2,axis=0))
             Vec = np.sum(Vec/Len,axis=0)
             Len = np.sqrt(np.sum(Vec**2))
-            Hpos = OXYZ-0.98*np.inner(Bmat,Vec).T/Len
+            if 'C' in Oatom[ct]:
+                Hpos = OXYZ-1.10*np.inner(Bmat,Vec).T/Len
+            else: #N+
+                Hpos = OXYZ-1.03*np.inner(Bmat,Vec).T/Len
             HU = 1.1*Uiso
             return [Hpos,],[HU,]
         elif AddHydId[-1] == 2:
@@ -1157,26 +1167,29 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Mat2 /= np.sqrt(np.sum(Mat2**2))
             Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
             iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
-            Hpos = np.array([[-0.97*cosd(54.75),0.97*sind(54.75),0.],
-                [-0.97*cosd(54.75),-0.97*sind(54.75),0.]])
+            dist = 1.09
+            if 'N' in Oatom[ct]:
+                dist = 1.01
+            Hpos = np.array([[-dist*cosd(54.75),dist*sind(54.75),0.],
+                [-dist*cosd(54.75),-dist*sind(54.75),0.]])
             HU = 1.2*Uiso*np.ones(2)
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             return Hpos,HU
-        else:
+        else:   #CH3 or NH3+
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
             iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
-            a = 0.96*cosd(70.5)
-            b = 0.96*sind(70.5)
+            a = 1.06*cosd(70.5)
+            b = 1.06*sind(70.5)
             Hpos = np.array([[a,0.,-b],[a,-b*cosd(30.),0.5*b],[a,b*cosd(30.),0.5*b]])
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             HU = 1.5*Uiso*np.ones(3)
             return Hpos,HU
     elif nBonds == 3:
-        if AddHydId[-1] == 1:
+        if AddHydId[-1] == 1:   #aromatic C-H
             Vec = np.sum(TXYZ-OXYZ,axis=0)
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
-            Vec = -0.93*Vec/Len
+            Vec = -1.08*Vec/Len
             Hpos = OXYZ+Vec
             HU = 1.1*Uiso
             return [Hpos,],[HU,]
@@ -1184,8 +1197,8 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
             iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
-            a = 0.93*cosd(60.)
-            b = 0.93*sind(60.)
+            a = 1.08*cosd(60.)
+            b = 1.08*sind(60.)
             Hpos = [[a,b,0],[a,-b,0]]
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             HU = 1.2*Uiso*np.ones(2)
@@ -1194,7 +1207,7 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
         if 'C' in Oatom[ct]:
             Vec = TXYZ[0]-OXYZ
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
-            Vec = -0.93*Vec/Len
+            Vec = -1.06*Vec/Len
             Hpos = OXYZ+Vec
             HU = 1.1*Uiso
             return [Hpos,],[HU,]
@@ -1203,8 +1216,8 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
             iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
-            a = 0.82*cosd(70.5)
-            b = 0.82*sind(70.5)
+            a = 0.97*cosd(70.5)
+            b = 0.97*sind(70.5)
             azm = np.arange(0.,360.,5.)
             Hpos = np.array([[a,b*cosd(x),b*sind(x)] for x in azm])
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
@@ -1226,65 +1239,6 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
 #        XYZ = np.inner(Amat,atom[cx:cx+3])
 #        if atom[cia] == 'A':
 #            UIJ = atom[cia+2:cia+8]
-
-def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
-    '''default doc string
-
-    :param type name: description
-
-    :returns: type name: description
-
-    '''
-    TLStype,TLS = rbObj['ThermalMotion'][:2]
-    Tmat = np.zeros((3,3))
-    Lmat = np.zeros((3,3))
-    Smat = np.zeros((3,3))
-    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
-        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
-    if 'T' in TLStype:
-        Tmat = G2lat.U6toUij(TLS[:6])
-    if 'L' in TLStype:
-        Lmat = G2lat.U6toUij(TLS[6:12])
-    if 'S' in TLStype:
-        Smat = np.array([[TLS[18],TLS[12],TLS[13]],[TLS[14],TLS[19],TLS[15]],[TLS[16],TLS[17],0] ])
-    XYZ = np.inner(Amat,xyz)
-    Axyz = np.array([[ 0,XYZ[2],-XYZ[1]], [-XYZ[2],0,XYZ[0]], [XYZ[1],-XYZ[0],0]] )
-    Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
-    beta = np.inner(np.inner(g,Umat),g)
-    return G2lat.UijtoU6(beta)*gvec
-
-def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be?
-    '''default doc string
-
-    :param type name: description
-
-    :returns: type name: description
-
-    '''
-    cx,ct,cs,cia = atPtrs
-    TLStype,TLS = rbObj['ThermalMotion'][:2]
-    Tmat = np.zeros((3,3))
-    Lmat = np.zeros((3,3))
-    Smat = np.zeros((3,3))
-    G,g = G2lat.A2Gmat(Amat)
-    gvec = 1./np.sqrt(np.array([g[0][0],g[1][1],g[2][2],g[0][1],g[0][2],g[1][2]]))
-    if 'T' in TLStype:
-        Tmat = G2lat.U6toUij(TLS[:6])
-    if 'L' in TLStype:
-        Lmat = G2lat.U6toUij(TLS[6:12])
-    if 'S' in TLStype:
-        Smat = np.array([ [TLS[18],TLS[12],TLS[13]], [TLS[14],TLS[19],TLS[15]], [TLS[16],TLS[17],0] ])
-    for atom in atomData:
-        XYZ = np.inner(Amat,atom[cx:cx+3])
-        Axyz = np.array([ 0,XYZ[2],-XYZ[1], -XYZ[2],0,XYZ[0], XYZ[1],-XYZ[0],0],ndmin=2 )
-        if 'U' in TLStype:
-            atom[cia+1] = TLS[0]
-            atom[cia] = 'I'
-        else:
-            atom[cia] = 'A'
-            Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
-            beta = np.inner(np.inner(g,Umat),g)
-            atom[cia+2:cia+8] = G2spc.U2Uij(beta/gvec)
 
 def GetXYZDist(xyz,XYZ,Amat):
     '''gets distance from position xyz to all XYZ, xyz & XYZ are np.array
@@ -1310,102 +1264,6 @@ def getAtomXYZ(atoms,cx):
         XYZ.append(atom[cx:cx+3])
     return np.array(XYZ)
 
-def getRBTransMat(X,Y):
-    '''Get transformation for Cartesian axes given 2 vectors
-    X will  be parallel to new X-axis; X cross Y will be new Z-axis &
-    (X cross Y) cross Y will be new Y-axis
-    Useful for rigid body axes definintion
-
-    :param array X: normalized vector
-    :param array Y: normalized vector
-
-    :returns: array M: transformation matrix
-
-    use as XYZ' = np.inner(M,XYZ) where XYZ are Cartesian
-
-    '''
-    Mat2 = np.cross(X,Y)      #UxV-->Z
-    Mat2 /= np.sqrt(np.sum(Mat2**2))
-    Mat3 = np.cross(Mat2,X)        #(UxV)xU-->Y
-    Mat3 /= np.sqrt(np.sum(Mat3**2))
-    return np.array([X,Mat3,Mat2])
-
-def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
-    '''rotate & transform cartesian coordinates to crystallographic ones
-    no translation applied. To be used for numerical derivatives
-
-    :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
-    :param array Cart: 2D array of coordinates
-    :param array Q: quaternion as an np.array
-    :param tuple symAxis: if not None (default), specifies the symmetry
-      axis of the rigid body, which will be aligned to the quaternion vector.
-    :returns: 2D array of fractional coordinates, without translation to origin
-    '''
-    if symAxis is None:
-        Q = oriQ
-    else:
-        a,v = Q2AV(oriQ)
-        symaxis = np.array(symAxis)
-        vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
-        xformAng = np.arccos(vdotsym)
-        xformVec = np.cross(symaxis,v)
-        Q = prodQQ(oriQ,AV2Q(xformAng,xformVec))
-    XYZ = np.zeros_like(Cart)
-    for i,xyz in enumerate(Cart):
-        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))
-    return XYZ
-
-def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
-    '''returns crystal coordinates for atoms described by RBObj.
-    Note that RBObj['symAxis'], if present, determines the symmetry
-    axis of the rigid body, which will be aligned to the
-    quaternion direction.
-
-    :param np.array Bmat: see :func:`GSASIIlattice.cell2AB`
-    :param dict rbObj: rigid body selection/orientation information
-    :param dict RBData: rigid body tree data structure
-    :param str RBType: rigid body type, 'Vector' or 'Residue'
-
-    :returns: coordinates for rigid body as XYZ,Cart where XYZ is
-       the location in crystal coordinates and Cart is in cartesian
-    '''
-    if RBType == 'Vector':
-        RBRes = RBData[RBType][RBObj['RBId']]
-        vecs = RBRes['rbVect']
-        mags = RBRes['VectMag']
-        Cart = np.zeros_like(vecs[0])
-        for vec,mag in zip(vecs,mags):
-            Cart += vec*mag
-    elif RBType == 'Residue':
-        RBRes = RBData[RBType][RBObj['RBId']]
-        Cart = np.array(RBRes['rbXYZ'])
-        for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
-            QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
-            Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
-    elif RBType == 'Spin':
-        Cart = np.zeros(3)
-        XYZ = [np.array(RBObj['Orig'][0]),]
-        return XYZ,Cart
-    # if symmetry axis is defined, place symmetry axis along quaternion
-    if RBObj.get('symAxis') is None:
-        Q = RBObj['Orient'][0]
-    else:
-        a,v = Q2AV(RBObj['Orient'][0])
-        symaxis = np.array(RBObj.get('symAxis'))
-        vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
-        xformAng = np.arccos(vdotsym)
-        xformVec = np.cross(symaxis,v)
-        Q = prodQQ(RBObj['Orient'][0],AV2Q(xformAng,xformVec))
-    XYZ = np.zeros_like(Cart)
-    for i,xyz in enumerate(Cart):
-        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))+RBObj['Orig'][0]
-    return XYZ,Cart
-
-def GetSpnRBData(SpnRB,atId):
-    for SpnData in SpnRB:
-        if atId in SpnData['Ids']:
-            return SpnData
-
 def UpdateMCSAxyz(Bmat,MCSA):
     '''default doc string
 
@@ -1428,6 +1286,8 @@ def UpdateMCSAxyz(Bmat,MCSA):
             Ori = np.array(model['Ori'][0])
             Qori = AVdeg2Q(Ori[0],Ori[1:])
             if model['Type'] == 'Vector':
+                symAxis = RBRes.get('symAxis',[0,0,1])
+                Qori = QsymAxis(Qori,symAxis)
                 vecs = RBRes['rbVect']
                 mags = RBRes['VectMag']
                 Cart = np.zeros_like(vecs[0])
@@ -1474,19 +1334,129 @@ def SetMolCent(model,RBData):
     model['MolCent'][0] = cent/len(centList)
 
 ###############################################################################
-#### Various utilities
+#### Various RB utilities
 ###############################################################################
 
+def getRBTransMat(X,Y):
+    '''Get transformation for Cartesian axes given 2 vectors
+    X will  be parallel to new X-axis; X cross Y will be new Z-axis &
+    (X cross Y) cross Y will be new Y-axis
+    Useful for rigid body axes definintion
+
+    :param array X: normalized vector
+    :param array Y: normalized vector
+
+    :returns: array M: transformation matrix
+
+    use as XYZ' = np.inner(M,XYZ) where XYZ are Cartesian
+
+    '''
+    Mat2 = np.cross(X,Y)      #UxV-->Z
+    Mat2 /= np.sqrt(np.sum(Mat2**2))
+    Mat3 = np.cross(Mat2,X)        #(UxV)xU-->Y
+    Mat3 /= np.sqrt(np.sum(Mat3**2))
+    return np.array([X,Mat3,Mat2])
+
+def QsymAxis(Q,symAxis):
+    '''forms product of orientation Q vector & symAxis
+    
+    :param list Q: quaternion
+    :param list aymAxis: symmetry axis for rigid body: could be None
+    
+    :returns: list Q: new quaternion
+    '''
+    if symAxis is None:
+        symAxis = [0,0,.1]
+    a,v = Q2AV(Q)
+    v = vnorm(v)
+    symaxis = vnorm(np.array(symAxis))
+    vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
+    if vdotsym in [-1.0,1.0]:   #Q, symAxis parallel/antiparallel
+        return Q
+    else:
+        xformAng = np.arccos(vdotsym)
+        xformVec = vnorm(np.cross(symaxis,v))
+        return prodQQ(Q,AV2Q(xformAng,xformVec))
+
+def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
+    '''rotate & transform cartesian coordinates to crystallographic ones
+    no translation applied. To be used for numerical derivatives
+
+    :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
+    :param array Cart: 2D array of coordinates
+    :param array Q: quaternion as an np.array
+    :param tuple symAxis: if not None (default), specifies the symmetry
+      axis of the rigid body, which will be aligned to the quaternion vector.
+    :returns: 2D array of fractional coordinates, without translation to origin
+    '''
+    Q = QsymAxis(oriQ,symAxis)
+    XYZ = np.zeros_like(Cart)
+    for i,xyz in enumerate(Cart):
+        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))
+    return XYZ
+
+def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
+    '''returns crystal coordinates for atoms described by RBObj.
+    Note that RBObj['symAxis'], if present, determines the symmetry
+    axis of the rigid body, which will be aligned to the
+    quaternion direction.
+
+    :param np.array Bmat: see :func:`GSASIIlattice.cell2AB`
+    :param dict rbObj: rigid body selection/orientation information
+    :param dict RBData: rigid body tree data structure
+    :param str RBType: rigid body type, 'Vector' or 'Residue'
+
+    :returns: coordinates for rigid body as XYZ,Cart where XYZ is the location 
+        in crystal coordinates and Cart is in cartesian wrt rigid body coordinates
+    '''
+    if RBType == 'Vector':
+        RBRes = RBData[RBType][RBObj['RBId']]
+        vecs = RBRes['rbVect']
+        mags = RBRes['VectMag']
+        Cart = np.zeros_like(vecs[0])
+        for vec,mag in zip(vecs,mags):
+            Cart += vec*mag
+        if RBObj.get('Invert',False):
+            Cart *= -1.
+    elif RBType == 'Residue':
+        RBRes = RBData[RBType][RBObj['RBId']]
+        Cart = np.array(RBRes['rbXYZ'])
+        for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
+            QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
+            Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
+        if RBObj.get('Invert',False):
+            Cart *= -1.
+    elif RBType == 'Spin':      #applies only to spin RB center
+        Cart = np.zeros(3)
+        XYZ = [np.array(RBObj['Orig'][0]),]
+        return XYZ,Cart
+    # place symmetry axis (default = z) along quaternion
+    RBRes['symAxis'] = RBRes.get('symAxis',[0,0,1.])
+    Q = QsymAxis(RBObj['Orient'][0],RBRes['symAxis'])
+    XYZ = np.inner(Bmat,prodQVQ(Q,Cart)).T+RBObj['Orig'][0]
+    return XYZ,Cart
+
+def GetSpnRBData(SpnRB,atId):
+    for SpnData in SpnRB:
+        if atId in SpnData['Ids']:
+            return SpnData
+
 def UpdateRBUIJ(Bmat,Cart,RBObj):
-    '''default doc string
+    '''Transform TLS to Uij for RB objects
 
-    :param type name: description
+    :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
+    :param array Cart: 2D array of coordinates wrt RB coordinates
+    :param dict RBObj: rigid body selection/orientation information
 
-    :returns: type name: description
+    :returns: list Uout : new atom thermal parameters
 
     '''
-    ''' returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
-    '''
+    # if symmetry axis is defined, place symmetry axis along quaternion
+    Q = QsymAxis(RBObj['Orient'][0],RBObj.get('symAxis',None))
+    QMat = Q2Mat(Q)
+    g = nl.inv(np.inner(Bmat,Bmat))
+    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
+        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))        
     TLStype,TLS = RBObj['ThermalMotion'][:2]
     T = np.zeros(6)
     L = np.zeros(6)
@@ -1496,14 +1466,9 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
     if 'L' in TLStype:
         L = np.array(TLS[6:12])*(np.pi/180.)**2
     if 'S' in TLStype:
-        S = np.array(TLS[12:])*(np.pi/180.)
-    g = nl.inv(np.inner(Bmat,Bmat))
-    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
-        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
+        S = np.array(TLS[12:])*(np.pi/180.)     #What do we do for S?
     Uout = []
-    Q = RBObj['Orient'][0]
     for X in Cart:
-        X = prodQVQ(Q,X)
         if 'U' in TLStype:
             Uout.append(['I',TLS[0],0,0,0,0,0,0])
         elif not 'N' in TLStype:
@@ -1518,7 +1483,8 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
             U[5] = T[5]+L[3]*X[0]*X[2]+L[4]*X[0]*X[1]-L[5]*X[0]**2-L[0]*X[2]*X[1]+  \
                 S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
             Umat = G2lat.U6toUij(U)
-            beta = np.inner(np.inner(Bmat.T,Umat),Bmat)
+            Umat = np.inner(np.inner(QMat,Umat),QMat)
+            beta = np.inner(np.inner(Bmat,Umat),Bmat)
             Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
         else:
             Uout.append(['N',])
@@ -1606,8 +1572,17 @@ def phaseContents(phase):
 def fmtPhaseContents(compdict):
     '''Format results from :func:`phaseContents`
     '''
-    n = ', '.join([f'{i}({compdict[i]})' for i in sorted(compdict)])
-    return f"contents: {n}"
+    s = ''
+    for i in sorted(compdict):
+        n = compdict[i]
+        i = i.split('+')[0].split('-')[0]
+        if n == 1:
+            s += f'{i} '
+        elif n == int(n):
+            s += f'{i}{int(n)} '
+        else:
+            s += f'{i}({n}). '
+    return f"contents: {s}"
 
 def getWave(Parms):
     '''returns wavelength from Instrument parameters dictionary
@@ -2134,6 +2109,7 @@ def ApplyModulation(data,tau):
     drawAtoms = drawingData['Atoms']
     Fade = np.ones(len(drawAtoms))
     for atom in atoms:
+        G2el.AddWave2atm(atom)
         atxyz = np.array(atom[cx:cx+3])
         atuij = np.array(atom[cia+2:cia+8])
         Sfrac = atom[-1]['SS1']['Sfrac']
@@ -2216,6 +2192,7 @@ def ApplyModulation(data,tau):
 
 def patchIsoDisp(ISO):
     '''patch: look for older ISODISTORT imports (<Nov 2021)'''
+    if 'IsoVarList' not in ISO: return
     print('''
 ======================================================================
 Warning: The ISODISTORT modes were read before the importer
@@ -4025,11 +4002,15 @@ def OmitMap(data,reflDict,pgbar=None):
     return mapData
 
 def FourierMap(data,reflDict):
-    '''default doc string
+    '''Compute 3D Fourier map. Expands reflist hkl to cover full sphere & expand/zero fill to
+    box matching dimensions of desired map. Shifts hkl to put origin at corner.
+    Uses fft.fftn to make map & shifts it back accordingly.
+    Twinned data not handled properly
 
-    :param type name: description
+    :param dict data: phase data
+    :param dict reflDict: 3D hkl structure factors
 
-    :returns: type name: description
+    :returns: None; map is put in phase data
 
     '''
     generalData = data['General']
@@ -4046,7 +4027,7 @@ def FourierMap(data,reflDict):
 #    Fhkl[0,0,0] = generalData['F000X']
     time0 = time.time()
     for iref,ref in enumerate(reflDict['RefList']):
-        if ref[4] > dmin:
+        if ref[4] > dmin and ref[3] > 0:
             Fosq,Fcsq,ph = ref[8:11]
             Uniq = np.inner(ref[:3],SGMT)
             Phi = np.inner(ref[:3],SGT)
@@ -4094,11 +4075,14 @@ def FourierMap(data,reflDict):
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
 
 def Fourier4DMap(data,reflDict):
-    '''default doc string
+    '''Compute 4D Fourier map. Expands reflist hklm to cover full sphere & expand/zero fill to
+    box matching dimensions of desired 4D map. Shifts hklm to put origin at corner.
+    Uses fft.fftn to make map & shifts it back accordingly.
 
-    :param type name: description
+    :param dict data: phase data
+    :param dict reflDict: 4D hklm structure factors
 
-    :returns: type name: description
+    :returns: None; map is put in phase data
 
     '''
     generalData = data['General']
@@ -4203,7 +4187,7 @@ def findOffset(SGData,A,Fhkl):
 
     '''
     if SGData['SpGrp'] == 'P 1':
-        return [0,0,0]
+        return [0,0,0],' No offset calculated'
     hklShape = Fhkl.shape
     hklHalf = np.array(hklShape)//2
     sortHKL = np.argsort(Fhkl.flatten())
@@ -4284,6 +4268,7 @@ def ChargeFlip(data,reflDict,pgbar):
             print('%s normalizing form factor: fa: %s, fb: %s'%(FFtable['Symbol'],
                 str(FFtable['fa']),str(FFtable['fb'])))
     dmin = flipData['GridStep']*2.
+    dmax = flipData.get('d-max',100.)
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -4301,7 +4286,7 @@ def ChargeFlip(data,reflDict,pgbar):
         dsp = ref[4+im]
         if im and ref[3]:   #skip super lattice reflections - result is 3D projection
             continue
-        if dsp > dmin:
+        if dsp > dmin and dsp < dmax:
             ff = 0.1*Vol    #est. no. atoms for ~10A**3/atom
             if FFtable:
                 SQ = 0.25/dsp**2
@@ -4898,7 +4883,10 @@ def DoWilsonStat(refList,Super,normEle,Inst):
     A = np.vstack([SQbins,np.ones_like(SQbins)]).T
     result = nl.lstsq(A,np.log(E2bins),rcond=None)
     twoB,lnscale = result[0]    #twoB = -2B
+    U = -twoB/atepisq
     scale = np.exp(lnscale)
+    print(' Wilson thermal parameter U = %.3f, scale = %.4f'%(U,scale))
+    print(' (Divide by unit cell Z to get true scale estimate)')
     E2calc = lnscale+twoB*SQbins
     normE = np.sqrt(np.where(Esq>0.,Esq,0.)/scale)*np.exp(-0.5*twoB*SQ2)
     return [np.mean(normE),np.mean(normE**2),np.mean(np.abs(-1.+normE**2))],[SQbins,np.log(E2bins),E2calc]
@@ -5753,6 +5741,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             if parmDict[pfx+'Type'] in ['Vector','Residue']:
                 if parmDict[pfx+'Type'] == 'Vector':
                     RBRes = RBdata['Vector'][parmDict[pfx+'RBId']]
+                    symAxis = RBRes['symAxis']
                     vecs = RBRes['rbVect']
                     mags = RBRes['VectMag']
                     Cart = np.zeros_like(vecs[0])
@@ -5760,6 +5749,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                         Cart += vec*mag
                 elif parmDict[pfx+'Type'] == 'Residue':
                     RBRes = RBdata['Residue'][parmDict[pfx+'RBId']]
+                    symAxis = None
                     Cart = np.array(RBRes['rbXYZ'])
                     for itor,seq in enumerate(RBRes['rbSeq']):
                         QuatA = AVdeg2Q(parmDict[pfx+'Tor'+str(itor)],Cart[seq[0]]-Cart[seq[1]])
@@ -5767,8 +5757,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                 if parmDict[pfx+'MolCent'][1]:
                     Cart -= parmDict[pfx+'MolCent'][0]
                 Qori = AVdeg2Q(parmDict[pfx+'Qa'],[parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
+                Q = QsymAxis(Qori,symAxis)
                 Pos = np.array([parmDict[pfx+'Px'],parmDict[pfx+'Py'],parmDict[pfx+'Pz']])
-                Xdata.T[iatm:iatm+len(Cart)] = np.inner(Bmat,prodQVQ(Qori,Cart)).T+Pos
+                Xdata.T[iatm:iatm+len(Cart)] = np.inner(Bmat,prodQVQ(Q,Cart)).T+Pos
                 iatm += len(Cart)
             elif parmDict[pfx+'Type'] == 'Atom':
                 atNo = parmDict[pfx+'atNo']
@@ -5874,7 +5865,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     parmDict['nfixAt'] = len(fixAtoms)
     MCSA = generalData['MCSA controls']
     reflName = MCSA['Data source']
-    Htype = data['Histograms'][reflName]['Type']
+    Htype = data['Histograms'][reflName].get('Type','PXC')
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
     upper = []
     lower = []
@@ -6022,7 +6013,10 @@ import scipy.cluster.hierarchy as SCH
 ################################################################################
 
 def Cart2Polar(X,Y,Z):
-    ''' convert Cartesian to polar coordinates in deg
+    ''' convert Cartesian X,Y,Z to polar coordinates in deg
+    R - radius, 0<=Az<=360: azimuth angle from X-axis, 
+    0<=Pl<=180: polar angle from Z-axis
+    All are same length arrays
     '''
 
     R = np.sqrt(X**2+Y**2+Z**2)
@@ -6031,7 +6025,10 @@ def Cart2Polar(X,Y,Z):
     return R,Az,Pl
 
 def Polar2Cart(R,Az,Pl):
-    '''Convert polar angles in deg to Cartesian coordinates
+    '''Convert polar vector in deg to Cartesian coordinates
+    R - radius, 0<=Az<=360: azimuth angle from X-axis, 
+    0<=Pl<=180: polar angle from Z-axis
+    All are same length arrays
     '''
 
     X = R*sind(Pl)*cosd(Az)
@@ -6074,6 +6071,10 @@ def normQ(QA):
     ''' get length of quaternion & normalize it
         q=r+ai+bj+ck
     '''
+    if QA[0] < -1.:
+        QA[0] %= -1. 
+    elif QA[0] > 1.:
+        QA[0] %= 1.
     n = np.sqrt(np.sum(np.array(QA)**2))
     return QA/n
 
@@ -6128,10 +6129,10 @@ def AV2Q(A,V):
     '''
     Q = np.zeros(4)
     d = nl.norm(np.array(V))
+    if not A:       #==0.
+        A = 2.*np.pi
     if d:
         V = V/d
-        if not A:       #==0.
-            A = 2.*np.pi
         p = A/2.
         Q[0] = np.cos(p)
         Q[1:4] = V*np.sin(p)

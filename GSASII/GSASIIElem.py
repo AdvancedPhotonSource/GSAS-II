@@ -729,7 +729,7 @@ def FPcalc(Orbs, KEv):
     return (FP, FPP, Mu)
 
 mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
-                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+                'rho':[],'rhoMax':0.,'mapSize':4.0,'cutOff':50.,'Flip':False}
 
 def SetupGeneral(data, dirname):
     '''Initialize the General sections of the Phase tree contents. Should
@@ -793,6 +793,7 @@ def SetupGeneral(data, dirname):
         for atom in atomData:
 #                if 'SS1' not in atom:
 #                    atom += [[],[],{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
+            AddWave2atm(atom)
             if isinstance(atom[-1],dict) and 'waveType' in atom[-1]['SS1']:
                 waveType = atom[-1]['SS1']['waveType']
                 for parm in ['Sfrac','Spos','Sadp','Smag']:
@@ -939,3 +940,16 @@ def SetupGeneral(data, dirname):
                 msg += ' (' + str(badList[key]) + ' times)'
         #wx.MessageBox(msg,caption='Element symbol error')
         raise ValueError("Phase error:\n" + msg)
+
+def AddWave2atm(atom):
+    '''For modulated structures, make sure that the wave info dict is 
+    the last atom entry
+    '''
+    try:
+        atom[-1]['SS1']
+    except KeyError:
+        # unexpected, entry is dict but no SS entry
+        atom['SS1'] = {'Sfrac': [], 'Spos': [], 'Sadp': [], 'Smag': []}
+    except TypeError:
+        # this needs a SS dict added
+        atom.append({'SS1': {'Sfrac': [], 'Spos': [], 'Sadp': [], 'Smag': []}})

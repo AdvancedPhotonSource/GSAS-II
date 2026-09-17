@@ -29,6 +29,8 @@ jobs:
           pixi run install 
 
     - name: run Bilbao self-test
+      env:
+        BCS_API_KEY: ${{ secrets.BCS_API_KEY }}
       run: |
           cd pixi
           pixi run python -m pytest ../tests/run_bilbao.py

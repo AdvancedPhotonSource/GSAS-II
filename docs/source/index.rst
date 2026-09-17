@@ -44,8 +44,8 @@ For scripting use of GSAS-II, see  :ref:`GSASIIscriptable`.
     GSASII.rst
     GSASIIobj.rst
     GSASIIutil.rst
-    GSASIIGUIr.rst
     GSASIIGUI.rst
+    GSASIIGUIr.rst
     GSASIIdata.rst
     GSASIIstruc.rst
     GSASIImapvars.rst

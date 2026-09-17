@@ -673,10 +673,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     def OnABOUTItems0Menu(self, event):
         '''Displays the About window
         '''
-        try:
-            import wx.adv as wxadv  # AboutBox moved here in Phoenix
-        except:
-            wxadv = wx
+        import wx.adv as wxadv
         info = wxadv.AboutDialogInfo()
         info.Name = 'Absorb'
         info.Copyright = '''

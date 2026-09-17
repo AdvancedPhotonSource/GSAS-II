@@ -1595,7 +1595,7 @@ def UpdateLayerData(G2frame,data,Scroll=0):
 def UpdateTexture(G2frame,data):
 
     def SetSHCoef():
-        cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],SamSym[textureData['Model']],textureData['Order'])
+        cofNames = G2lat.GenSHCoeffT(SGData['SGLaue'],SamSym[textureData['Model']],textureData['Order'])
         newSHCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
         SHCoeff = textureData['SH Coeff'][1]
         for cofName in SHCoeff:
@@ -2038,40 +2038,8 @@ def UpdateTexture(G2frame,data):
 
 #### UpdateWavesData GUI   
 def UpdateWavesData(G2frame,data,Scroll=0):
-
-    generalData = data['General']
-    cx,ct,cs,cia = generalData['AtomPtrs']
-    typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
-    numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5,'Crenel':2}
-    posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax']
-    adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
-        'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
-    magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
-    fracNames = ['Fsin','Fcos','Fzero','Fwid']
-    waveTypes = {'Sfrac':['Fourier','Crenel'],'Spos':['Fourier','ZigZag','Block',],'Sadp':['Fourier',],'Smag':['Fourier',]}
-    Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
-    Indx = {}
-    waveData = G2frame.waveData
-    G2frame.GetStatusBar().SetStatusText('',1)
-    generalData = data['General']
-    SGData = generalData['SGData']
-    SSGData = generalData['SSGData']
-    cx,ct,cs,cia = generalData['AtomPtrs']
-    atomData = data['Atoms']
-    D4Map = generalData.get('4DmapData',{'rho':[]})
-    if waveData.GetSizer():
-        waveData.GetSizer().Clear(True)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data: Select atom to edit: '),0,WACV)
-    atNames = []
-    for atm in atomData:
-        atNames.append(atm[ct-1])
-    if not atNames:
-        return
-    if G2frame.atmSel not in atNames:
-        G2frame.atmSel = atNames[0]
-
+    '''Create the Wave Data tab for modulated structures
+    '''
     def OnAtmSel(event):
         Obj = event.GetEventObject()
         G2frame.atmSel = Obj.GetValue()
@@ -2117,6 +2085,7 @@ def UpdateWavesData(G2frame,data,Scroll=0):
             def OnWaveType(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
+                G2elem.AddWave2atm(atm)
                 if len(atm[-1]['SS1'][item]) <= 1:
                     atm[-1]['SS1'][item] = [0,]
                     atm[-1]['SS1'][item][0] = waveType.GetValue()
@@ -2127,9 +2096,13 @@ def UpdateWavesData(G2frame,data,Scroll=0):
                         G2G.G2MessageBox(G2frame,'Warning: can only change wave type if no waves','Not changed')
 
             def OnAddWave(event):
+                if not SSGData: # empty means 
+                    G2G.G2MessageBox(None,'Select a modulation group first','Superspace Group Error')
+                    return
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 nt = numVals[Stype]
+                G2elem.AddWave2atm(atm)
                 if not len(atm[-1]['SS1'][item]):
                     if waveTyp in ['ZigZag','Block','Crenel']:
                         nt = numVals[waveTyp]
@@ -2141,6 +2114,7 @@ def UpdateWavesData(G2frame,data,Scroll=0):
             def OnRefWave(event):
                 Obj = event.GetEventObject()
                 item,iwave = Indx[Obj.GetId()]
+                G2elem.AddWave2atm(atm)
                 atm[-1]['SS1'][item][iwave+1][1] = not atm[-1]['SS1'][item][iwave+1][1]
 
             def OnDelWave(event):
@@ -2250,6 +2224,7 @@ def UpdateWavesData(G2frame,data,Scroll=0):
 
         iatm = atNames.index(G2frame.atmSel)
         atm = atomData[iatm]
+        G2elem.AddWave2atm(atm)
         xyz = atm[cx:cx+3]
         atomSizer = wx.BoxSizer(wx.VERTICAL)
         G2G.HorizontalLine(atomSizer,waveData)
@@ -2259,16 +2234,54 @@ def UpdateWavesData(G2frame,data,Scroll=0):
                 continue
             if generalData['Type'] != 'magnetic' and Stype == 'Smag':
                 break
-
-            atomSizer.Add(WaveSizer(iatm,atm[-1]['SS1'][Stype],Stype,typeNames[Stype],Labels[Stype]))
+            try:
+                atomSizer.Add(WaveSizer(iatm,atm[-1]['SS1'][Stype],Stype,typeNames[Stype],Labels[Stype]))
+            except TypeError:  # not expected anymore
+                atomSizer.Add(wx.StaticText(waveData,label='     Error: could not process SS info for this atom'))
+                break
         return atomSizer
+    
+    generalData = data['General']
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
+    numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5,'Crenel':2}
+    posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax']
+    adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
+        'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
+    magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
+    fracNames = ['Fsin','Fcos','Fzero','Fwid']
+    waveTypes = {'Sfrac':['Fourier','Crenel'],'Spos':['Fourier','ZigZag','Block',],'Sadp':['Fourier',],'Smag':['Fourier',]}
+    Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
+    Indx = {}
+    waveData = G2frame.waveData
+    G2frame.GetStatusBar().SetStatusText('',1)
+    generalData = data['General']
+    SGData = generalData['SGData']
+    SSGData = generalData['SSGData']
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    atomData = data['Atoms']
+    D4Map = generalData.get('4DmapData',{'rho':[]})
+    if waveData.GetSizer():
+        waveData.GetSizer().Clear(True)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data'))
+    atNames = []
+    for atm in atomData:
+        atNames.append(atm[ct-1])
+    if not atNames:
+        mainSizer.Add(wx.StaticText(waveData,label='   (no atoms in phase)'))
+        G2phsG.SetPhaseWindow(G2frame.waveData,mainSizer,Scroll=Scroll)
+        return
+    if G2frame.atmSel not in atNames:
+        G2frame.atmSel = atNames[0]
 
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    mainSizer.Add(topSizer,0)
+    topSizer.Add(wx.StaticText(waveData,label=' Select atom to edit: '),0,WACV)
     atms = wx.ComboBox(waveData,value=G2frame.atmSel,choices=atNames,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     atms.Bind(wx.EVT_COMBOBOX,OnAtmSel)
     topSizer.Add(atms,0)
-    mainSizer.Add(topSizer,0)
     G2frame.bottomSizer = ShowAtomInfo()
     mainSizer.Add(G2frame.bottomSizer)
     G2phsG.SetPhaseWindow(G2frame.waveData,mainSizer,Scroll=Scroll)
-

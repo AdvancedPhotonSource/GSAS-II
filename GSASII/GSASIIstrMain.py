@@ -362,6 +362,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,h
         Rvals['Nobs'] = Histograms['Nobs']
         Rvals['Nvars'] = len(varyList)
         Rvals['RestraintSum'] = Histograms.get('RestraintSum',0.)
+        Rvals['Restraints'] = Histograms.get('Restraints',{})
+        Rvals['nRestraints'] = Histograms.get('nRestraints',{})
         Rvals['RestraintTerms'] = Histograms.get('RestraintTerms',0)
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
         Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs']+Rvals['RestraintTerms']-len(varyList)))
@@ -600,8 +602,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                     Rvals['msg'] += msg
             # save refinement results into .gpx file
             G2stIO.SaveUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
+            G2fil.G2Print (f'Refinement results are in file: {printFile.name}')
             printFile.close()
-            G2fil.G2Print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
             G2fil.G2Print (' ***** Refinement successful *****')
         else:
             G2fil.G2Print ('****ERROR - Refinement failed',mode='error')

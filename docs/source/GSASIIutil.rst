@@ -11,7 +11,8 @@ Determines the location of the compiled (.pyd or .so) libraries.
 
 Interfaces with git and gets version number.
 
-Accesses configuration options, as defined in config.py
+Accesses configuration options, as stored in the `config.ini`
+file. The configuration variables are described in `config_example.py`.
 
 GSASIIpath Classes & Routines
 ------------------------------------

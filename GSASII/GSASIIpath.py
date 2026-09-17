@@ -339,7 +339,7 @@ def getG2VersionInfo():
             elif age > 60 and len(rc) > 0:
                 msg += f"\n\t**** This version is really old ({age:.1f} days). Please update.\n\t**** At least {len(rc)} updates have been posted ****"
             elif (age > 5 and len(rc) > 0) or len(rc) > 5:
-                msg += f"\n\t**** Please consider updating. This version is {age:.1f} days old\n\t**** and {len(rc)} or more updates behind."
+                msg += f"\n\t**** Please consider updating. This version is {age:.1f} days old\n\t**** and at least {len(rc)} updates behind."
 #            elif len(rc) > 0:
 #                msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
         # could consider getting version & tag from gv if not None (see below)
@@ -398,14 +398,16 @@ def getGitHubVersion():
     as saved by saveGitHubVersion
     '''
     import configparser
-    cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+    localdir = LocalG2Dir()
+    if localdir is None: return None,None
+    cfgfile = os.path.join(localdir,'config.ini')
     if not os.path.exists(cfgfile):
         if GetConfigValue('debug'): print(f"{cfgfile} not found")
         return None,None
     try:
         cfg = configparser.ConfigParser()
         # Read the configuration file
-        cfg.read(cfgfile)
+        cfg.read(cfgfile, encoding='utf-8')
     except Exception as err:
         if GetConfigValue('debug'): print(f"Error reading {cfgfile}\n",err)
         return None,None
@@ -876,7 +878,7 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
     :param bool verbose: if True (default), status messages are printed.
     :returns: None
     '''
-    # packages not commonly used so import them here not on startup
+    # packages not commonly used so import them here, not on startup
     import tempfile
     import tarfile
     try:
@@ -1264,9 +1266,11 @@ def InvokeDebugOpts():
             IPyBreak = IPyBreak_base
             sys.excepthook = exceptHook
             os.environ['PYTHONBREAKPOINT'] = 'GSASIIpath.IPyBreak_base'
-            print ('Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()')
+            print ('Debug mode: IPython shell called on Exceptions, breakpoint() and IPyBreak();\n\tfor pdb: pdbBreak()')
         except:
-            print ('Debug on failed. IPython not installed?')
+            print ('Debug mode without IPython; breakpoint() invokes pdb.')
+            from . import GSASIIfiles as G2fil
+            G2fil.NeededPackage({'IPython for debugging/code development':['ipython']})
     else: # not in spyder or debug enabled, hide breakpoints
         os.environ['PYTHONBREAKPOINT'] = '0'
 
@@ -1398,24 +1402,22 @@ def WriteConfig(configDict):
     '''
     import configparser
 
-    localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
-    if not os.path.exists(localdir):
-        try:
-            os.mkdir(localdir)
-            print(f'Created directory {localdir}')
-        except Exception as msg:
-            print(f'Error trying to create directory {localdir}\n{msg}')
-            return True
+    localdir = LocalG2Dir()
+    if localdir is None: return True
     cfgfile = os.path.join(localdir,'config.ini')
-    cfgP = configparser.ConfigParser()
-    if os.path.exists(cfgfile): 
-        cfgP.read(cfgfile)  # read previous file so other sections are retained
-    cfgP['GUI settings'] = configDict
+    try:
+        cfgP = configparser.ConfigParser()
+        if os.path.exists(cfgfile): 
+            cfgP.read(cfgfile, encoding='utf-8')  # read previous file so other sections are retained
+        cfgP['GUI settings'] = configDict
 
-    # Write the configuration file
-    with open(cfgfile, 'w') as configfile:
-        cfgP.write(configfile)
-    print(f"Configuration settings saved as {cfgfile}")
+        # Write the configuration file
+        with open(cfgfile, 'w', encoding='utf-8') as configfile:
+            cfgP.write(configfile)
+            print(f"Configuration settings saved as {cfgfile}")
+    except Exception as msg:
+        print(f"Warning: Configuration settings not saved")
+        if GetConfigValue('debug'): print('error=',msg)
 
 def LoadConfig(printInfo=True):
     '''Read configuration settings from ~/.GSASII/config.ini, if present.
@@ -1424,40 +1426,14 @@ def LoadConfig(printInfo=True):
     :param bool printInfo: if printInfo is True (default) then a message
       is shown with the number of settings read (upon startup).
     '''
-    def XferConfigIni():
-        '''copy the contents of the config.py file to file ~/.GSASII/config.ini.
-        This "patch code" used for master->main transition and can eventually
-        be removed.
-        '''
-        import types
-        configDict = {}
-        try:
-            import config
-            #import config_example as config
-            for i in config.__dict__:
-                if i.startswith('__') and i.endswith('__'): continue
-                if isinstance(config.__dict__[i],types.ModuleType): continue
-                configDict.update({i:str(config.__dict__[i])})
-        except ImportError:
-            print("New install: start without a config.py file")
-            return
-        except Exception as err:
-            print("Error reading config.py file\n",err)
-            return
-        print(f"Contents of {config.__file__} to be written from config.py...")
-        WriteConfig(configDict)
-
     import configparser
     global configDict
     configDict = {}
-    cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+    localdir = LocalG2Dir()
+    if localdir is None: return
+    cfgfile = os.path.join(localdir,'config.ini')
     if not os.path.exists(cfgfile):
         print(f'N.B. Configuration file {cfgfile} does not exist')
-        # patch 2/7/25: transform GSAS-II config.py contents to config.ini
-        try:
-            XferConfigIni()
-        except:
-            print('transfer of config.py failed')
     try:
         from . import config_example
     except ImportError:
@@ -1473,9 +1449,9 @@ def LoadConfig(printInfo=True):
     try:
         cfg = configparser.ConfigParser()
         # Read the configuration file
-        cfg.read(cfgfile)
+        cfg.read(cfgfile, encoding='utf-8')
     except Exception as err:
-        print("Error reading {cfgfile}\n",err)
+        print(f"Error reading {cfgfile}\n",err)
         return
 
     # Access values from the configuration file
@@ -1544,68 +1520,60 @@ end tell
 #==============================================================================
 #==============================================================================
 # conda/pip routines
-def findConda():
-    '''Determines if GSAS-II has been installed as g2conda or gsas2full
-    with conda located relative to this file.
-    We could also look for conda relative to the python (sys.executable)
-    image, but I don't want to muck around with python that someone else
-    installed.
-    '''
-    parent = os.path.split(path2GSAS2)[0]
-    if sys.platform != "win32":
-        activate = os.path.join(parent,'bin','activate')
-        conda = os.path.join(parent,'bin','conda')
-    else:
-        activate = os.path.join(parent,'Scripts','activate.bat')
-        conda = os.path.join(parent,'condabin','conda.bat')
-    if os.path.exists(activate) and os.path.exists(conda):
-        return conda,activate
-    else:
-        return None
-
 def condaTest(requireAPI=False):
-    '''Returns True if it appears that Python is being run under Anaconda 
-    Python with conda present. Tests for conda environment vars and that 
+    '''Returns True if it appears that Python is being run with 
+    conda present. Tests for conda environment vars and that 
     the conda package is installed in the current environment.
+
+    This is imperfect testing, but hopefully does what is needed
 
     :returns: True, if running under Conda
     '''
-    if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]): return False
+    if not any([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]): return False
     if requireAPI:
-        # is the conda package available?
-        try:
-            import conda.cli.python_api
-            conda.cli.python_api
-        except:
-            print('You do not have the conda package installed in this environment',
-                  '\nConsider using the "conda install conda" command')
-            return False
+        print('condaTest(requireAPI=True) is obsolete. Ignoring arg.')
+        # # is the conda package available?
+        # try:
+        #     import conda.cli
+        #     conda.cli
+        # except:
+        #     print('You do not have the conda package installed in this environment',
+        #           '\nConsider using the "conda install conda" command')
+        #     return False
 
     # There is no foolproof way to check if someone activates conda
     # but then calls a different Python using its path...
     # ...If we are in the base environment then the conda Python
     # should be the same path as the one currently being run:
-    if os.environ['CONDA_DEFAULT_ENV'] == 'base':
-        try:
-            if os.path.samefile(os.environ['CONDA_PYTHON_EXE'],
-                                sys.executable): return True
-        except:
-            return False
-
+    # if os.environ['CONDA_DEFAULT_ENV'] == 'base':
+    #     try:
+    #         if os.path.samefile(os.environ['CONDA_PYTHON_EXE'],
+    #                             sys.executable): return True
+    #     except:
+    #         pass
     # ...If not in the base environment, what we can do is check if the
     # python we are running in shares the beginning part of its path with
     # the one in the base installation:
-    dir1 = os.path.dirname(os.environ['CONDA_PYTHON_EXE'])
-    dir2 = os.path.dirname(sys.executable)
-    if sys.platform != "win32": # python in .../bin/..
-        dir1 = os.path.dirname(dir1)
-        dir2 = os.path.dirname(dir2)
-    return commonPath(dir1,dir2)
+    #dir1 = os.path.dirname(os.environ['CONDA_PYTHON_EXE'])
+    #dir2 = os.path.dirname(sys.executable)
+    #if sys.platform != "win32": # python in .../bin/..
+    #    dir1 = os.path.dirname(dir1)
+    #    dir2 = os.path.dirname(dir2)
+    #return commonPath(dir1,dir2)
+
+    # is the conda package available?
+    try:
+        import conda.cli
+        conda.cli
+    except:
+        return False
+    return True
 
 def condaInstall(packageList):
     '''Installs one or more packages using the anaconda conda package
     manager. Can be used to install multiple packages and optionally
     use channels.
+    Copilot-generated replacement for obsoleted conda.api routine.
 
     :param list packageList: a list of strings with name(s) of packages
       and optionally conda options.
@@ -1615,34 +1583,45 @@ def condaInstall(packageList):
        packageList=['-c','conda-forge','wxpython']
        packageList=['numpy','scipy','matplotlib']
 
-    :returns: None if the the command ran normally, or an error message
+    :returns: None if the command ran normally, or an error message
       if it did not.
     '''
+    import os, shutil, subprocess, sys
+
     try:
-        import conda.cli.python_api
-    except:
-        print('You do not have the conda package installed in this environment',
-                  '\nConsider using the "conda install conda" command')
-        return None
-    try:
-        print(f'Preparing to install package(s): {" ,".join(packageList)}'+
-                  '\nThis can take a while')
-        # the next line works, but the subsequent cli is considered more stable
-        #conda.cli.main('install',  '-y', *packageList)
-        # this is considered to be supported in the long term
-        (out, err, rc) = conda.cli.python_api.run_command(
-            conda.cli.python_api.Commands.INSTALL,packageList,
-#            search_path=('conda-forge'),   # broken!
-#    use_exception_handler=True#, stdout=sys.stdout,
-            stderr=sys.stderr)
-        #print('rc=',rc)
-        print('Ran conda. output follows...')
-        print(70*'='+'\n'+out+'\n'+70*'=')
-        #print('err=',err)
-        if rc != 0: return str(out)
+        print(f'Preparing to install package(s): {" ,".join(packageList)}'
+              '\nThis can take a while')
+
+        conda_exe = os.environ.get("CONDA_EXE") or shutil.which("conda")
+        if conda_exe:
+            cmd = [conda_exe, "install", "-y", *packageList]  # <- auto-confirm
+        else:
+            cmd = [sys.executable, "-m", "conda", "install", "-y", *packageList]
+
+        # Stream output so user sees progress and we avoid "looks hung"
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+
+        lines = []
+        for line in proc.stdout:
+            print(line, end="")   # live progress
+            lines.append(line)
+
+        rc = proc.wait()
+        out = "".join(lines)
+
+        if rc != 0:
+            return out.strip() or f"conda install failed (exit code {rc})"
+
     except Exception as msg:
         print(f"\nConda error occurred, see below\n{msg}")
         return "error occurred"
+
     return None
 
 def fullsplit(fil,prev=None):
@@ -1659,18 +1638,18 @@ def fullsplit(fil,prev=None):
         return [i]+prev
     return out
 
-def commonPath(dir1,dir2):
-    '''Check if two directories share a path. Note that paths
-    are considered the same if either directory is a subdirectory
-    of the other, but not if they are in different subdirectories
-    /a/b/c shares a path with /a/b/c/d but /a/b/c/d and /a/b/c/e do not.
+# def commonPath(dir1,dir2):
+#     '''Check if two directories share a path. Note that paths
+#     are considered the same if either directory is a subdirectory
+#     of the other, but not if they are in different subdirectories
+#     /a/b/c shares a path with /a/b/c/d but /a/b/c/d and /a/b/c/e do not.
 
-    :returns: True if the paths are common
-    '''
+#     :returns: True if the paths are common
+#     '''
 
-    for i,j in zip(fullsplit(dir1),fullsplit(dir2)):
-        if i != j: return False
-    return True
+#     for i,j in zip(fullsplit(dir1),fullsplit(dir2)):
+#         if i != j: return False
+#     return True
 
 def pipInstall(packageList):
     '''Installs one or more packages using the pip package installer.
@@ -1700,107 +1679,69 @@ def pipInstall(packageList):
         return msg
     return None
 
-def condaEnvCreate(envname, packageList, force=False):
-    '''Create a Python interpreter in a new conda environment. Use this
-    when there is a potential conflict between packages and it would
-    be better to keep the packages separate (which is one of the reasons
-    conda supports environments). Note that conda should be run from the
-    base environment; this attempts to deal with issues if it is not.
+def condaCreate(envpath, packageList):
+    '''Create a Python interpreter in a new conda environment. This has the 
+    advantage of keeping the Python environment separate from the one used
+    by GSAS-II. It has the disadvantage of requiring more disk space. 
 
     Currently, this is used only to install diffpy.PDFfit2.
 
-    :param str envname: the name of the environment to be created.
-      If the environment exists, it will be overwritten only if force is True.
+    :param str envpath: the directory where the environment will be created.
+       If the environment exists, it will be overwritten only if force is True.
     :param list packageList: a list of conda install create command
-      options, such as::
+       options, such as::
 
-            ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
-                '-c', 'conda-forge', '-c', 'diffpy']
+             ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
+                 '-c', 'conda-forge', '-c', 'diffpy']
 
-    :param bool force: if False (default) an error will be generated
-      if an environment exists
-
-    :returns: (status,msg) where status is True if an error occurs and
-      msg is a string with error information if status is True or the
-      location of the newly-created Python interpreter.
+    :returns: (status,msg,pyexe) where status is True if an error occurs and
+      msg is a string with error information if status is True (or None)
+      and pyexe is the location of the newly-created Python interpreter.
     '''
-    if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV',
-                            'CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-        p = sys.exec_prefix
-    else:
-        # workaround for bug that avoids nesting packages if running from an
-        # environment (see https://github.com/conda/conda/issues/11493)
-        p = os.path.dirname(os.path.dirname(os.environ['CONDA_EXE']))
-    try:
-        import conda.cli.python_api
-    except:
-        return True,'conda package not available (in environment)'
-    if not os.path.exists(os.path.join(p,'envs')):
-        msg = ('Error derived installation path not found: '+
-                  os.path.join(p,'envs'))
-        print(msg)
-        return True,msg
-    newenv = os.path.join(p,'envs',envname)
-    if os.path.exists(newenv) and not force:
-        msg = 'path '+newenv+' already exists and force is not set, aborting'
-        print(msg)
-        return True,msg
-    pathList = ['-p',newenv]
-    try:
-        (out, err, rc) = conda.cli.python_api.run_command(
-            conda.cli.python_api.Commands.CREATE,
-            packageList + pathList,
-            use_exception_handler=True) # ,stdout=sys.stdout, stderr=sys.stderr)
-        print(out)
-        if rc != 0:
-            print(err)
-            return True,str(out+err)
-        if sys.platform == "win32":
-            newpython = os.path.join(newenv,'python.exe')
-        else:
-            newpython = os.path.join(newenv,'bin','python')
-        if os.path.exists(newpython):
-            return False,newpython
-        return True,'Unexpected, '+newpython+' not found'
-    except Exception as msg:
-        print("Error occurred, see below\n",msg)
-        return True,'Error: '+str(msg)
-
-def addCondaPkg():
-    '''Install the conda API into the current conda environment using the
-    command line, so that the API can be used in the current Python interpreter
-
-    Attempts to do this without a shell failed on the Mac because it seems that
-    the environment was inherited; seems to work w/o shell on Windows.
-    '''
-    if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
-                        'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-        return None
-    #condaexe = os.environ['CONDA_EXE']
-    currenv = os.environ['CONDA_DEFAULT_ENV']
-    if sys.platform == "win32":
-        cmd = [os.environ['CONDA_EXE'],'install','conda','-n',currenv,'-y']
-        with subprocess.Popen(cmd,
-                         #stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         encoding='UTF-8') as p:
-            out,err = p.communicate()
-    else:
-        script = 'source ' + os.path.join(
-            os.path.dirname(os.environ['CONDA_PYTHON_EXE']),
-            'activate') + ' base; '
-        script += 'conda install conda -n '+currenv+' -y'
-        with subprocess.Popen(script,shell=True,env={},
-                         #stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         encoding='UTF-8') as p:
-            out,err = p.communicate()
+    import os, shutil, subprocess, sys
     
-    if out is not None and GetConfigValue('debug'): print('Output from adding conda:\n',out)
-    if err and err is not None:
-        print('Note error/warning from running conda:\n',err)
-    if currenv == "base":
-        print('\nUnexpected action: adding conda to base environment???')
+    # find conda
+    conda_exe = os.environ.get("CONDA_EXE")
+    if sys.platform == "win32" and not conda_exe:
+        conda_exe = shutil.which('conda.exe')
+    if not conda_exe:
+        conda_exe = shutil.which('conda')
+
+    if not conda_exe:
+        # could try as a fallback to see if executing
+        #   [sys.executable, "-m", "conda", "info"]
+        # works even if conda is not present
+        print('conda not found, if you are using conda and get this error,\nplease contact Brian Toby')
+        return (True,'Conda executable not found',None)
+    
+    if not os.path.exists(conda_exe):
+        return (True,f'Conda executable located but not found ({conda_exe})',None)
+    
+    cmd = [conda_exe, "create", "-p", envpath, "-y", *packageList]  # <- auto-confirm
+    try:
+        print('Running conda to install Python interpreter',
+              f'using command\n\t{" ".join(cmd)}\nconda output follows...\n\n')
+        subprocess.run(
+            cmd,
+            #stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,check=True
+        )
+    except subprocess.CalledProcessError as e:
+        msg = f"conda error, output:\n{e.stderr} (code {e.returncode})"
+        print(msg)
+        return (True,msg,None)
+    except Exception as msg:
+        print('Unknown conda error',msg)
+        return (True,msg,None)
+    if sys.platform == "win32":
+        newpython = os.path.join(envpath,'python.exe')
+    else:
+        newpython = os.path.join(envpath,'bin','python')
+    if os.path.exists(newpython):
+        return False,None,newpython
+    return True,f'Unexpected error, {newpython} not found'
+
 #==============================================================================
 #==============================================================================
 # routines for reorg of GSAS-II directory layout
@@ -1923,7 +1864,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
         count += 1
         r = None
         repeat = False
-        if GetConfigValue('debug'): print('request to',URL)
+        #if GetConfigValue('debug'): print('request to',URL)
         try:
             if timeout is not None:
                 r = reqopt(URL,params=postdict,cookies=usecookie,
@@ -1953,6 +1894,12 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
                     print('Retry with http://')
                     repeat = True
                     URL = URL.replace('https:','http:')
+            if GetConfigValue('debug'):
+                print(70*'=')
+                print('request to',URL,'\naccess type=',mode,
+                          '\ndict=',postdict,
+                          '\ncookie=',usecookie)
+                print(70*'=')
         except requests.exceptions.Timeout as msg:
             print(f'timeout accessing {URL}')
             if GetConfigValue('debug'): print('full error=',msg)
@@ -2095,6 +2042,205 @@ end tell
             fp.write(f"{script}\n")
         fp.close()
         subprocess.Popen(cmds,start_new_session=True)
+
+def LocalG2Dir():
+    '''Finds the directory used for storage of local GSAS-II files.
+    At present this is always .GSASII in the user's home directory,
+    `~/.GSASII` on Linux/MacOS and `%HOMEPATH%\\.GSASII` on Windows.
+
+    :returns: the path to the directory or None, if it does not 
+      exist and can't be created.
+    '''
+    localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
+    if os.path.exists(localdir): return localdir 
+    try:
+        print(f'Creating directory {localdir}')
+        os.mkdir(localdir)
+        if os.path.exists(localdir): return localdir
+        print(f'Unexpected: unable to create {localdir} and no error')
+        return None
+    except Exception as msg:
+        print(f'Error trying to create directory {localdir}\n{msg}')
+        return None
+    return
+
+#===========================================================================
+# routines used for gsas_query (Query-gsas-II, LLM Documentation searching) 
+def testLLMquery():
+    '''See if the LLM documentation searching is set up to run. 
+    This can take a second or two to run, so don't use this 
+    unless the user asks for use of the LLM query
+
+    :returns: the name of the backend (llama or ollama) if the necessary
+      ingredients are in place, None otherwise
+    '''
+    #import importlib.util # faster but not fast enough
+
+    try:
+        os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+        import chromadb # slowish
+        #if importlib.util.find_spec('chromadb') is None: return
+    except ImportError:
+        #print('chromadb is not installed')
+        from . import GSASIIfiles as G2fil
+        G2fil.NeededPackage({'LLM docs search':['chromadb',
+                                    'llama-cpp-python','huggingface_hub']})
+        return
+    try:
+        import gsas_query.gui
+    except ImportError:
+        raise Exception('gsas_query is not installed; unexpected!')
+        return
+    
+    # is Ollama setup? TODO: should also allow for designation of
+    # Ollama server location and to have 
+    try:
+        if gsas_query.gui._is_ollama_running(): return "ollama"
+    except ImportError:
+        pass
+    bin = os.environ.get("OLLAMA_BIN")
+    if bin is not None:
+        if os.path.exists(bin): return "ollama"
+
+    # No Ollama; is llama installed?
+    try:
+        import llama_cpp # slow
+        try:
+            import huggingface_hub # not strictly necessary
+        except:
+            print('Warning: llama installer but not huggingface_hub.\n'+
+                  'Unable to download llama models')
+        return "llama"
+        #if (importlib.util.find_spec('llama_cpp') is not None and
+        #    importlib.util.find_spec('huggingface_hub') is not None
+        #        ): return "llama"
+    except ImportError:
+        from . import GSASIIfiles as G2fil
+        G2fil.NeededPackage({'LLM docs search':['llama-cpp-python','huggingface_hub']})
+        pass
+    return
+
+def setupOllama():
+    '''Set up to run Ollama
+    '''
+    os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+    import chromadb
+    os.environ['LLM_BACKEND'] ='ollama'
+    return True
+
+def testLLamaModel():
+    '''Test if an llama model has been installed.
+    Returns the name of the most recently installed model 
+    or None if the model needs to be installed.
+    '''
+    modelDir = os.path.expanduser("~/.GSASII/llama_models")
+    if not os.path.exists(modelDir):
+        return None
+    fileList = glob.glob(os.path.join(modelDir,'*.gguf'))
+    if not fileList: return None
+    if len(fileList) == 1:
+        return fileList[0]
+    elif len(fileList) > 1:
+        return sorted(fileList, key=os.path.getmtime, reverse=True)[0]
+    else:
+        return None
+
+def installLLamaModel():
+    '''Download the Qwen2.5-3B-Instruct llama model'''
+    modelDir = os.path.expanduser("~/.GSASII/llama_models")
+    os.makedirs(modelDir, exist_ok=True)
+    print('Downloading a model...')
+    from huggingface_hub import hf_hub_download
+    hf_hub_download(repo_id='Qwen/Qwen2.5-3B-Instruct-GGUF',
+                        filename='qwen2.5-3b-instruct-q4_k_m.gguf',
+                        local_dir=modelDir)
+    print('...Download complete')
+
+def setupLLama():
+    '''Prepare settings to run llama
+    '''
+    os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+    import chromadb
+    model = testLLamaModel()
+#    if model is None:
+#        installLLamaModel()
+#        model = testLLamaModel()
+    if model is None:
+#        print('Error: did not download a llama model from huggingface_hub')
+        print('Error: cannot use llama without a llama model')
+        return False
+    os.environ['LLM_BACKEND'] ='llama_cpp'
+    os.environ['LLAMA_CPP_MODEL'] = model
+    return True
+
+def ageLLMindex():
+    '''Returns the date since the LLM index was last downloaded or
+    None if the file does not exist.
+    '''
+    import datetime
+    f = 'chroma_db'
+    dbdir = os.path.expanduser('~/.GSASII/query_gsas2')
+    db = os.path.join(dbdir,f)
+    if os.path.exists(db):
+        m_time_timestamp = os.path.getmtime(db)
+        last_modified = datetime.datetime.fromtimestamp(m_time_timestamp)
+    
+        return (datetime.datetime.now() - last_modified).total_seconds()/(60*60*24)
+
+def getLLMindex():
+    '''Download the ChromaDB database for Query-GSAS-II from the GSASII 
+    releases GitHub site and place into the location where GSAS-II 
+    will use it. 
+
+    Do this in two stages (download to temp location and then move), 
+    as someday perhaps the index update might be performed in the 
+    background.
+    '''
+    import tempfile
+    import requests
+    import zipfile
+    import shutil
+
+    OWNER = "AdvancedPhotonSource"
+    REPO = "GSAS-II-buildtools"
+    TAG = "v1.0.1"
+    WANTED = "chroma_db_latest.zip"
+    zip_url = f"https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/{WANTED}"
+
+    with requests.Session() as s:
+        # Optional but sometimes helps with GitHub/CDN edge behavior
+        s.headers.update({"User-Agent": "python-requests/zip-downloader"})
+
+        resp = s.get(zip_url, stream=True, timeout=60)
+        resp.raise_for_status()  # fail loudly on 4xx/5xx
+
+        ctype = resp.headers.get("Content-Type", "")
+        if "zip" not in ctype and "octet-stream" not in ctype:
+            # Often means you got HTML (login/error/rate-limit page) instead of the file
+            raise RuntimeError(f"Unexpected content type: {ctype}")
+
+    try:
+        tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+        with tmp as f:
+            for chunk in resp.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+        #print("Saved to:", tmp.name)
+        # create the files in a new location and then move them to the final location
+        f = 'chroma_db'
+        finaldir = os.path.expanduser('~/.GSASII/query_gsas2')
+        finaldb = os.path.join(finaldir,f)
+        newdir = os.path.expanduser('~/.GSASII/new_query_gsas2')
+        newdb = os.path.join(newdir,f)
+        os.makedirs(newdir, exist_ok=True)
+        os.makedirs(finaldir, exist_ok=True)
+        with zipfile.ZipFile(tmp.name, 'r') as zip_ref:
+            zip_ref.extractall(newdir)
+        if os.path.exists(finaldb): shutil.rmtree(finaldb)
+        os.rename(newdb,finaldb)
+        if os.path.exists(newdir): shutil.rmtree(newdir)
+    finally:
+        os.unlink(tmp.name)        
 
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a
@@ -2242,25 +2388,25 @@ to update/regress repository from git repository:
         lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]
         #print('tags=',lastver,lastnum)
         # make directory for config file if needed
-        localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
-        if not os.path.exists(localdir):
-            try:
-                os.mkdir(localdir)
-                print(f'Created directory {localdir}')
-            except Exception as msg:
-                print(f'Error trying to create directory {localdir}\n{msg}')
-                sys.exit()
+        localdir = LocalG2Dir()
+        if localdir is None: sys.exit()
         # add tag info to config file
         import configparser
-        cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
-        cfg = configparser.ConfigParser()
-        cfg.read(cfgfile)
-        if 'version info' not in cfg:
-            cfg.add_section('version info')
-        cfg['version info'].update(
-            {'lastVersionTag':lastver,'lastVersionNumber':lastnum})
-        with open(cfgfile, 'w') as configfile:
-            cfg.write(configfile)
+        localdir = LocalG2Dir()
+        if localdir is None: sys.exit()
+        cfgfile = os.path.join(localdir,'config.ini')
+        try:
+            cfg = configparser.ConfigParser()
+            cfg.read(cfgfile, encoding='utf-8')
+            if 'version info' not in cfg:
+                cfg.add_section('version info')
+            cfg['version info'].update(
+                {'lastVersionTag':lastver,'lastVersionNumber':lastnum})
+            with open(cfgfile, 'w', encoding='utf-8') as configfile:
+                cfg.write(configfile)
+        except Exception as msg:
+            print(f"Warning: Configuration settings not saved")
+            if GetConfigValue('debug'): print('error=',msg)
         sys.exit()
 
     if updateType == 'fetch':

@@ -65,11 +65,11 @@ gcc = ">=14.2.0,<14.3"
 
 [target.osx-arm64.dependencies]
 compilers = ">=1.11.0,<2"
-clang = ">=19.1.7,<22"
+#clang = ">=19.1.7,<22"   # removed based on CoPilot recommendation due to sporadic smoketest fails
 
 [target.osx-64.dependencies]
 compilers = ">=1.11.0,<2"
-clang = ">=19.1.7,<22"
+#clang = ">=19.1.7,<22"   # removed based on CoPilot recommendation due to sporadic smoketest fails
 
 # for now assume gcc & gfortran already installed in Linux
 

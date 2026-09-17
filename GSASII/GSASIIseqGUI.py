@@ -29,6 +29,7 @@ from . import GSASIImapvars as G2mv
 from . import GSASIIobj as G2obj
 from . import GSASIIexprGUI as G2exG
 from . import GSASIIctrlGUI as G2G
+from . import GSASIIElem as G2elem
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 #####  Display of Sequential Results ##########################################
@@ -1168,7 +1169,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         parmDict = data[histNames[sel]]['parmDict']
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         for phase in Phases:
-            print('Updating {phase} from Seq. Ref. row {histNames[sel]}')
+            print(f'Updating {phase} from Seq. Ref. row {histNames[sel]}')
             Phase = Phases[phase]
             General = Phase['General']
             SGData = General['SGData']
@@ -1222,6 +1223,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         at[ind] = parmDict[names[ind]]
                 ind = General['AtomTypes'].index(at[ct])
                 if General.get('Modulated',False):
+                    G2elem.AddWave2atm(at)
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
@@ -1271,9 +1273,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         phaseKeys = [i for i in parmDict if ':' in i and i.split(':')[1] == '']
         phaseKeys = [i for i in phaseKeys if type(parmDict[i]) not in (int,str,bool)]
         if len(selRows) == 1:
-            lbl = "\nin {histNames[selRows[0]]}      "
+            lbl = f"\nin {histNames[selRows[0]]}      "
         else:
-            lbl = "\nin {len(selRows)} histograms"
+            lbl = f"\nin {len(selRows)} histograms"
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase parmDict item(s) to set'+lbl,
                                       'Choose items to edit', phaseKeys)
         if dlg.ShowModal() == wx.ID_OK:
@@ -1486,12 +1488,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colLabels += ['GOF']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
+    deltaChiCol = None
     if histNames[0][:4] not in ['SASD','IMG ','REFD'] and Controls.get('ShowCell'):
-        G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
-        G2frame.colSigs += [None]
-        colLabels += ['\u0394\u03C7\u00B2 (%)']
-        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
-    deltaChiCol = len(colLabels)-1
+        colvals = [100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]
+        if not all([i == -100 for i in colvals]): # include this only when available
+            G2frame.colList += [colvals]
+            G2frame.colSigs += [None]
+            colLabels += ['\u0394\u03C7\u00B2 (%)']
+            Types += [wg.GRID_VALUE_FLOAT+':10,5',]
+            deltaChiCol = len(colLabels)-1
     # frozen variables?
     if 'parmFrozen' in Controls:
         f = [len(Controls['parmFrozen'].get(h,[])) for h in histNames]
@@ -1704,8 +1709,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if None in list(derivs):
                     esdList.append(None)
                 else:
-                    esdList.append(np.sqrt(
-                        np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
+                    try:
+                        esdList.append(np.sqrt(
+                            np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
+                    except:
+                        esdList.append(None)
             psDict = parmDict.copy()
             psDict.update(sampleDict[name])
             try:
@@ -1773,7 +1781,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)
     parent = G2frame.dataWindow.topPanel
-    topSizer.Add(wx.StaticText(parent,label='Sequential results:'),0,WACV)
+    treename = G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection())
+    if treename.lower().startswith('sequential ') and treename.lower().endswith('results'):
+        lbl = treename
+    else:
+        lbl = 'Sequential results: '+treename
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     wx.CallAfter(G2frame.dataWindow.SetDataSize)
@@ -1796,10 +1809,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
             else:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
-    if 'phoenix' in wx.version():
-        G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-    else:
-        G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotLeftSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, PlotRightSelect)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8

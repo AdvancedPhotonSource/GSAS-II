@@ -6,7 +6,7 @@
 from __future__ import division, print_function
 import numpy as np
 import os.path
-from .. import GSASIIpath
+#from .. import GSASIIpath
 from .. import GSASIIobj as G2obj
 from .. import GSASIIfiles as G2fil
 try:
@@ -90,14 +90,17 @@ class CIFhklReader(G2obj.ImportStructFactor):
             )
         rdbuffer = kwarg.get('buffer')
         cf = None
-        if self.repeat and rdbuffer is not None:
-            cf = rdbuffer.get('lastcif')
-            print ('Reusing previously parsed CIF')
+        if self.repeat:
+            self.RefDict = {'RefList':[],'FF':{},'Super':0} # needed when multiple blocks are read
+            if rdbuffer is not None:
+                cf = rdbuffer.get('lastcif')
+                print ('Reusing previously parsed CIF')
         if cf is None:
             cf = G2obj.ReadCIF(filename)
         # scan blocks for reflections
         self.errors = 'Error during scan of blocks for datasets'
         blklist = []
+        EmbeddedShelx = []      #as made by Olex2
         for blk in cf.keys(): # scan for reflections, F or F2 values and cell lengths.
             # Ignore blocks that do not have structure factors and a cell
             blkkeys = [k.lower() for k in cf[blk].keys()]
@@ -109,20 +112,22 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 if hklitems[i][0] in blkkeys and hklitems[i][1] in blkkeys and hklitems[i][2] in blkkeys:
                     dnIndex = i
                     break
+            if '_shelx_hkl_file' in blkkeys:    #found Olex2 reflection block from Shelx; should be h,k,l,Fo^2,sig(Fo^2)
+                blklist.append(blk)
+                EmbeddedShelx.append(blk)
+                continue
             else:
-                break # no reflections
+                continue # no reflections in this block
             for dn in Fdatanames:
                 if dn in blkkeys:
                     blklist.append(blk)
                     gotFo = True
                     break
-            if gotFo: break
+            if gotFo: continue
             for dn in F2datanames:
                 if dn in blkkeys:
                     blklist.append(blk)
                     break
-            else:
-                break
         if not blklist:
             selblk = None # no block to choose
         elif len(blklist) == 1: # only one choice
@@ -140,14 +145,17 @@ class CIFhklReader(G2obj.ImportStructFactor):
                     else:
                         choice[-1] += name.strip()[:20] + ', '
                         break
-                s = ''
-                fmt = "%.2f,"
-                for i,key in enumerate(cellitems[dnIndex]):
-                    if i == 3: fmt = "%.f,"
-                    if i == 5: fmt = "%.f"
-                    val = cf[blknm].get(key)
-                    if val is None: break
-                    s += fmt % cif.get_number_with_esd(val)[0]
+                for j in range(2):
+                    s = ''
+                    fmt = "%.2f,"
+                    for i,key in enumerate(cellitems[j]):
+                        if i == 3: fmt = "%.f,"
+                        if i == 5: fmt = "%.f"
+                        val = cf[blknm].get(key)
+                        if val is None: break
+                        s += fmt % cif.get_number_with_esd(val)[0]
+                    else:
+                        break
                 if s: choice[-1] += ', cell: ' + s
                 for dn in SGdataname:
                     sg = cf[blknm].get(dn)
@@ -178,6 +186,32 @@ class CIFhklReader(G2obj.ImportStructFactor):
             self.repeatcount = 1
         blknm = blklist[selblk]
         blk = cf[blklist[selblk]]
+        if blknm in EmbeddedShelx:
+            hkllines = blk.GetItemValue('_shelx_hkl_file').split('\n')
+            try:
+                for line,S in enumerate(hkllines):
+                    self.errors = '  Error reading line '+str(line+1)
+                    if not len(S.strip()): continue
+                    items = S.split()
+                    h,k,l,Fo,sigFo = items[:5]      #will only be h,k,l,fo^2,sig(Fo^2)
+                    h,k,l = [int(h),int(k),int(l)]
+                    if not any([h,k,l]):    #end of file found
+                        break
+                    Fo = float(Fo)
+                    sigFo = float(sigFo)
+                    self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,1])
+                self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+                self.RefDict['Type'] = 'SXC'
+                self.RefDict['Super'] = 0
+                wave = 0.70926
+                if blk.get('_diffrn_radiation_wavelength'):
+                    wave = float(blk['_diffrn_radiation_wavelength'])
+                self.UpdateParameters(Type='SXC',Wave=wave) # histogram type
+                self.objname = os.path.basename(filename)+':'+str(blknm)
+                return True
+            except Exception as msg:
+                print(f'error in _shelx_hkl_file read in block {blknm}:\n\t{msg}')
+                return False                
         self.objname = os.path.basename(filename)+':'+str(blknm)
         self.errors = 'Error during reading of reflections'
         # read in reflections
@@ -322,11 +356,10 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 Type = 'SNC'
         self.RefDict['Type'] = Type
         self.RefDict['Super'] = im
+        wave = 0.70926
         if blk.get('_diffrn_radiation_wavelength'):
             wave = float(blk['_diffrn_radiation_wavelength'])
         elif blk.get('_diffrn_radiation.wavelength'):
             wave = float(blk['_diffrn_radiation.wavelength'])
-        else:
-            wave = 0.70926
         self.UpdateParameters(Type=Type,Wave=wave) # histogram type
         return True

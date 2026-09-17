@@ -258,6 +258,12 @@ class testMagSym(wx.Frame):
         showMOps = wx.Button(self.testSSPanel,-1,'Show mag. ops')
         showMOps.Bind(wx.EVT_BUTTON,OnShowMOps)
         printSizer.Add(showMOps,0,WACV)
+        showSG = wx.Button(self.testSSPanel,-1,'Show SGdata')
+        def printSG(event):
+            for i in sorted(SGData):
+                print(i,SGData[i])
+        showSG.Bind(wx.EVT_BUTTON,printSG)
+        printSizer.Add(showSG,0,WACV)
         mainSizer.Add(printSizer,0,WACV)
         SGData1 = copy.deepcopy(SGData)
         SGData1['SGSpin'] = G2spc.GetSGSpin(SGData1,SGData1['MagSpGrp'])

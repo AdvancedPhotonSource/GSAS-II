@@ -4,7 +4,6 @@
 Classes and routines defined in :mod:`GSASIIimage` follow.
 '''
 
-from __future__ import division, print_function
 import math
 import time
 import copy
@@ -44,6 +43,7 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 nxs = np.newaxis
 debug = False
 
+
 def peneCorr(tth,dep,dist):
     ''' Compute empirical position correction due to detector absorption
 
@@ -53,15 +53,38 @@ def peneCorr(tth,dep,dist):
     :returns: float/array distance: correction for penetration
     '''
     
-    return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
+    return dep*(1.-npcosd(tth))**2*dist**2/1000.         #best one
 
-def GetTthP(x,y,parmDict):
-    ''' Compute angle between detector normal & sample scattering ray vector
+def sagCorr(x,y,sag,xyLim):
+    ''' Correct detector Z for detector sag when highly tilted
+    something approximate? Seems to be a fold down vertical center.
+    
+    :param float/array x: detector x position in mm
+    :param float/array y: detector y position in mm
+    :param float sag: detector sag in mm
+    :param float/array xyLim: detector x/y upper limits in mm
+    :returns: float/array dsag: z-displacement from detector plane by sag
+    
+    '''
+    dsag = npsind(180.*(x/xyLim[0]))*sag
+    return dsag
+
+def GetTthP(x,y,parmDict,dist=None,detX=None,detY=None):
+    '''Compute angle between detector normal & sample scattering ray vector
+    For Multi-distance use, dist, detX & detY change for 
+    different detector positions.
 
     :param float/array x: detector x-position in mm
     :param float/array y: detector y-position in mm
-    :param dict parmDict: dictionary of detector orientation parameters in fitting routine
-        names are: det-X, det-Y, tilt, dist & phi
+    :param dict parmDict: dictionary of detector orientation parameters 
+      in fitting routine.
+      Used entries are: det-X, det-Y, tilt, dist & phi
+      In multi-dist, used entries are: tilt & phi, and the following 
+      are specified:
+    :param float/array dist: detector distance
+    :param float/array detX: X Position of beam center
+    :param float/array detY: Y Position of beam center
+
     :returns: float/array angle: = 2-theta if tilt is zero
     '''
     def costth(xyz,d0):
@@ -69,29 +92,36 @@ def GetTthP(x,y,parmDict):
         u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
         return np.dot(u,d0)
     
-    dx = x-parmDict['det-X']
-    dy = y-parmDict['det-Y']
     tilt = parmDict['tilt']
-    dist = parmDict['dist']/npcosd(tilt)    #sample-beam intersection point on detector plane
+    if dist is None:
+        dx = x-parmDict['det-X']
+        dy = y-parmDict['det-Y']
+        dist = parmDict['dist']/npcosd(tilt)    #sample-beam intersection point on detector plane
+    else:
+        dx = x - detX
+        dy = y - detY
+        dist = dist/npcosd(tilt)    #sample-beam intersection point on detector plane
+
     T = makeMat(tilt,0)         #detector tilt matrix
     R = makeMat(parmDict['phi'],2)     #rotation of tilt axis matrix
     MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T)
     d001 = np.array([0.,0.,1.])         #vector along z (beam direction); normal to untilted detector plane
     r001 = np.inner(d001,MN)            #should rotate vector same as detector
     dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #transform detector pixel x,y by tilt/rotate
-    dxyz0 += np.array([0.,0.,dist])         #shift away from sample
+    #dxyz0 += np.array([0.,0.,dist])         #shift away from sample
+    dxyz0[:,:,2] += dist                #shift away from sample
     ctth0 = costth(dxyz0,r001)              #cos of angle between detector normal & sample-pixel vector
     return npacosd(ctth0)[0]
-        
-def SamAbs(data,tax,tay,muT):
+
+def SamAbs(data,tth,azm,muT):
     'Compute sample absorption correction for images'
     if 'Cylind' in data['SampleShape']:
-        muR = muT*(1.+npsind(tay)**2/2.)/(npcosd(tax))      #adjust for additional thickness off sample normal
-        tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
+        muR = muT*(1.+npsind(azm)**2/2.)/(npcosd(tth))      #adjust for additional thickness off sample normal
+        tabs = G2pwd.Absorb(data['SampleShape'],muR,tth)
     elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
-        tabs = G2pwd.Absorb('Fixed',muT,tay)
+        tabs = G2pwd.Absorb('Fixed',muT,tth)
     else:
-        tabs = np.ones_like(tax)
+        tabs = np.ones_like(tth)
     return tabs
 
 def makeMat(Angle,Axis):
@@ -153,6 +183,141 @@ def FitEllipse(xy):
         phi -= 90.
     return cent,phi,radii
 
+def FitHyperbola(xy):
+    
+    def hypcof(xo,yo,phi,a,b):
+        a2 = a**2
+        b2 = b**2
+        sp2 = npsind(phi)**2
+        cp2 = npcosd(phi)**2
+        Axx = -a2*sp2+b2*cp2
+        Ayy = -a2*cp2+b2*sp2
+        Axy = (a2+b2)*npsind(phi)*npcosd(phi)
+        Bx = -Axx*xo-Axy*yo
+        By = -Axy*xo-Ayy*yo
+        C = Axx*xo**2+2.*Axy*xo*yo+Ayy*yo**2-a2*b2
+        return [Axx,Ayy,Axy,Bx,By,C]
+        
+    def hypfxn(parms,x,y):
+        Axx,Ayy,Axy,Bx,By,C = parms
+        P = Axx*x**2+2.*Axy*x*y+Ayy*y**2+2.*Bx*x+2.*By*y+C
+        return -P**2
+    
+    def dhypfxn(parms,x,y):
+        Axx,Ayy,Axy,Bx,By,C = parms
+        P = Axx*x**2+2.*Axy*x*y+Ayy*y**2+2.*Bx*x+2.*By*y+C
+        dPdAxx = x**2
+        dPdAxy = 2.*x*y
+        dPdAyy = y**2
+        dPdBx = 2.*x
+        dPdBy = 2.*y
+        dPdC = np.ones_like(x)
+        return np.array([dPdAxx,dPdAxy,dPdAyy,dPdBx,dPdBy,dPdC]).T
+    
+    xy = np.array(xy)
+    x,y = xy
+    xo = 400.
+    yo = 200.
+    phi = 110.
+    radii = [300.,100.]
+    parms = hypcof(xo,yo,phi,radii[0],radii[1])
+    r = leastsq(hypfxn,parms,Dfun=dhypfxn,args=(x,y))[0]
+    Ms = np.array([[r[0],r[1],r[3]],[r[1],r[2],r[4]],[r[3],r[4],r[5]]])
+    dMs = nl.det(Ms)
+    Md = np.array([[r[0],r[1]],[r[1],r[2]]])
+    detMd = nl.det(Md)
+    Mx = np.array([[r[3],r[1]],[r[4],r[2]]])
+    xo = -nl.det(Mx)/detMd
+    My = np.array([[r[0],r[3]],[r[1],r[4]]])
+    yo = -nl.det(My)/detMd
+    ttph = 2.*r[1]/(r[0]-r[2])
+    phi = npatand(ttph)+90.
+    b = -(r[0]+r[2])
+    lam = np.sqrt(4.*detMd-b)
+    lam1 = (-b+lam)/2.
+    lam2 = (-b-lam)/2.
+    a2 = -dMs/(lam1*detMd)
+    b2 = -dMs/(lam2*detMd)
+    radii = [-np.sqrt(a2),np.sqrt(b2),0.]
+    return [xo,yo],phi,radii
+    
+ellipseCalcCount = 0
+ellipseCalcRMS = None
+def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
+    '''Compute the deviations from the ellipse point locations
+    '''
+    x,y,dsp = xyd
+    if progressDlg:
+        global ellipseCalcCount,ellipseCalcRMS
+        ellipseCalcCount += 1
+        msg = ""
+        if ellipseCalcRMS is not None:
+            msg = f'RMS error: {ellipseCalcRMS:.3f} '
+        msg += f'eval #{ellipseCalcCount}'
+        GoOn = progressDlg.Update(ellipseCalcCount%100,newmsg=msg)
+        if not GoOn[0]:
+            print('Multi-distance fit cancelled')
+            raise KeyboardInterrupt('Multi-distance fit cancelled')
+            return None
+    deltaMode = False
+    if keyArray is not None and 'deltaDist' in parmDict:
+        deltaMode = True
+    varyDict = dict(zip(varyList,B))
+    parms = {}
+    for parm in parmDict:
+        if parm in varyList:
+            parms[parm] = varyDict[parm]
+        else:
+            parms[parm] = parmDict[parm]
+    phi = parms['phi']-90.               #get rotation of major axis from tilt axis
+    if keyArray is None:
+        dsag = sagCorr(x,y,parms['sag'],parmDict['xyLim'])
+        detX = np.array(len(x)*[parms['det-X']])
+        detY = np.array(len(x)*[parms['det-Y']])
+        dist = np.array(len(x)*[parms['dist']])+dsag
+        dtth = GetTthP(x,y,parmDict)        #sample-detector ray wrt detector plane != 2-theta if tilted
+    else:
+        detX = np.array([parms[f'det-X{k}'] for k in keyArray])
+        detY = np.array([parms[f'det-Y{k}'] for k in keyArray])
+        if deltaMode:
+            dist = np.array([parms[f'dist{k}'] for k in keyArray]) - parms['deltaDist']
+        else:
+            dist = np.array([parms[f'dist{k}'] for k in keyArray])
+        dtth = GetTthP(x,y,parmDict,dist,detX,detY)        #sample-detector ray wrt detector plane != 2-theta if tilted
+
+    tth = 2.0*npasind(parms['wave']/(2.*dsp))
+    phi0 = npatan2d(y-detY,x-detX)
+    dxy = peneCorr(dtth,parms['dep'],dist)
+    stth = npsind(tth)
+    cosb = npcosd(parms['tilt'])
+    tanb = nptand(parms['tilt'])
+    tbm = nptand((tth-parms['tilt'])/2.)
+    tbp = nptand((tth+parms['tilt'])/2.)
+    d = dist+dxy
+    fplus = d*tanb*stth/(cosb+stth)
+    fminus = d*tanb*stth/(cosb-stth)
+    vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
+    vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
+    if np.all(vplus+vminus < 0.):
+        return 0.
+    R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
+    R1 = (vplus+vminus)/2.                                    #major axis
+    zdis = (fplus-fminus)/2.
+    Robs = np.sqrt((x-detX)**2+(y-detY)**2)
+    rsqplus = R0**2+R1**2
+    rsqminus = R0**2-R1**2
+    R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
+    Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
+    P = 2.*R0**2*zdis*npcosd(phi0-phi)
+    Rcalc = (P+Q)/R
+    M = (Robs-Rcalc)*25.        #25 wt scaling factor to make "chi**2" more reasonable
+    if progressDlg: # keep track of GOF
+        rms = np.sqrt((M**2).sum()/(25.*len(M)))
+        if ellipseCalcRMS is None: ellipseCalcRMS = rms
+        ellipseCalcRMS = min(ellipseCalcRMS,rms)
+    return M
+
+
 def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     '''Fit detector calibration parameters
 
@@ -166,7 +331,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     '''
 
     def CalibPrint(ValSig,chisq,Npts):
-        print ('Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
+        print ('Image Parameters: red. chi**2: %12.3g, Np: %d'%(chisq,Npts))
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
@@ -184,46 +349,8 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         print (ptstr)
         print (sigstr)
         
-    def ellipseCalcD(B,xyd,varyList,parmDict):
-
-        x,y,dsp = xyd
-        varyDict = dict(zip(varyList,B))
-        parms = {}
-        for parm in parmDict:
-            if parm in varyList:
-                parms[parm] = varyDict[parm]
-            else:
-                parms[parm] = parmDict[parm]
-        phi = parms['phi']-90.               #get rotation of major axis from tilt axis
-        dtth = GetTthP(x,y,parmDict)        #sample-detector ray wrt detector plane != 2-theta if tilted
-        tth = 2.0*npasind(parms['wave']/(2.*dsp))
-        phi0 = npatan2d(y-parms['det-Y'],x-parms['det-X'])
-        dxy = peneCorr(dtth,parms['dep'],parms['dist'])
-        stth = npsind(tth)
-        cosb = npcosd(parms['tilt'])
-        tanb = nptand(parms['tilt'])
-        tbm = nptand((tth-parms['tilt'])/2.)
-        tbp = nptand((tth+parms['tilt'])/2.)
-        d = parms['dist']+dxy
-        fplus = d*tanb*stth/(cosb+stth)
-        fminus = d*tanb*stth/(cosb-stth)
-        vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
-        vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
-        R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
-        R1 = (vplus+vminus)/2.                                    #major axis
-        zdis = (fplus-fminus)/2.
-        Robs = np.sqrt((x-parms['det-X'])**2+(y-parms['det-Y'])**2)
-        rsqplus = R0**2+R1**2
-        rsqminus = R0**2-R1**2
-        R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
-        Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
-        P = 2.*R0**2*zdis*npcosd(phi0-phi)
-        Rcalc = (P+Q)/R
-        M = (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
-        return M
-
-    names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
-    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f']
+    names = ['dist','det-X','det-Y','tilt','phi','dep','wave','sag']
+    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f','%12.4f']
     Fmt = dict(zip(names,fmt))
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
@@ -236,7 +363,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         sigList = []
     else:
         sig = list(np.sqrt(chisq*np.diag(result[1])))
-        sigList = np.zeros(7)
+        sigList = np.zeros(8)
         for i,name in enumerate(varyList):
             sigList[i] = sig[varyList.index(name)]
         ValSig = zip(varyList,vals,sig)
@@ -250,26 +377,56 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     else:
         return [chisq,vals,sigList]
 
-def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
+def FitMultiDist(rings,varyList,parmDict,keyArray,Print=True,covar=False,
+                     progressDlg=None):
     '''Fit detector calibration parameters with multi-distance data
 
-    :param np.array rings: vector of ring positions (x,y,dist,d-space)
+    :param np.array rings: vector of ring positions (x,y,d-space)
     :param list varyList: calibration parameters to be refined
     :param dict parmDict: calibration parameters
+    :param list keyArray: key to look up distances for each ring position.
+      Length must be the same as rings.
     :param bool Print: set to True (default) to print the results
     :param bool covar: set to True to return the covariance matrix (default is False)
+    :param progressDlg: wx.ProgressDialog object or None (default)
     :returns: [chisq,vals,sigDict] unless covar is True, then
         [chisq,vals,sigDict,coVarMatrix] is returned
     '''
 
-    def CalibPrint(parmDict,sigDict,chisq,Npts):
+    def CalibPrint(parmDict,sigDict,chisq,Npts,keyArray):
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
-        for d in sorted(set([i[5:] for i in parmDict.keys() if 'det-X' in i]),key=lambda x:int(x)):
+        keylen = None
+        if 'deltaDist' in parmDict:
+            keylen = -1
+        print ('\nImage Parameters:')
+        ptlbls = 'names :'
+        ptstr =  'values:'
+        sigstr = 'esds  :'
+        names = ['wave', 'dep', 'phi', 'tilt']
+        if 'deltaDist' in parmDict:
+            names += ['deltaDist']
+        for name in names:
+            if name == 'wave':
+                fmt = '%12.6f'
+            elif name == 'dep':
+                fmt = '%12.4f'
+            else:
+                fmt = '%12.3f'
+
+            ptlbls += "%s" % (name.rjust(12))
+            if name == 'phi':
+                ptstr += fmt % (parmDict[name]%360.)
+            else:
+                ptstr += fmt % (parmDict[name])
+            if name in sigDict:
+                sigstr += fmt % (sigDict[name])
+            else:
+                sigstr += 12*' '
+        for k in sorted(set(keyArray)):
             fmt = '%12.3f'
-            for key in 'det-X','det-Y','delta':
-                name = key+d
+            for name in (f'det-X{k}',f'det-Y{k}',f'dist{k}')[:keylen]:
                 if name not in parmDict: continue
                 ptlbls += "%12s" % name
                 ptstr += fmt % (parmDict[name])
@@ -290,81 +447,14 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
             print (ptlbls)
             print (ptstr)
             print (sigstr)
-        print ('\nImage Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
-        ptlbls = 'names :'
-        ptstr =  'values:'
-        sigstr = 'esds  :'
-        names = ['wavelength', 'dep', 'phi', 'tilt']
-        if 'deltaDist' in parmDict:
-            names += ['deltaDist']
-        for name in names:
-            if name == 'wavelength':
-                fmt = '%12.6f'
-            elif name == 'dep':
-                fmt = '%12.4f'
-            else:
-                fmt = '%12.3f'
-
-            ptlbls += "%s" % (name.rjust(12))
-            if name == 'phi':
-                ptstr += fmt % (parmDict[name]%360.)
-            else:
-                ptstr += fmt % (parmDict[name])
-            if name in sigDict:
-                sigstr += fmt % (sigDict[name])
-            else:
-                sigstr += 12*' '
-        print (ptlbls)
-        print (ptstr)
-        print (sigstr)
-        print()
-
-    def ellipseCalcD(B,xyd,varyList,parmDict):
-        x,y,dist,dsp = xyd
-        varyDict = dict(zip(varyList,B))
-        parms = {}
-        for parm in parmDict:
-            if parm in varyList:
-                parms[parm] = varyDict[parm]
-            else:
-                parms[parm] = parmDict[parm]
-        # create arrays with detector center values
-        detX = np.array([parms['det-X'+str(int(d))] for d in dist])
-        detY = np.array([parms['det-Y'+str(int(d))] for d in dist])
-        if 'deltaDist' in parms:
-            deltaDist = parms['deltaDist']
-        else:
-            deltaDist = np.array([parms['delta'+str(int(d))] for d in dist])
-
-        phi = parms['phi']-90.               #get rotation of major axis from tilt axis
-        tth = 2.0*npasind(parms['wavelength']/(2.*dsp))
-        dtth = GetTthP(x,y,parmDict)
-        phi0 = npatan2d(y-detY,x-detX)
-        dxy = peneCorr(dtth,parms['dep'],dist-deltaDist)
-        stth = npsind(tth)
-        cosb = npcosd(parms['tilt'])
-        tanb = nptand(parms['tilt'])
-        tbm = nptand((tth-parms['tilt'])/2.)
-        tbp = nptand((tth+parms['tilt'])/2.)
-        d = (dist-deltaDist)+dxy
-        fplus = d*tanb*stth/(cosb+stth)
-        fminus = d*tanb*stth/(cosb-stth)
-        vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
-        vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
-        R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
-        R1 = (vplus+vminus)/2.                                    #major axis
-        zdis = (fplus-fminus)/2.
-        Robs = np.sqrt((x-detX)**2+(y-detY)**2)
-        rsqplus = R0**2+R1**2
-        rsqminus = R0**2-R1**2
-        R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
-        Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
-        P = 2.*R0**2*zdis*npcosd(phi0-phi)
-        Rcalc = (P+Q)/R
-        return (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
+        print (f'\nchi**2: {chisq:.3g}, Number of points: {Npts}\n')
 
     p0 = [parmDict[key] for key in varyList]
-    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
+    global ellipseCalcCount,ellipseCalcRMS
+    ellipseCalcCount = 0
+    ellipseCalcRMS = None
+    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict,keyArray,progressDlg),
+        full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])
@@ -374,7 +464,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         sig = list(np.sqrt(np.diag(result[1])))
     sigDict = {name:s for name,s in zip(varyList,sig)}
     if Print:
-        CalibPrint(parmDict,sigDict,chisq,rings.shape[0])
+        CalibPrint(parmDict,sigDict,chisq,rings.shape[0],keyArray)
     if covar:
         return [chisq,vals,sigDict,result[1]]
     else:
@@ -399,19 +489,59 @@ def ImageLocalMax(image,w,Xpix,Ypix):
         return xpix,ypix,np.ravel(ZMax)[Zmax],max(0.0001,np.ravel(ZMin)[Zmin])   #avoid neg/zero minimum
     else:
         return 0,0,0,0
-
-def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
+    
+def makeRing2(dsp,ellipse,pix,reject,data,image,mul=1):
     'Needs a doc string'
+    
     def ellipseC():
         'compute estimate of ellipse circumference'
         if radii[0] <= 0:        #hyperbola
-            if debug: 
-                theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
-                print ('hyperbola:',theta)
-            return 720.
+            return 720.        
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
         return np.pi*apb*(1+3*(amb/apb)**2/(10+np.sqrt(4-3*(amb/apb)**2)))
+    
+    Mx,My = image.shape
+    pixelSize = data['pixelSize']
+    scalex = 1000./pixelSize[0]
+    scaley = 1000./pixelSize[1]
+    cent,phi,radii = ellipse
+    if radii[1] < 0.:
+        return None
+    ring = []
+    C = int(ellipseC())*mul         #ring circumference in mm
+    azm = np.arange(C)*360./C
+    for a in azm:      #step around ring in 1mm increments
+        x,y = GetDetectorXY(dsp,a,data)
+        X = x*scalex      #convert mm to pixels
+        Y = y*scaley
+        if 0<=X<Mx and 0<=Y<My:
+            X,Y,I,J = ImageLocalMax(image,pix,X,Y)
+            if I and J and float(I)/J > reject:
+                X += .5                             #set to center of pixel
+                Y += .5
+                X /= scalex                         #convert back to mm
+                Y /= scaley
+                if [X,Y,dsp] not in ring:           #no duplicates!
+                    ring.append([X,Y,dsp])
+    if len(ring) < 10:
+        ring = []
+    return ring
+
+def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
+    'Needs a doc string'
+    
+    def ellipseC():
+        'compute estimate of ellipse circumference'
+        if radii[0] <= 0:        #hyperbola
+#            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
+            print ('hyperbola at 2-theta:',radii[2])
+            return 720.        
+        apb = radii[1]+radii[0]
+        amb = radii[1]-radii[0]
+        return np.pi*apb*(1+3*(amb/apb)**2/(10+np.sqrt(4-3*(amb/apb)**2)))
+    
+    Mx,My = image.shape
     cent,phi,radii = ellipse
     if radii[1] < 0.:
         return None
@@ -419,7 +549,6 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     sphi = sind(phi-90.)
     ring = []
     C = int(ellipseC())*mul         #ring circumference in mm
-    azm = []
     for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
         if radii[0] <= 0:        #parabola or hyperbola
@@ -430,19 +559,18 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
             y = radii[0]*sind(a-phi+90.)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
         Y = (sphi*x+cphi*y+cent[1])*scaley
-        X,Y,I,J = ImageLocalMax(image,pix,X,Y)
-        if I and J and float(I)/J > reject:
-            X += .5                             #set to center of pixel
-            Y += .5
-            X /= scalex                         #convert back to mm
-            Y /= scaley
-            if [X,Y,dsp] not in ring:           #no duplicates!
-                ring.append([X,Y,dsp])
-                azm.append(a)
+        if 0<=X<Mx and 0<=Y<My:
+            X,Y,I,J = ImageLocalMax(image,pix,X,Y)
+            if I and J and float(I)/J > reject:
+                X += .5                             #set to center of pixel
+                Y += .5
+                X /= scalex                         #convert back to mm
+                Y /= scaley
+                if [X,Y,dsp] not in ring:           #no duplicates!
+                    ring.append([X,Y,dsp])
     if len(ring) < 10:
         ring = []
-        azm = []
-    return ring,azm
+    return ring
 
 def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     '''uses Dandelin spheres to find ellipse or hyperbola parameters from detector geometry
@@ -458,18 +586,18 @@ def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     tbp = tand((tth+tilt)/2.)
     sinb = sind(tilt)
     d = dist+dxy
-    if tth+abs(tilt) < 90.:      #ellipse
-        fplus = d*tanb*stth/(cosb+stth)
-        fminus = d*tanb*stth/(cosb-stth)
-        vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
-        vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
+    fplus = d*tanb*stth/(cosb+stth)
+    fminus = d*tanb*stth/(cosb-stth)
+    vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
+    vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
+    if vplus+vminus > 0.:      #ellipse
         radii[0] = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
         radii[1] = (vplus+vminus)/2.                                    #major axis
         radii[2] = tth                                                  #save for ellipse; might be useful
         zdis = (fplus-fminus)/2.
     else:   #hyperbola!
         f = d*abs(tanb)*stth/(cosb+stth)
-        v = d*(abs(tanb)+tand(tth-abs(tilt)))
+        v = abs(d*(abs(tanb)+tand(tth-abs(tilt))))
         delt = d*stth*(1.+stth*cosb)/(abs(sinb)*cosb*(stth+cosb))
         eps = (v-f)/(delt-v)
         radii[0] = -eps*(delt-f)/np.sqrt(eps**2-1.)                     #-minor axis
@@ -650,16 +778,38 @@ def GetAzm(x,y,data):
         return GetTthAzmDsp2(x,y,data)[1]
 # these two are used only for integration & finding pixel masks
 
+def GetTthAzmG2(x,y,data):
+    '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
+     calibration info in data - only used in integration for detector 2-theta = 0
+     only used for SASD; no correction for penetration or sag
+    '''
+    tilt = data['tilt']
+    dist = data['distance']/npcosd(tilt)
+    MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
+    dx = x-data['center'][0]
+    dy = y-data['center'][1]
+    dz = np.dot(np.dstack([dx.T,dy.T,np.zeros_like(dx.T)]),MN).T[2]
+    xyZ = dx**2+dy**2-dz**2
+    tth = npatan2d(np.sqrt(xyZ),dist-dz)#  +dzp
+    azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
+# G-calculation - use Law of sines
+    distm = data['distance']/1000.0
+    sinB2 = np.minimum(np.ones_like(tth),(data['distance']*npsind(tth))**2/(dx**2+dy**2))
+    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+    G = distm**2*sinB2/npsind(C)**2
+    return tth,azm,G
+
 def GetTthAzmG(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
      calibration info in data - only used in integration for detector 2-theta != 0.
-     checked OK for ellipses & hyperbola
+     checked OK for ellipses & hyperbola - not used for SASD (see GetTthAzmG2 above)
      This is the slow step in image integration
      '''
     def costth(xyz,d0):
         ''' compute cos of angle between vectors; xyz not normalized, d0 normalized'''
         u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
-        return np.dot(u,d0)
+        v = d0/nl.norm(d0)
+        return np.dot(u,v)
 #zero detector 2-theta: tested with tilted images - perfect integrations
     dx = x-data['center'][0]
     dy = y-data['center'][1]
@@ -667,7 +817,7 @@ def GetTthAzmG(x,y,data):
     dist = data['distance']/npcosd(tilt)    #sample-beam intersection point on detector plane
     T = makeMat(tilt,0)         #detector tilt matrix
     R = makeMat(data['rotation'],2)     #rotation of tilt axis matrix
-    MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T)
+    MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T), because that don't work
     d001 = np.array([0.,0.,1.])         #vector along z (beam direction); normal to untilted detector plane
     r001 = np.inner(d001,MN)            #should rotate vector same as detector
     dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #transform detector pixel x,y by tilt/rotate
@@ -677,12 +827,12 @@ def GetTthAzmG(x,y,data):
         tth0 = npacosd(ctth0)
         dzp = peneCorr(tth0,data['DetDepth'],data['distance'])
         dxyz0[:,:,2] += dzp
-#non zero detector 2-theta:
-    if data.get('det2theta',0):
-        tthMat = makeMat(data['det2theta'],1)
-        dxyz = np.inner(dxyz0,tthMat.T)
-    else:
-        dxyz = dxyz0
+    #compute sag distance here & correct dxyz0[:,:,2]
+    if data['sag']:
+        dsag = sagCorr(x,y,data['sag'],data['xyLim'])
+        dxyz0[:,:,2] += dsag
+    tthMat = makeMat(data['det2theta'],1)
+    dxyz = np.inner(dxyz0,tthMat.T)
     ctth = costth(dxyz,d001)
     tth = npacosd(ctth)
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360. 
@@ -798,9 +948,9 @@ def CalcRings(G2frame,ImageZ,data,masks):
         dsp = H[3]
         ellipse = GetEllipse(dsp,data)
         if iH not in absent and iH >= skip:
-            Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
+            Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))
         else:
-            Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
+            Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))
         if Ring:
             if iH not in absent and iH >= skip:
                 data['rings'].append(np.array(Ring))
@@ -859,8 +1009,8 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     HKL = G2lat.sortHKLd(HKL,True,False)
     varyList = [item for item in data['varyList'] if data['varyList'][item]]
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
-        'setdist':data.get('setdist',data['distance']),
-        'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
+        'setdist':data.get('setdist',data['distance']),'tilt':data['tilt'],'phi':data['rotation'],
+        'wave':data['wavelength'],'dep':data['DetDepth'],'sag':data['sag']}
     Found = False
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)
@@ -872,9 +1022,9 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         dsp = H[3]
         ellipse = GetEllipse(dsp,data)
         if iH not in absent and iH >= skip:
-            Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
+            Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))
         else:
-            Ring = makeRing(dsp,ellipse,pixLimit,1000.0,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
+            Ring = makeRing(dsp,ellipse,pixLimit,1000.0,scalex,scaley,ma.array(ImageZ,mask=tam))
         if Ring:
             if iH not in absent and iH >= skip:
                 data['rings'].append(np.array(Ring))
@@ -896,6 +1046,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     rings = np.concatenate((data['rings']),axis=0)
     if getRingsOnly:
         return rings,HKL
+    parmDict['xyLim'] = [data['size'][0]/scalex,data['size'][1]/scaley]
     [chisq,vals,sigList,covar] = FitDetector(rings,varyList,parmDict,True,True)
     data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']
@@ -903,6 +1054,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     data['rotation'] = np.mod(parmDict['phi'],360.0)
     data['tilt'] = parmDict['tilt']
     data['DetDepth'] = parmDict['dep']
+    data['sag'] = parmDict['sag']
     data['chisq'] = chisq
     N = len(data['ellipses'])
     data['ellipses'] = []           #clear away individual ellipse fits
@@ -930,9 +1082,14 @@ def ImageCalibrate(G2frame,data):
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
+    xyLim = [data['size'][0]/scalex,data['size'][1]/scaley]
     pixLimit = data['pixLimit']
     cutoff = data['cutoff']
     varyDict = data['varyList']
+    #make sure dep & sag aren't refined in calibrate
+    varyDict['sag'] = False
+    varyDict['dep'] = False
+    print('NB: Sag & dep are not refined during Calibrate; use Recalibrate to refine them')
     if varyDict['dist'] and varyDict['wave']:
         G2fil.G2Print ('ERROR - you can not simultaneously calibrate distance and wavelength')
         return False
@@ -954,10 +1111,10 @@ def ImageCalibrate(G2frame,data):
 
     #setup 360 points on that ring for "good" fit
     data['ellipses'].append(ellipse[:]+('g',))
-    Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]
+    Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)
     if Ring:
         ellipse = FitEllipse(Ring)
-        Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]    #do again
+        Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)    #do again
         ellipse = FitEllipse(Ring)
     else:
         G2fil.G2Print ('1st ring not sufficiently complete to proceed',mode='warn')
@@ -1002,7 +1159,7 @@ def ImageCalibrate(G2frame,data):
         dist = data['distance']
         tth = npatan2d(radii[0],dist)
         data['wavelength'] = wave =  2.0*dsp*sind(tth/2.0)
-    Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
+    Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,G2frame.ImageZ)
     ttth = nptand(tth)
     ctth = npcosd(tth)
 #1st estimate of tilt; assume ellipse - don't know sign though
@@ -1037,9 +1194,9 @@ def ImageCalibrate(G2frame,data):
             tth = 2.0*asind(wave/(2.*dsp))
             ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
             G2fil.G2Print (fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1]))
-            Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
+            Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)
             parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
-                'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}
+                'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0,'sag':0.0,'xyLim':xyLim}
             varyList = [item for item in varyDict if varyDict[item]]
             if len(Ringp) > 10:
                 chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)[0]
@@ -1051,7 +1208,7 @@ def ImageCalibrate(G2frame,data):
                 chip = 1e6
             ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
             G2fil.G2Print (fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1]))
-            Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
+            Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)
             if len(Ringm) > 10:
                 parmDict['tilt'] *= -1
                 chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)[0]
@@ -1079,7 +1236,8 @@ def ImageCalibrate(G2frame,data):
     if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
         data['DetDepth'] /= data['distance']
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
-        'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
+        'sag':data['sag'],'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],
+        'dep':data['DetDepth'],'xyLim':xyLim}
     varyList = [item for item in varyDict if varyDict[item]]
     data['rings'] = []
     data['ellipses'] = []
@@ -1090,17 +1248,18 @@ def ImageCalibrate(G2frame,data):
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
         if debug:   print (fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1]))
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]
+        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)
         if Ring:
             data['rings'].append(np.array(Ring))
             rings = np.concatenate((data['rings']),axis=0)
             if i:
-                chisq = FitDetector(rings,varyList,parmDict,False)[0]
+                chisq = FitDetector(rings,varyList,parmDict,False,False)[0]
                 data['distance'] = parmDict['dist']
                 data['center'] = [parmDict['det-X'],parmDict['det-Y']]
                 data['rotation'] = parmDict['phi']
                 data['tilt'] = parmDict['tilt']
                 data['DetDepth'] = parmDict['dep']
+                data['sag'] = parmDict['sag']
                 data['chisq'] = chisq
                 elcent,phi,radii = ellipse = GetEllipse(dsp,data)
                 if debug:   print (fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings)))
@@ -1150,13 +1309,19 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
+    data['xyLim'] = [data['size'][0]/scalex,data['size'][1]/scaley]
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asarray(tax*scalex,dtype=np.float32).flatten()
     tay = np.asarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     TA = np.empty((4,nI,nJ))
-    TA[:3] = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))     #includes geom. corr. as cos(detang)*dist**2/10^6 - most expensive step
+    if data['type'] == 'SASD': # correct for SASD
+        TA[:3] = np.array(GetTthAzmG2(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))
+    # elif data.get('det2theta',0.0):   #PWDR & det2theta != 0.0 
+    #     TA[:3] = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))
+    else:
+        TA[:3] = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
     TA[3] = G2pwd.Polarization(data['PolaVal'][0],TA[0],TA[1]-90.)[0]
     return TA           #2-theta, azimuth & geom. corr. arrays
@@ -1194,21 +1359,22 @@ def polymask(data,Poly,Spots=[]):
     ax0.axis("off")
     figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
     for poly in Poly:
-        px = np.array(poly).T[0]/scalex
-        py = np.array(poly).T[1]/scaley
+        px = np.array(poly).T[1]/scalex
+        py = np.array(poly).T[0]/scaley
         ax0.fill(px,py,inmask)
     for spot in Spots:
-        px = np.array(spot).T[0]/scalex
-        py = np.array(spot).T[1]/scaley
+        px = np.array(spot).T[1]/scalex
+        py = np.array(spot).T[0]/scaley
         rad = 0.5*np.array(spot).T[2]/scaley
         psp = Circle((px,py),radius=rad,fc=inmask,ec='none')        
         ax0.add_artist(psp)
     ax0.set_xbound(0,Nx)
     ax0.set_ybound(0,Ny)
     img, (width,height) = canvas.print_to_buffer()
-    Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
-    return Zimg[:,:,0]
-
+    Zimg = np.frombuffer(img, np.uint8).reshape((height,width,4))    
+    Z = np.swapaxes(Zimg[:,:,0],0,1)
+    A = np.flip(Z,axis=1)
+    return A
 def MakeMaskMap(data,masks,iLim,jLim):
     '''Makes a mask array from masking parameters that are not determined by 
     image calibration parameters or the image intensities. Thus this uses 
@@ -1576,10 +1742,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
     else:
         H1 = LRazm
-    if 'SASD' not in data['type']:
-        H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
+    else:
+        H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     if data['Oblique'][1]:
         H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
     times[4] += time.time()-t0          #cleanup
@@ -1603,10 +1769,13 @@ def MakeStrStaRing(ring,Image,Controls):
     pixSize = Controls['pixelSize']
     scalex = 1000./pixSize[0]
     scaley = 1000./pixSize[1]
-    Ring = np.array(makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)[0]).T   #returns x,y,dsp for each point in ring
+    Controls['xyLim'] = [Controls['size'][0]/scalex,Controls['size'][1]/scaley]
+    Ring = np.array(makeRing2(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],Controls,Image)).T
     if len(Ring):
         ring['ImxyObs'] = copy.copy(Ring[:2])
-        TA = GetTthAzm(Ring[0],Ring[1],Controls)       #convert x,y to tth,azm
+#        TA = GetTthAzm(Ring[0],Ring[1],Controls)       #convert x,y to tth,azm
+        TAG = GetTthAzmG(Ring[0],Ring[1],Controls)
+        TA = np.array([TAG[0][0],TAG[1][0]])
         TA[0] = Controls['wavelength']/(2.*npsind(TA[0]/2.))      #convert 2th to d
         ring['ImtaObs'] = TA
         ring['ImtaCalc'] = np.zeros_like(ring['ImtaObs'])
@@ -1628,6 +1797,7 @@ def FitStrSta(Image,StrSta,Controls):
     pixelSize = Controls['pixelSize']
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
+    isze,jsze = Controls['size']
     StaType = StrSta['Type']
     StaControls['distance'] += StrSta['Sample z']*cosd(phi)
 
@@ -1641,9 +1811,13 @@ def FitStrSta(Image,StrSta,Controls):
             ring['Emat'] = val
             ring['Esig'] = esd
             ellipse = FitEllipse(R['ImxyObs'].T)
-            ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
+            if any(np.isnan(ellipse[2])):
+                print('hyperbola for d=%.5f'%dset)
+                ellipse = FitHyperbola(R['ImxyObs'])
+            ringxy = makeRing2(ring['Dset'],ellipse,0,0.,Controls,Image)
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
-            ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
+            ringixy = [[int(x*scalex),int(y*scaley)] for y,x in np.array(ringxy)[:,:2]]
+            ringint = np.array([float(Image[ix,iy]) if (0 <= ix < isze) and (0 <= iy < jsze) else 0.0 for ix,iy in ringixy])
             ringint /= np.mean(ringint)
             ring['Ivar'] = np.var(ringint)
             ring['covMat'] = covMat
@@ -1655,6 +1829,8 @@ def IntStrSta(Image,StrSta,Controls):
     pixelSize = Controls['pixelSize']
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
+    Controls['xyLim'] = xyLim = [Controls['size'][0]/scalex,Controls['size'][1]/scaley]
+    isze,jsze = Controls['size']
     phi = StrSta['Sample phi']
     StaControls['distance'] += StrSta['Sample z']*cosd(phi)
     RingsAI = []
@@ -1662,21 +1838,27 @@ def IntStrSta(Image,StrSta,Controls):
         Ring,R = MakeStrStaRing(ring,Image,StaControls)
         if len(Ring):
             ellipse = FitEllipse(R['ImxyObs'].T)
-            ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
-            XY = np.array(ringxy).T
-            Th,Azm = GetTthAzm(XY[0],XY[1],Controls)
+            if any(np.isnan(ellipse[2])):
+                ellipse = FitHyperbola(R['ImxyObs'])
+            ringxy = makeRing2(ring['Dcalc'],ellipse,0,0.,Controls,Image)
+#            ringxy = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
+            RXA = np.array(ringxy)
+            MRXA = np.array([rxa if (0.<=rxa[0]<=xyLim[0] and 0.<=rxa[1]<=xyLim[1]) else [0.,0.,0.] for rxa in RXA])
+            Th,Azm,G = GetTthAzmG(MRXA.T[0],MRXA.T[1],Controls)      #TODO: deal with break in rings - make min < azm < max continuous
             pola = G2pwd.Polarization(Controls['PolaVal'][0],Th,Azm-90.)[0]     #get pola not dpola
-            ring['ImxyCalc'] = np.array(ringxy).T[:2]
-            ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
-            ringint /= np.mean(ringint)
+            ring['ImxyCalc'] = MRXA[:2]
+            ringixy = [[int(x*scalex),int(y*scaley)] for y,x in MRXA[:,:2]]
+            ringint = np.array([float(Image[ix,iy])  for ix,iy in ringixy])
+            ringint *= G[0]
             if Controls.get('SampleAbs',[0.0,''])[1]:
                 muT = Controls.get('SampleAbs',[0.0,''])[0]
-                tabs = SamAbs(Controls,Th,Azm,muT)
-                ringint *= tabs
+                tabs = SamAbs(Controls,Th,Azm-90.,muT)
+                ringint /= tabs
             ringint /= pola[0]      #just 1st column
+            ringint /= np.mean(ringint)
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
-            RingsAI.append(np.array(list(zip(ringazm,ringint))).T)
-    return RingsAI
+            RingsAI.append(np.array(list(zip(Azm[0],ringint))).T)
+    return RingsAI 
 
 def CalcStrSta(StrSta,Controls):
 

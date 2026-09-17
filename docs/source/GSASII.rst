@@ -1,39 +1,21 @@
 *GSASII: GSAS-II GUI*
 ===========================
 
-Script G2.py 
-----------------------------------------
+The GSAS-II GUI is normally started using the `G2.py` file. This will
+"hack" the PythonPath, if needed,  by adding the diectory containing the `GSASII`
+directory to the path, allowing GSASII to be run without installing it
+inside Python. The  `G2.py` invokes the `main()` routine inside
+`GSASIIGUI.py` which actually starts the GUI.
 
-File `G2.py` can be used to start the GSAS-II graphical user 
-interface (GUI), particularly when GSAS-II has been installed
-in a location outside of Python and thus  requires changing the Python
-path. When GSAS-II is installed in a location that is on the
-default Python path, this command is
+When GSAS-II has been installed inside Python, either of these two commands is
 sufficient to start the GSAS-II GUI:
 
-`python -c "from GSASII.GSASIIGUI import main; main()"`
+``python -c "from GSASII.GSASIIGUI import main; main()"``
 
-The `G2.py` script checks to see if GSAS-II is on the path. If not,
-the directory where the `G2.py` file is located is placed into the
-Python path. At this point the func:`GSASIIGUI.main` routine is
-called to start the GSAS-II GUI.
+``python -m GSASII``
 
-Module GSASIIGUI.py
-----------------------------------------
-
-The `GSASIIGUI.py` script imports GSASIIpath, which does some minor initialization
-and then (before any wxPython calls can be made) creates a wx.App application. 
-At this point :func:`GSASIIpath.SetBinaryPath` is called to establish
-the directory where GSAS-II binaries are found. If the binaries 
-are not installed or are incompatible with the OS/Python packages, 
-the user is asked if they should be updated from the subversion site. 
-The wxPython app is then passed to :func:`GSASIIdataGUI.GSASIImain`, 
-which creates the GSAS-II GUI and finally the event loop is started.
-
-.. automodule:: GSASII.GSASIIGUI
-    :members: 
-    :private-members:
-    :special-members:
+For documentation on the main GUI routines see the
+:ref:`GSAS-II GUI Components <GSASIIGUI_chapter>` chapter.
 
 Keyboard Menu Shortcuts
 ----------------------------------------
@@ -46,10 +28,11 @@ menu command with a "\\tCtrl+" addition such as::
 This will allow the above menu command to be executed with a "Control-R" 
 keyboard command (on MacOS this will be "Command+R" rather than "Control-R") as well as using the menu to access that action. The following table lists the 
 keyboard letters/numbers that have GSAS-II assigned actions.
-are system assigned. Note that there are also plotting keyboard commands that are 
+are system assigned.
+Note that there are also plotting keyboard shortcut commands that are 
 implemented in :mod:`GSASIIplot`. 
 These can be discovered from the "K" button on the plot menu bar, as they 
-vary depending on the type of plot.
+vary depending on the type of plot that is shown.
 
 .. tabularcolumns:: |c|p{4in}|
 

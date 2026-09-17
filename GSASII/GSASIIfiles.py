@@ -160,7 +160,7 @@ def NeededPackage(pkgDict):
 
       Examples::
 
-          {'MIDAS Zarr importer':['zarr=2.18.*']}
+          {'MIDAS Zarr importer':['zarr=3.18.*']}
           {'HDF5 image importer':['h5py','hdf5']}
     '''
     condaRequestList.update(pkgDict)
@@ -612,7 +612,9 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                 if reader.UseReader:
                     readerlist.append(reader)
     # Now look for modules in the "user-defined" area (~/.GSASII/imports)
-    fnam = os.path.expanduser(os.path.normpath(f'~/.GSASII/imports/G2{prefix}*.py'))
+    localdir = GSASIIpath.LocalG2Dir()
+    if localdir is None: return readerlist
+    fnam = os.path.join(localdir,'imports',f'G2{prefix}*.py')
     import importlib.util
     for f in sorted(glob.glob(fnam)):
         nam = os.path.splitext(os.path.split(f)[1])[0]
@@ -683,7 +685,9 @@ def LoadExportRoutines(parent, usetraceback=False):
                     import traceback
                     traceback.print_exc(file=sys.stdout)
     # Now look for modules in the "user-defined" area (~/.GSASII/exports)
-    fnam = os.path.expanduser(os.path.normpath('~/.GSASII/exports/G2export*.py'))
+    localdir = GSASIIpath.LocalG2Dir()
+    if localdir is None: return exporterlist
+    fnam = os.path.join(localdir,'exports','G2export*.py')
     import importlib.util
     for f in sorted(glob.glob(fnam)):
         nam = os.path.splitext(os.path.split(f)[1])[0]
@@ -1093,6 +1097,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
             if rd.errors:
                 errorReport += ': '+rd.errors
                 continue
+        rd.imageOnly = imageOnly
         if imageOnly:
             ParentFrame = None # prevent GUI access on reread
         else:
@@ -1770,6 +1775,7 @@ class ExportBaseclass(object):
         # The following types are defined: 'project', "phase", "powder", "single"
         self.multiple = False # set as True if the class can export multiple phases or histograms
         # self.multiple is ignored for "project" exports
+        self.fileNames = None
 
     def InitExport(self,event):
         '''Determines the type of menu that called the Exporter and
@@ -1779,12 +1785,22 @@ class ExportBaseclass(object):
         self.dirname = '' # name of file to be written (multiple export)
         if event:
             self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
+        self.fileNames = None
 
+    def MakePWDRtemplate(self):
+        stripChars = './[]\\*?!|#$%&*= ' # characters that will be changed to _
+        from . import GSASIIctrlGUI as G2G
+        G2G.HistogramNameTemplate(self,stripChars)
+    
     def MakePWDRfilename(self,hist):
         '''Make a filename root (no extension) from a PWDR histogram name
 
         :param str hist: the histogram name in data tree (starts with "PWDR ")
         '''
+        # if a template has been created, use the result from that
+        if self.fileNames is not None and hist in self.histnam:
+            return self.fileNames[self.histnam.index(hist)]
+
         file0 = ''
         file1 = hist[5:]
         # replace repeated blanks
@@ -1841,8 +1857,14 @@ class ExportBaseclass(object):
             elif len(self.Phases) == 1:
                 self.phasenam = list(self.Phases.keys())
             elif self.multiple:
-                choices = sorted(self.Phases.keys())
-                phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
+                if GSASIIpath.GetConfigValue('SortExports'):
+                    choices = sorted(self.Phases.keys())
+                else:
+                    choices = list(self.Phases.keys())
+                phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=True,
+                                        title='Select one or more phases',
+                                        header='Select Phases')
+
                 if phasenum is None: return True
                 self.phasenam = [choices[i] for i in phasenum]
                 if not self.phasenam: return True
@@ -1882,8 +1904,14 @@ class ExportBaseclass(object):
             elif len(self.powderDict) == 1:
                 self.histnam = list(self.powderDict.values())
             elif self.multiple:
-                choices = sorted(self.powderDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
+                #choices = sorted(self.powderDict.values())
+                if GSASIIpath.GetConfigValue('SortExports'):
+                    choices = sorted(self.powderDict.values())
+                else:
+                    choices = list(self.powderDict.values())
+                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True,
+                                        title='Select one or more PWDR histograms',
+                                        header='Select Histograms')
                 if not hnum: return True
                 self.histnam = [choices[i] for i in hnum]
                 numselected = len(self.histnam)
@@ -1997,10 +2025,16 @@ class ExportBaseclass(object):
             ):
             self.dirname = self.askSaveDirectory()
             if not self.dirname: return True
+            if self.currentExportType == 'powder':
+                self.MakePWDRtemplate()
+                if self.fileNames is None: return True
         elif AskFile == 'default-dir' or AskFile == 'default':
             self.dirname,self.filename = os.path.split(
                 os.path.splitext(self.G2frame.GSASprojectfile)[0] + self.extension
                 )
+            if self.currentExportType == 'powder':
+                self.MakePWDRtemplate()
+                if self.fileNames is None: return True
         else:
             raise Exception('This should not happen!')
 
@@ -2058,6 +2092,9 @@ class ExportBaseclass(object):
             self.constList += consDict[item]
         # now process the constraints
         G2mv.InitVars()
+        d = {str(k):v for k,v in zip(consDict.get('_OffsetKeys',[]),
+                                     consDict.get('_OffsetVals',[]))}
+        G2mv.ProcessOffsets(d)
         constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList)
         varyList = covDict.get('varyListStart',[])
         if varyList is None and len(constrDict) == 0:
@@ -2508,6 +2545,50 @@ class ExportBaseclass(object):
                     td.append((val,sig))
             atomslist.append((label,typ,mult,xyz,td))
         return atomslist
+
+def findPDFfit():
+    '''Checks to see if PDFfit2 is available or can be imported. If the 
+    pdffit2_exec config variable is defined, the files is checked to see
+    it exists, but no attempt is made to check that it actually runs.
+    Otherwise, if diffpy.PDFfit has been installed into with conda/pip 
+    into the current Python interpreter, it is checked via an import. 
+
+    This is here rather than in GSASIIrmcGUI in case it needs to be 
+    used in a non-GUI setting.
+
+    :returns: None if PDFfit2 cannot be run/accessed. Otherwise a file 
+      name for the Python interpreter than contains PDFfit2. This will 
+      be sys.executable if PDFfit2 is installed into the current Python 
+      interpreter.
+    '''
+    # if a separate Python interpreter has been specified, just use it,
+    # minimal checking
+    PDFpython = GSASIIpath.GetConfigValue('pdffit2_exec')
+    if PDFpython is not None and os.path.exists(PDFpython):
+        return PDFpython
+
+    # see if diffpy has been installed directly
+    try:
+        from diffpy.pdffit2 import PdfFit
+        PdfFit
+        #import diffpy
+        #diffpy
+        return sys.executable
+    except:
+        pass
+
+    # test default install location
+    localdir = GSASIIpath.LocalG2Dir()
+    if localdir is None:
+        print('Directory ~/.GSASII not found. Unexpected')
+        return
+    pdffitDir = os.path.join(localdir,'PDFfit2')
+    if sys.platform == "win32":
+        newpython = os.path.join(pdffitDir,'python.exe')
+    else:
+        newpython = os.path.join(pdffitDir,'bin','python')
+    if os.path.exists(newpython): return newpython
+    return None
 
 if __name__ == '__main__':
     for i in (1.23456789e-129,1.23456789e129,1.23456789e-99,1.23456789e99,-1.23456789e-99,-1.23456789e99):

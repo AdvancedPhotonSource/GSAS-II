@@ -7,7 +7,7 @@ as provides misc. support routines for accessing them.
 *GSASIIobj Classes and routines*
 ------------------------------------
 
-.. automodule:: GSASIIobj
+.. automodule:: GSASII.GSASIIobj
     :members: 
     :private-members:
     :special-members:

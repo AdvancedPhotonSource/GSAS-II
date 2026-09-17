@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#config.py - Variables used to set optional configuration options
+#config_example.py - Variables used to set optional configuration options
 '''
 This file contains optional configuration options for GSAS-II. The 
 values for the variables named here will be set in file ~/.GSASII/config.ini
@@ -78,8 +78,6 @@ As another example, to use ~/.G2tutorials do this::
     Tutorial_location = '~/.G2tutorials'
 
 Note that os.path.expanduser is run on Tutorial_location before it is used.
-Also note that GSASIIpath is imported inside config.py; other imports should be
-avoided.
 '''
 
 Save_paths=False
@@ -352,4 +350,22 @@ LogAllVars = False
 refinement run in the GSAS-II Notebook tree entry. This setting will 
 be ignored if individual variables are set to be logged in the 
 Calculate/View LS Parameters window. 
+'''
+
+SortExports = False
+'''When True, data tree entries (Histograms, Phases,...) are sorted 
+alphanumerically prior to to export, when multiple entries are selected. 
+This will matter for exporters that place multiple entries in a single file.
+The default is to use the data tree entries in the order they appear in the
+data tree. 
+'''
+
+BCS_API_KEY = ""
+'''This contains a key that is used to access the Bilbao Crystallographic 
+web Server. It will be generated individually for each user who wants to 
+access the server based on specific information (likely including an 
+e-mail address) that BCS chooses. 
+
+The mechanism for obtaining that key and getting it into the GSAS-II 
+configuration will be established later.
 '''

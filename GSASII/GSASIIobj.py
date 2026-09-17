@@ -33,7 +33,7 @@ data tree item.
 restraintNames = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
                   ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
                   ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments'],
-                  ['General','General']]
+                  ['General','General'],['SpinRB','SpinRBs']]
 '''Names of restraint keys for the restraint dict and the location of
 the restraints in each dict
 '''
@@ -692,8 +692,8 @@ def CompileVarDesc():
         'RBSAtNo' : 'Atom number for spinning rigid body',
         'RBSO([aijk])' : 'Spinning rigid body orientation parameter \\1',
         'RBSP([xyz])' : 'Spinning rigid body \\1 position parameter',
-        'RBSShRadius' : 'Spinning rigid body shell radius',
-        'RBSShC([1-20,1-20])'  : 'Spinning rigid body sph. harmonics term',
+        'RBSSh;[0-9];R.*' : 'Spinning rigid body shell radius',
+        'RBSSh;[0-9];C.*'  : 'Spinning rigid body sph. harmonics term',
         'constr([0-9]*)' : 'Generated degree of freedom from constraint',
         'nv-(.+)' : 'New variable assignment with name \\1',
         # supersymmetry parameters  p::<var>:a:o 'Flen','Fcent'?
@@ -983,7 +983,12 @@ class G2VarObj(object):
             self.phase,self.histogram,self.name,self.atom = args[0]
         elif len(args) == 1 and ':' in args[0]:
             #parse a string
-            lst = args[0].split(':')
+            suff = None
+            if ';' in args[0]:  #for e.g. Vector RB translations
+                lst,suff = args[0].split(';')
+                lst = lst.split(':')
+            else:
+                lst = args[0].split(':')
             if lst[0] == '*':
                 self.phase = '*'
                 if len(lst) > 3:
@@ -1007,6 +1012,8 @@ class G2VarObj(object):
                 else:
                     raise Exception("Incorrect number of colons in var name "+str(args[0]))
             self.name = lst[2]
+            if suff:  #for e.g. Vector RB translations
+                self.name += (';'+suff)
         elif len(args) == 4:
             if args[0] == '*':
                 self.phase = '*'
@@ -1326,7 +1333,14 @@ class ImportPhase(ImportBaseclass):
             extensionlist,strictExtension)
         self.Phase = None # a phase must be created with G2IO.SetNewPhase in the Reader
         self.SymOps = {} # specified when symmetry ops are in file (e.g. CIF)
+        self.Constraints = None  # constraints read from a phase (ISODISTORT CIFs)
+        self.ConstraintOffsets = None # offsets applied to parameters when (ISODISTORT occupancy mode CIFs)
+
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
         self.Constraints = None
+        self.ConstraintOffsets = None
 
 ######################################################################
 class ImportStructFactor(ImportBaseclass):
@@ -1607,6 +1621,7 @@ class ImportImage(ImportBaseclass):
         self.repeat = False
         self.repeatcount = 1
         self.sumfile = ''
+        self.imageOnly = False   # on Reread, set True to skip metadata processing
 
     def LoadImage(self,ParentFrame,imagefile,imagetag=None):
         '''Optionally, call this after reading in an image to load it into the tree.

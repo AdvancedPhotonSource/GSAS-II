@@ -253,6 +253,10 @@ latex_elements = {
 
 #this allows \AA to be used in equations 
 'preamble': '\\global\\renewcommand{\\AA}{\\text{\\r{A}}}',
+
+# Suppress Sphinx's automatic \printindex at the end of the PDF;
+# the index is printed explicitly in indices.rst instead.
+'printindex': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -284,6 +288,9 @@ latex_logo = 'G2_html_logo.png'
 
 #build PDF with Unicode characters
 latex_engine = 'xelatex'
+
+# Configuration for LaTeX output
+latex_use_xindy = False  # Disable xindy for indexing
 
 # -- Options for manual page output --------------------------------------------
 

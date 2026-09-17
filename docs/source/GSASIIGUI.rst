@@ -1,3 +1,5 @@
+.. _GSASIIGUI_chapter:
+
 *GSAS-II GUI Components*
 ========================
 
@@ -5,19 +7,64 @@ These modules are used to create different parts of the GSAS-II
 graphical user interface (GUI).
 
 --------------------------------------
-*GSASIIdataGUI: Main GUI for GSAS-II*
+*G2.py: Routine to start GSAS-II*
 --------------------------------------
 
-Module that defines GUI routines and classes for the main GUI Frame (window)
-and the main routines that define the GSAS-II tree panel and much of the
-data editing panel. 
+`G2.py` is a short Python file that can be used to start the GSAS-II
+GUI, particularly when GSAS-II has been installed
+in a location outside of Python and thus requires changing the Python
+path.
+
+
+Note that when GSAS-II is installed in a location that is on the
+default Python path (or the current working directory is the one that
+contains the `GSASII` directory) either of these two commands is
+sufficient to start the GSAS-II GUI:
+
+``python -c "from GSASII.GSASIIGUI import main; main()"``
+
+``python -m GSASII``
+
+.. automodule:: GSASII.G2
+        :members:
+
+--------------------------------------
+*GSASIIGUI: Main GUI for GSAS-II*
+--------------------------------------
+
+The `GSASIIGUI.py` module imports GSASIIpath, which does some minor initialization
+and then (before any wxPython calls can be made) creates a wx.App application. 
+At this point :func:`GSASIIpath.SetBinaryPath` is called to establish
+the directory where GSAS-II binaries are found. If the binaries 
+are not installed or are incompatible with the OS/Python packages, 
+the user is asked if they should be updated from the subversion site. 
+The wxPython app is then passed to :func:`GSASIIdataGUI.GSASIImain`, 
+which creates the GSAS-II GUI and finally the event loop is started.
+
+.. automodule:: GSASII.GSASIIGUI
+    :members: 
+    :private-members:
+    :special-members:
+
+
+----------------------------------------
+*GSASIIdataGUI: overall GUI components*
+----------------------------------------
+
+This module that defines GUI routines and classes for the main GUI Frame (window)
+including the routines that define the GSAS-II tree panel and much of the
+data editing panel. Most menus are defined here but are not invoked
+until later to reduce the GUI startup time. 
+
+Routine :func:`GSASIIdataGUI.SelectDataTreeItem` is called
+to respond to selections in the data tree and invoke the routines that
+display the appropriate information in the Data Window. 
+Two of the simpler data tree items (Notebook and Controls) are
+implemented from here, but most are defined in other modules. 
 
 GSASIIdataGUI Classes & Routines
 ---------------------------------------
 
-.. automodule:: GSASII.G2
-        :members:
-           
 .. automodule:: GSASII.GSASIIdataGUI
         :members: 
 
@@ -86,8 +133,9 @@ GSASIIrmcGUI Classes & Routines
 
 Module to create the GUI for display of HAP items (where there is
 an entry for each histogram & phase). This is shown when the
-Phase "Data" tab is selected or may appear as if in a separate
-data tree item (see SeparateHistPhaseTreeItem in config.py).
+Phase "Data" tab is selected, or can appear as in a separate
+data tree item if the SeparateHistPhaseTreeItem configuration variable
+is set (described in `config_example.py`).
 
 GSASIIddataGUI Classes & Routines
 ---------------------------------------

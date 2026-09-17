@@ -28,8 +28,9 @@ try:
     BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
 except:
     pass
-mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
-                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+#mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
+#                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+# not used?
 
 def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     '''Display the Diffraction Data associated with a phase
@@ -264,7 +265,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         coefficients for the specified order. 
         Retains values from the previous dict, if values were already present
         '''
-        cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
+        cofNames = G2lat.GenSHCoeffT(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
         newPOCoef = dict(zip(cofNames,len(cofNames)*[0.]))
         POCoeff = UseList[G2frame.hist]['Pref.Ori.'][5]
         for cofName in POCoeff:
@@ -833,25 +834,18 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if oldFocus: wx.CallAfter(oldFocus.SetFocus)
 
     def RepaintHistogramInfo(Scroll=0):
-        if 'phoenix' in wx.version():
-            G2frame.bottomSizer.Clear(True)
-            # deal with case where this is called after another tree item has been selected
-            try:
-                DData.Shown
-            except RuntimeError:
-                if GSASIIpath.GetConfigValue('debug'):
-                    print('DBG: DData window deleted. Ignoring RepaintHistogramInfo, forcing redraw')
-                # Repaint called while DData window deleted, force redraw of entire window
-                from . import GSASIIdataGUI
-                G2frame.PickIdText = ''
-                wx.CallLater(100,GSASIIdataGUI.SelectDataTreeItem,G2frame,G2frame.GPXtree.Selection)
-                return
-        else:
-            # deal with case where this is called after another tree item has been selected
-            if DData.__class__ is  not wx._windows.ScrolledWindow:
-                # fix bug where this is called after the Window is deleted
-                return
-            G2frame.bottomSizer.DeleteWindows()
+        G2frame.bottomSizer.Clear(True)
+        # deal with case where this is called after another tree item has been selected
+        try:
+            DData.Shown
+        except RuntimeError:
+            if GSASIIpath.GetConfigValue('debug'):
+                print('DBG: DData window deleted. Ignoring RepaintHistogramInfo, forcing redraw')
+            # Repaint called while DData window deleted, force redraw of entire window
+            from . import GSASIIdataGUI
+            G2frame.PickIdText = ''
+            wx.CallLater(100,GSASIIdataGUI.SelectDataTreeItem,G2frame,G2frame.GPXtree.Selection)
+            return
         Indx.clear()
         G2frame.bottomSizer,LeBailMsg = ShowHistogramInfo()
         mainSizer.Add(G2frame.bottomSizer)
@@ -1145,7 +1139,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)
     parent = G2frame.dataWindow.topPanel
-    lbl= f"Histogram data for Phase {data['General']['Name']!r}"[:60]
+    lbl= f"Histogram-specific parameters for Phase {data['General']['Name']!r}"[:60]
     topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))

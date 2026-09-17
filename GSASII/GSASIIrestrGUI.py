@@ -206,6 +206,8 @@ def UpdateRestraints(G2frame,data,phaseName):
             AddChemCompRestraint(restrData['ChemComp'])
         elif 'Texture' in G2frame.restrBook.GetPageText(page):
             AddTextureRestraint(restrData['Texture'])
+        elif 'Spin RB' in G2frame.restrBook.GetPageText(page):
+            AddSpinRBRestraint(restrData['SpinRB'])
         elif 'Moments' in G2frame.restrBook.GetPageText(page):
             AddMomentRestraint(restrData['Moments'])
         elif 'General' in G2frame.restrBook.GetPageText(page):
@@ -890,6 +892,19 @@ def UpdateRestraints(G2frame,data,phaseName):
                 print ('**** ERROR - not enough atoms for a average moment restraint - try again ****')
         UpdateMomentRestr(momentRestData)                
 
+    def AddSpinRBRestraint(spinRestData):
+        SpinRB = RBModels.get('Spin',[])
+        indx = [item['Ids'][0] for item in SpinRB]
+        Snames = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)                
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select atoms for negative spin RB restraint in '+General['Name'],
+                'Select atoms',Snames)
+        if dlg.ShowModal() == wx.ID_OK:
+            sels = dlg.GetSelections()
+            for sel in sels:
+                minspin = [indx[sel],0.01,False,1.0]    #spin atom id, esd, unit flag, unit esd
+                if minspin not in spinRestData['SpinRBs']:
+                    spinRestData['SpinRBs'].append(minspin)            
+        UpdateSpinRBRestr(spinRestData)                
         
     def AddTextureRestraint(textureRestData):
         dlg = wx.TextEntryDialog(G2frame,'Enter h k l for pole figure restraint','Enter HKL','')
@@ -907,24 +922,28 @@ def UpdateRestraints(G2frame,data,phaseName):
         dlg.Destroy()
                
     def WtBox(wind,restData):
-        if 'Range' not in restData: restData['Range'] = 1.1     #patch
         
         def OnUseData(event):
             Obj = event.GetEventObject()
             restData['Use'] = Obj.GetValue()
 
         wtBox = wx.BoxSizer(wx.HORIZONTAL)
+        restData['wtFactor'] = float(restData['wtFactor'])
         wtBox.Add(wx.StaticText(wind,-1,'Phase '+phaseName+' Restraint weight factor: '),0,WACV)
-        wtfactor = G2G.ValidatedTxtCtrl(wind,restData,'wtFactor',nDig=(10,2),typeHint=float)
+        wtfactor = G2G.ValidatedTxtCtrl(wind,restData,'wtFactor',nDig=(12,4,'f'),typeHint=float)
         wtBox.Add(wtfactor,0,WACV)
         useData = wx.CheckBox(wind,-1,label=' Use?')
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(restData['Use'])        
         wtBox.Add(useData,0,WACV)
         if 'Bonds' in restData or 'Angles' in restData:
+            restData['Range'] = restData.get('Range',1.1)
             wtBox.Add(wx.StaticText(wind,-1,'  Search range: '),0,WACV)
             sRange = G2G.ValidatedTxtCtrl(wind,restData,'Range',nDig=(10,2),typeHint=float)
             wtBox.Add(sRange,0,WACV)
+        if 'Bonds' in restData:
+            wtBox.Add(wx.StaticText(wind,-1,' x target dist.'),0,WACV)
+        if 'Angles' in restData:
             wtBox.Add(wx.StaticText(wind,-1,' x sum(atom radii)'),0,WACV)
         return wtBox
         
@@ -1075,10 +1094,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     attr.SetReadOnly(True)
                     Bonds.SetColAttr(c, attr)
                 Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                if 'phoenix' in wx.version():
-                    Bonds.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-                else:
-                    Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                Bonds.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
                     G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
@@ -1219,10 +1235,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     attr.SetReadOnly(True)
                     Angles.SetColAttr(c, attr)
                 Angles.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                if 'phoenix' in wx.version():
-                    Angles.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-                else:
-                    Angles.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                Angles.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
                     G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
@@ -1357,10 +1370,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                         Planes.SetReadOnly(r,c,True)
                         Planes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 Planes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                if 'phoenix' in wx.version():
-                    Planes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-                else:
-                    Planes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                Planes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESTCHANGEESD):
                     G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
@@ -1497,10 +1507,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                         Volumes.SetReadOnly(r,c,True)
                         Volumes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 Volumes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                if 'phoenix' in wx.version():
-                    Volumes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-                else:
-                    Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                Volumes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
                     G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
@@ -1635,10 +1642,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     TorsionRestr.Torsions.SetReadOnly(r,c,True)
                     TorsionRestr.Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             TorsionRestr.Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            if 'phoenix' in wx.version():
-                TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-            else:
-                TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+            TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
             for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESTCHANGEESD):
                 G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
             G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
@@ -1771,10 +1775,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                         RamaRestr.Ramas.SetReadOnly(r,c,True)
                         RamaRestr.Ramas.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 RamaRestr.Ramas.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                if 'phoenix' in wx.version():
-                    RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-                else:
-                    RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESTCHANGEESD):
                     G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
@@ -1918,10 +1919,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                             ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
                             
                 ChemComps.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                if 'phoenix' in wx.version():
-                    ChemComps.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-                else:
-                    ChemComps.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                ChemComps.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 G2frame.dataWindow.RestraintEdit.Enable(id=G2G.wxID_RESTDELETE,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 #G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
@@ -2107,10 +2105,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     Textures.SetCellStyle(r,4,VERY_LIGHT_GREY,True)
                     Textures.SetCellTextColour(r,4,VERY_LIGHT_GREY)
             Textures.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            if 'phoenix' in wx.version():
-                Textures.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-            else:
-                Textures.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+            Textures.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
             G2frame.dataWindow.RestraintEdit.Enable(id=G2G.wxID_RESTDELETE,enable=True)
             G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
             mainSizer.Add(Textures,0,)
@@ -2118,6 +2113,74 @@ def UpdateRestraints(G2frame,data,phaseName):
             mainSizer.Add(wx.StaticText(TextureRestr,-1,'No texture restraints for this phase'),0,)
         G2phsGUI.SetPhaseWindow(TextureRestr,mainSizer,Scroll=0)
         
+    def UpdateSpinRBRestr(spinRestData):
+            
+        def OnDeleteRestraint(event):
+            rows = GetSelectedRows(SpinRBs,'delete',G2frame)
+            G2frame.GetStatusBar().SetStatusText('',1)
+            if not rows:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
+                return
+            rows.sort()
+            rows.reverse()
+            for row in rows:
+                spinRestData['SpinRBs'].remove(spinRestData['SpinRBs'][row])
+            wx.CallAfter(UpdateSpinRBRestr,spinRestData)                
+            
+        def OnCellChange(event):
+            r,c = event.GetRow(),event.GetCol()
+            try:
+                if c in [1,3]:   #esds
+                    new = float(spinRBTable.GetValue(r,c))
+                    if new < -1. or new > 2.:
+                        raise ValueError
+                else:
+                    new = spinRBTable.GetValue(r,c)
+                spinRestData['SpinRBs'][r][c] = new
+            except ValueError:
+                pass            
+            wx.CallAfter(UpdateSpinRBRestr,spinRestData)                
+
+        try:
+            if SpinRBRestr.GetSizer(): SpinRBRestr.GetSizer().Clear(True)
+        except:
+            pass
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(WtBox(SpinRBRestr,spinRestData),0)
+        mainSizer.Add(wx.StaticText(SpinRBRestr,-1, 
+            'NB: The spin RB restraints suppress negative spin RB densities for the selected atoms'),0)
+            # '    "unit esd" gives a bias toward a flatter spin RB density'),0)
+        mainSizer.Add((5,5),0)
+
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
+        if len(spinRestData['SpinRBs']):
+            table = []
+            rowLabels = []
+            Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':10,2']
+            colLabels = ['atom','neg esd']
+            for i,item in enumerate(spinRestData['SpinRBs']):
+                if item[0] not in AtLookUp:
+                    del spinRestData['SpinRBs'][i]
+            for i,[atomid,esd1,ifesd2,esd2] in enumerate(spinRestData['SpinRBs']):
+                table.append(['%s'%G2mth.GetAtomItemsById(Atoms,AtLookUp,atomid,ct-1)[0],esd1])
+                rowLabels.append(str(i))
+            spinRBTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            SpinRBs = G2G.GSGrid(SpinRBRestr)
+            SpinRBs.SetTable(spinRBTable, True)
+            SpinRBs.AutoSizeColumns(False)
+            for r in range(len(spinRestData['SpinRBs'])):
+                SpinRBs.SetReadOnly(r,0,True)
+                SpinRBs.SetCellStyle(r,0,VERY_LIGHT_GREY,True)
+            SpinRBs.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            SpinRBs.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+            G2frame.dataWindow.RestraintEdit.Enable(id=G2G.wxID_RESTDELETE,enable=True)
+            G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
+            mainSizer.Add(SpinRBs)
+        else:
+            mainSizer.Add(wx.StaticText(SpinRBRestr,-1,'No spin RB restraints for this phase'),0,)
+        G2phsGUI.SetPhaseWindow(SpinRBRestr,mainSizer,Scroll=0)        
 
     def UpdateGeneralRestr(generalRestData):
         '''Display any generalized restraint expressions'''
@@ -2221,7 +2284,6 @@ def UpdateRestraints(G2frame,data,phaseName):
                 GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
             mainSizer.Add(GridSiz)
         G2phsGUI.SetPhaseWindow(GeneralRestr,mainSizer,Scroll=0)
-
     
     def OnPageChanged(event):
         page = event.GetSelection()
@@ -2284,6 +2346,12 @@ def UpdateRestraints(G2frame,data,phaseName):
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESRCHANGEVAL,True)
             textureRestData = restrData['Texture']
             UpdateTextureRestr(textureRestData)
+        elif text == 'Spin RB':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
+            G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTRAINTADD,True)
+            G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESRCHANGEVAL,True)
+            spinRBRestData = restrData['SpinRB']
+            UpdateSpinRBRestr(spinRBRestData)
         elif text == 'Moments':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTRAINTADD,True)
@@ -2371,11 +2439,14 @@ def UpdateRestraints(G2frame,data,phaseName):
         restrData['Rama'] = {'wtFactor':1.0,'Coeff':{},'Ramas':[],'Use':True}
     if 'Texture' not in restrData:
         restrData['Texture'] = {'wtFactor':1.0,'HKLs':[],'Use':True}
+    if 'SpinRB' not in restrData:
+        restrData['SpinRB'] = {'wtFactor':1.0,'SpinRBs':[],'Use':True}
     if 'ChemComp' not in restrData:
         restrData['ChemComp'] = {'wtFactor':1.0,'Sites':[],'Use':True}
     if 'General' not in restrData:
         restrData['General'] = {'wtFactor':1.0,'General':[], 'Use':True}
     General = phasedata['General']
+    RBModels = phasedata['RBModels']
     if General['Type'] == 'magnetic' and 'Moments' not in restrData:
         restrData['Moments'] = {'wtFactor':1.0,'Moments':[],'Use':True}
     Cell = General['Cell'][1:7]          #skip flag & volume    
@@ -2473,6 +2544,12 @@ def UpdateRestraints(G2frame,data,phaseName):
         Pages.append(txt)
 
     UpdateBondRestr(restrData['Bond'])
+    
+    if 'Spin' in phasedata['RBModels'] and len(phasedata['RBModels']['Spin']):
+        txt = 'Spin RB'
+        SpinRBRestr = wx.ScrolledWindow(G2frame.restrBook)
+        G2frame.restrBook.AddPage(SpinRBRestr,txt)
+        Pages.append(txt)    
 
     G2frame.restrBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
 

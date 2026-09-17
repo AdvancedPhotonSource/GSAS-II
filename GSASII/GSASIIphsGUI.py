@@ -13,7 +13,7 @@ to control scrolling.
 Routines for Phase dataframes follow.
 '''
 from __future__ import division, print_function
-import platform
+#import platform
 import os
 import wx
 import wx.grid as wg
@@ -73,7 +73,6 @@ try:
     WACV = wx.ALIGN_CENTER_VERTICAL
 except:
     pass
-mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -85,6 +84,7 @@ atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 sqt2 = np.sqrt(2.)
 sqt3 = np.sqrt(3.)
+forpi = 4.*np.pi
 
 # previous rigid body selections
 prevResId = None
@@ -424,6 +424,7 @@ class TransformDialog(wx.Dialog):
 
         def OnMag(event):
             self.ifMag = True
+            self.ifConstr = True
             self.BNSlatt = self.SGData['SGLatt']
             G2spc.SetMagnetic(self.SGData)
             wx.CallAfter(self.Draw)
@@ -484,14 +485,22 @@ class TransformDialog(wx.Dialog):
         common.Bind(wx.EVT_COMBOBOX,OnCommon)
         commonSizer.Add(common,0,WACV)
         transSizer.Add(commonSizer)
-        transSizer.Add(G2G.XformMatrix(self.panel,self.Trans,self.Uvec,self.Vvec))
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        hSizer.Add(G2G.XformMatrix(self.panel,self.Trans,self.Uvec,self.Vvec))
+        hSizer.Add((10,10))
+        TestBtn = wx.Button(self.panel,-1,"Test\nxform")
+        TestBtn.Bind(wx.EVT_BUTTON, OnTest)
+        #hSizer.Add(TestBtn,0,wx.EXPAND|WACV)
+        hSizer.Add(TestBtn,0,WACV)
+        transSizer.Add(hSizer)
+#        transSizer.Add(G2G.XformMatrix(self.panel,self.Trans,self.Uvec,self.Vvec))
         MatSizer.Add((10,0),0)
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
         if self.ifMag:
             MagSizer = wx.BoxSizer(wx.HORIZONTAL)
             if not self.oldSGdata.get('MAXMAGN',[]):
-                Mtrans = wx.CheckBox(self.panel,label=' Use matrix transform?')
+                Mtrans = wx.CheckBox(self.panel,label=' Use matrix transpose?')
                 Mtrans.SetValue(self.Mtrans)
                 Mtrans.Bind(wx.EVT_CHECKBOX,OnMtrans)
                 MagSizer.Add(Mtrans,0,WACV)
@@ -555,15 +564,15 @@ class TransformDialog(wx.Dialog):
             constr.SetValue(self.ifConstr)
             constr.Bind(wx.EVT_CHECKBOX,OnConstr)
             mainSizer.Add(constr,0)
-        TestBtn = wx.Button(self.panel,-1,"Test")
-        TestBtn.Bind(wx.EVT_BUTTON, OnTest)
+        #TestBtn = wx.Button(self.panel,-1,"Test xform")
+        #TestBtn.Bind(wx.EVT_BUTTON, OnTest)
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
         cancelBtn = wx.Button(self.panel,-1,"Cancel")
         cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        btnSizer.Add((20,20),1)
-        btnSizer.Add(TestBtn)
+        #btnSizer.Add((20,20),1)
+        #btnSizer.Add(TestBtn)
         btnSizer.Add((20,20),1)
         btnSizer.Add(OkBtn)
         btnSizer.Add((20,20),1)
@@ -1346,8 +1355,7 @@ def FindCoordination(ind,data,neighborArray,coordsArray,cmx=0,targets=None):
             symMisc.append(item[1:4])
         symCoords = np.array(coords)
         dists = np.sqrt(np.sum(np.inner(Amat,
-                np.array([symCoords+i-xyzA for i in cellArray])
-                                           )**2,axis=0))
+                np.array([symCoords+i-xyzA for i in cellArray]))**2,axis=0))
         for icell,isym in np.argwhere(np.logical_and(dists < sumR, dists != 0.0)):
             xyz = symCoords[isym] + cellArray[icell]
             item = [None]+list(symMisc[isym])
@@ -1397,8 +1405,6 @@ def FindBondsDrawCell(data,cell):
     Radii = []
     Names = []
     for atom in atomData:
-        if 'Q' in atom[ct]:     #skip spinning RB atoms
-            continue
         Atoms.append(np.array(atom[cx:cx+3]))
         Styles.append(atom[cs])
         Names.append(ord(atom[ct-1].ljust(4)[3]))
@@ -1450,6 +1456,7 @@ def FindBondsDrawCell(data,cell):
                                 norm /= np.sqrt(np.sum(norm**2))
                                 Faces.append([face,norm])
                     atomData[i][-1] = Faces
+    return
 
 def VoidMap(data,aMax=1,bMax=1,cMax=1,gridspacing=.25,probeRadius=.5,
                 aMin=0,bMin=0,cMin=0):
@@ -1532,6 +1539,7 @@ def SetDrawingDefaults(drawingData):
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,
             'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]],
+            'Line':[[0,0,1.],False,False,1.0,[255,255,0]],
             'peakMoveView':True,'PeakDistRadius':0.0,'showVoids':False,'showMap':False,
             'atomsExpandRadius':5.,'atomsDistRadius':2.5,'Voids':[],
             'VPPeakDistRad':0.,'VPatomsExpandRad':0.,'VPatomsDistRad':0.,
@@ -1546,18 +1554,29 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
     A,V = G2mth.Q2AVdeg(testRBObj['rbObj']['Orient'][0])
     testRBObj['rbObj']['OrientVec'][0] = A
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
-    for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
-        G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
-#        G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
-    try:
-#        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
-        G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
+    for i in range(4):
+        val = testRBObj['rbObj']['OrientVec'][i]
+        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]
+        try:
+            BSI.ChangeValue(val)
+        except:
+            pass
+    if len(G2frame.testRBObjSizers['OrientVecSiz']) > 4:
+        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
-    except:
-        pass
-    for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
+            
+    # if 'Spin' in str(G2frame.testRBObjSizers['OrientVecSiz'][0]):
+    #     for i in range(4):
+    #         val = testRBObj['rbObj']['OrientVec'][i]
+    #         BSI = G2frame.testRBObjSizers['OrientVecSiz'][i+1]
+    #         BSI.ChangeValue(val)
+    # else:  #from the Add RB GUI
+    #     for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
+    #         G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
+    #     G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+    #         int(10*testRBObj['rbObj']['OrientVec'][0]))
+    for i,sizer in enumerate(G2frame.testRBObjSizers.get('Xsizers',[])):
         sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
-#        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
     if G2frame.testRBObjSizers.get('OnOrien') is None: return
     G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))
@@ -1773,7 +1792,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                 generalData['SuperVec'] = [[0.,0.,0.],False,4]
                                 generalData['SSGData'] = {}
                             if '4DmapData' not in generalData:
-                                generalData['4DmapData'] = mapDefault.copy()
+                                generalData['4DmapData'] = G2elem.mapDefault.copy()
                                 generalData['4DmapData'].update({'MapType':'Fobs'})
                             if 'MC/SA' in pages:
                                 pass
@@ -1804,7 +1823,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                 generalData['SuperVec'] = [[0.,0.,0.],False,4]
                                 generalData['SSGData'] = {}
                             if '4DmapData' not in generalData:
-                                generalData['4DmapData'] = mapDefault.copy()
+                                generalData['4DmapData'] = G2elem.mapDefault.copy()
                                 generalData['4DmapData'].update({'MapType':'Fobs'})
                             if 'Wave Data' not in pages:
                                 G2frame.waveData = wx.ScrolledWindow(G2frame.phaseDisplay)
@@ -1815,9 +1834,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         for atom in Atoms:
                             atom += [{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
                         wx.CallAfter(UpdateGeneral)
-                    else:
-                        G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')
-                        modulated.SetValue(generalData['Modulated'])
+                    # removed this because modulation info is now added to atoms
+                    # else:
+                    #     G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')
+                    #     modulated.SetValue(generalData['Modulated'])
 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(General,-1,' Phase name: '),0,WACV)
@@ -2190,6 +2210,9 @@ def UpdatePhaseData(G2frame,Item,data):
 
             def OnShowSOps(event):
                 SSGData = generalData['SSGData']
+                if not SSGData: # SS sym defined? 
+                    G2G.G2MessageBox(General,'Select a modulation group first','Superspace Group Error')
+                    return
                 text,table = G2spc.SSGPrint(generalData['SGData'],SSGData,not SGData['SGFixed'])
                 msg = 'Superspace Group Information'
                 G2G.SGMessageBox(General,msg,text,table,SGData.get('SpnFlp',[])).ShowModal()
@@ -2455,8 +2478,9 @@ def UpdatePhaseData(G2frame,Item,data):
 
         def FlipSizer():
             #patches
-            if 'k-Max' not in Flip: Flip['k-Max'] = 20.
-            if 'MScorr' not in Flip: Flip['MScorr'] = 0.0
+            Flip['k-Max'] = Flip.get('k-Max',20.)
+            Flip['MScorr'] = Flip.get('Mscorr',0.0)
+            Flip['d-max'] = Flip.get('d-max',100.)
             if 'Resolution' in Flip:
                 Flip['GridStep'] = Flip['Resolution']
 
@@ -2515,6 +2539,8 @@ def UpdatePhaseData(G2frame,Item,data):
             normElem = wx.Button(General,label=Flip['Norm element'],style=wx.TE_READONLY)
             normElem.Bind(wx.EVT_BUTTON,OnNormElem)
             lineSizer.Add(normElem,0,WACV)
+            lineSizer.Add(wx.StaticText(General,label=' d-max (3.-100.): '),0,WACV)
+            lineSizer.Add(G2G.ValidatedTxtCtrl(General,Flip,'d-max',nDig=(10,2),xmin=3.,xmax=100.),0,WACV)
             flipSizer.Add(lineSizer,0)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Map grid step: '),0,WACV)
@@ -2975,6 +3001,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                         MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
                         atMxyz.append([MagSytSym,CSI[0]])
+                    # TODO: might want to select atoms by element 1st
                     dlg = UseMagAtomDialog(G2frame,SGData['MagSpGrp'],Atoms,atCodes,atMxyz,ifDelete=False)
                     try:
                         opt = dlg.ShowModal()
@@ -2997,7 +3024,7 @@ def UpdatePhaseData(G2frame,Item,data):
             if 'P' in UseList[hist]['Type']:
                 UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
                 UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-        newPhase['General']['Map'] = mapDefault.copy()
+        newPhase['General']['Map'] = G2elem.mapDefault.copy()
         sub = G2frame.GPXtree.AppendItem(parent=
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
@@ -3239,6 +3266,126 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.GPXtree.SelectItem(phId)
         wx.CallLater(100,_GetPhase)
 
+    # def OnNISTLatSym(event):
+    #     '''Run NIST*LATTICE cell search
+
+    #     This is a quick copy of the capability in GSASIIpwdGUI, but uses
+    #     the cell from the current phase. It would be better if this
+    #     would actually transform the unit cell and coordinates using any
+    #     new cell found here. Someday. (TODO)
+    #     '''
+    #     #pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+    #     #controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
+    #     nistInput=[0.2,1.,2,3]
+    #     msg = G2G.NISTlatUse(True)
+    #     dlg = wx.Dialog(G2frame,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    #     sizer = wx.BoxSizer(wx.VERTICAL)
+    #     sizer.Add(wx.StaticText(dlg,label='NIST*LATTICE Cell Symmetry Search Settings'),
+    #                   0,wx.ALIGN_CENTER_HORIZONTAL,0)
+    #     sizer.Add((-1,15))
+    #     sizer.Add(wx.StaticText(dlg,label=msg))
+    #     sizer.Add((-1,15))
+    #     sizer.Add(wx.StaticText(dlg,label=(
+    #         ('Starting cell: '+3*'{:.3f}, '+3*'{:.2f}, ').format(
+    #             *data['General']['Cell'][1:7]))))
+    #     sizer.Add((-1,15))
+    #     tableSizer = wx.FlexGridSizer(0,2,0,0)
+    #     tableSizer.Add(wx.StaticText(dlg,label='Cell length tolerance (A) '),
+    #         0,WACV|wx.ALIGN_LEFT)
+    #     w = G2G.ValidatedTxtCtrl(dlg,nistInput,0,nDig=(6,2))
+    #     tableSizer.Add(w)
+    #     tableSizer.Add(wx.StaticText(dlg,label='Cell angle tolerance (deg) '),
+    #         0,WACV|wx.ALIGN_LEFT)
+    #     w = G2G.ValidatedTxtCtrl(dlg,nistInput,1,nDig=(6,1))
+    #     tableSizer.Add(w)
+    #     #
+    #     # next option makes it too easy to create a really
+    #     # long-running (infinite?) computation. Removed for now.
+    #     #
+    #     #tableSizer.Add(wx.StaticText(dlg,label='Cell volume range (ratio) '),
+    #     #    0,WACV|wx.ALIGN_LEFT)
+    #     #w = G2G.ValidatedTxtCtrl(dlg,nistInput,2)
+    #     #tableSizer.Add(w)
+    #     tableSizer.Add(wx.StaticText(dlg,label='Search mode: Generate '),
+    #         0,WACV|wx.ALIGN_LEFT)
+    #     tableSizer.Add(G2G.EnumSelector(dlg,nistInput,3,
+    #         ['supercells', 'subcells', 'sub- and supercells'],[1,2,3]))
+    #     sizer.Add(tableSizer,1,wx.EXPAND)
+    #     btnsizer = wx.StdDialogButtonSizer()
+    #     btn = wx.Button(dlg, wx.ID_OK)
+    #     btn.SetDefault()
+    #     btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+    #     btnsizer.AddButton(btn)
+    #     btn = wx.Button(dlg, wx.ID_CANCEL)
+    #     btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+    #     btnsizer.AddButton(btn)
+    #     btnsizer.Realize()
+    #     sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
+    #     dlg.SetSizer(sizer)
+    #     sizer.Fit(dlg)
+    #     dlg.CenterOnParent()
+    #     if dlg.ShowModal() == wx.ID_OK:
+    #         dlg.Destroy()
+    #     else:
+    #         dlg.Destroy()
+    #         return
+    #     tol = 3*[nistInput[0]]+3*[nistInput[1]]
+    #     cell = data['General']['Cell'][1:7]
+    #     center = data['General']['SGData']['SGLatt']
+    #     delta = nistInput[2]
+    #     mode = nistInput[3]
+    #     wx.BeginBusyCursor()
+    #     import nistlat
+    #     out = nistlat.CellSymSearch(cell, center, tolerance=tol, mode=mode,deltaV=delta)
+    #     wx.EndBusyCursor()
+
+        # if not out: return
+        # cells.clear()
+        # for o in out:
+        #     cells.append([])
+        #     c = o[2][0]
+        #     # assign a Laue class
+        #     laue = 16 # P1
+        #     if c[0] == c[1] == c[2] and c[3] == c[4] == c[5] == 90:
+        #         if o[2][1] == 'F':
+        #             laue = 0 # Fm3m
+        #         elif o[2][1] == 'I':
+        #             laue = 1 # Im3m
+        #         else:
+        #             laue = 2 # Pm3m
+        #     elif o[2][1] == 'R':
+        #         laue = 3 # R3
+        #     elif c[0] == c[1] and c[5] == 120:
+        #         laue = 4 # P6/mmm
+        #     elif c[0] == c[1] and c[3] == c[4] == c[5] == 90 and o[2][1] == 'I':
+        #         laue = 5 # I4/mmm
+        #     elif c[0] == c[1] and c[3] == c[4] == c[5] == 90 and o[2][1] == 'P':
+        #         laue = 6 # P4/mmm
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'F':
+        #         laue =  7 # 'Fmmm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'I':
+        #         laue =  8 # 'Immm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'A':
+        #         laue =  9 # 'Ammm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'B':
+        #         laue =  10 # 'Bmmm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'C':
+        #         laue =  11 # 'Cmmm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'P':
+        #         laue =  12 # 'Pmmm'
+        #     elif c[3] == c[5] == 90 and o[2][1] == 'C':
+        #         laue =  13 # 'C2/m'
+        #     elif c[3] == c[5] == 90 and o[2][1] == 'P':
+        #         laue =  14 # 'P2/m'
+        #     elif o[2][1] == 'C':
+        #         laue =  15 # 'C1'
+        #     cells[-1] += [o[4],0,laue]
+        #     cells[-1] += c
+        #     cells[-1] += [G2lat.calc_V(G2lat.cell2A(c)),False,False]
+        # G2frame.GPXtree.SetItemPyData(pUCid,data)
+        # G2frame.OnFileSave(event)
+        # wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
     def OnSuperSearch(event):
         '''Search for a supergroup matching the current phase using the
         Bilbao Pseudosymmetry search (PSEUDO) program
@@ -3274,13 +3421,13 @@ program; Please cite:
             mainSizer.Add((-1,5))
             G2G.HorizontalLine(mainSizer,dlg)
             txt = wx.StaticText(dlg,wx.ID_ANY,
-                    'Searched for subgroups of model '+msg)
+                    'Searched for supergroups of model '+msg)
             txt.Wrap(width)
             mainSizer.Add(txt)
             if depth > 0:
                 mainSizer.Add((-1,5))
                 mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                    f'This is a {depth}-level supergroup of the original parent model'))
+                    f'This is a level {depth} supergroup of the original parent model'))
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(dlg, wx.ID_ANY,label='Show')
             btn.IndexNum = key
@@ -3408,25 +3555,7 @@ program; Please cite:
             G2frame.GPXtree.Expand(phId)
             phId = G2gd.GetGPXtreeItemId(G2frame,phId,ophsnam)
             G2frame.GPXtree.SelectItem(phId)
-        def _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist):
-            'Use the Bilbao site to test selected supergroups'
-            print(f'*** Testing {sum(csdict.values())} transformed structures')
-            pgbar = wx.ProgressDialog('Supergroup Search',
-                    f'Searching for supergroup(s) consistent with phase {ophsnam}',
-                    len(csdict)+2,parent=G2frame,
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-            try:
-                pgbar.CenterOnParent()
-                structDict = SUBGROUPS.BilbaoSymSearch2(valsdict,csdict,rowdict,savedcookies,
-                                                            pagelist=pagelist,dlg=pgbar,ophsnam=ophsnam)
-                GoOn = pgbar.Update(len(csdict)+2,newmsg=
-                        f'Searching for supergroup(s) consistent with phase {ophsnam}'+
-                            '\ndone')
-                if not GoOn: return
-                wx.GetApp().Yield()
-            finally:
-                pgbar.Destroy()
-            return structDict
+
         def showSuperResults(G2frame,msgs,pagelist,fileList,ReSearch,parentpage,msg=None):
             '''Show a summary with info from a search of supergroups in
             :func:`OnSuperSearch` (in :func:`UpdatePhaseData`)
@@ -3454,9 +3583,9 @@ program; Please cite:
 {G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''))
             if msg:
                 txt = wx.StaticText(dlg,wx.ID_ANY,'Starting from '+msg.replace('\n',' '))
-            txt.Wrap(width)
-            mainSizer.Add((-1,10))
-            mainSizer.Add(txt)
+                txt.Wrap(width)
+                mainSizer.Add((-1,10))
+                mainSizer.Add(txt)
             mainSizer.Add((-1,5))
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(dlg, wx.ID_ANY,label='Show')
@@ -3535,54 +3664,6 @@ program; Please cite:
             dlg.Destroy()
             return ans
 
-        def _showSummary(G2frame,msgs,gpxList):
-            '''Summarize the final results from all steps'''
-
-            width = 500
-            dlg = wx.Dialog(G2frame,wx.ID_ANY,'Final Supergroup Search Results',
-                                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-            mainSizer = wx.BoxSizer(wx.VERTICAL)
-            dlg.SetSizer(mainSizer)
-            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                f'''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
-program; Please cite:
-{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''))
-            mainSizer.Add((-1,10))
-            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                f'From the starting model, {len(gpxList)} possible supergroups were located.'))
-            if 0 in msgs:
-                txt = wx.StaticText(dlg,wx.ID_ANY,msgs[0]
-                                .replace('/volume:\n',' && volume:').replace('\n',' '))
-                txt.Wrap(width-50)
-                mainSizer.Add(txt)
-            spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(width, 200))
-            txtSizer = wx.BoxSizer(wx.VERTICAL)
-            G2G.HorizontalLine(mainSizer,dlg)
-            mainSizer.Add((-1,4))
-            for m in gpxList:
-                if m == 0: continue
-                msg = 'Found ' + m.replace('\n  after','. After').replace('/volume:\n',' && volume:')
-                txt = wx.StaticText(spanel,wx.ID_ANY,msg)
-                txt.Wrap(width-50)
-                txtSizer.Add(txt)
-                txtSizer.Add((-1,4))
-                G2G.HorizontalLine(txtSizer,spanel)
-            spanel.SetSizer(txtSizer)
-            mainSizer.Add(spanel,1,wx.ALL|wx.EXPAND,1)
-            btnsizer = wx.BoxSizer(wx.HORIZONTAL)
-            btn = wx.Button(dlg, wx.ID_CLOSE, label="Continue")
-            btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
-            btnsizer.Add(btn)
-            mainSizer.Add((-1,10))
-            mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
-            dlg.SetSizer(mainSizer)
-            mainSizer.Fit(dlg)
-            spanel.SetAutoLayout(1)
-            spanel.SetupScrolling()
-            dlg.CenterOnParent()
-            ans = dlg.ShowModal()
-            dlg.Destroy()
-            return ans
         def fmtCell(cell):
             s = ''
             for i in cell[0:3]: s += f"{i:.3f}, "
@@ -3591,14 +3672,16 @@ program; Please cite:
             return s
 
         #### processing for OnSuperSearch starts here ####
-        fileList = []
-        ReSearch = {}
-        gpxList = []
+        fileList = []  # contains a list of displayed web pages
         ophsnam = data['General']['Name']
         pgbar = wx.ProgressDialog('Supergroup Search',
-            f'Searching for supergroup(s) consistent with phase {ophsnam}',5,
+            f'Searching for supergroup(s) consistent with phase {ophsnam}',11,
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
                 parent=G2frame)
+        if SUBGROUPS.RegisterProgressDialog(pgbar):
+            pgbar.Destroy()
+            return
+        pgNum = 0
         pgbar.CenterOnParent()
         try:
             G2frame.OnFileSave(None) # save project on disk to restore to this later
@@ -3617,15 +3700,14 @@ program; Please cite:
             msgs[0] += f"Before any transform, unit cell {G2mth.fmtPhaseContents(occomp)}"
             msgs[0] += f", density={G2mth.getDensity(data['General'])[0]:.2f} g/cm^3"
             msgs[0] += f". Asymmetric unit {G2mth.fmtPhaseContents(oacomp)} ({len(data['Atoms'])} atoms)."
-            startSet = msgs[0]
 
             # fix non-standard space group settings
-            GoOn = pgbar.Update(1,newmsg=
-                f'Searching for supergroup(s) consistent with phase {ophsnam}'+
-                '\nTesting structure for standard setting')
-            if not GoOn: return
+            pgNum = 1 + pgNum % 10
+            GoOn = pgbar.Update(pgNum,newmsg=
+                f'Testing for standard setting for phase {ophsnam}')
+            if not GoOn[0]: return
+            pgbar.Raise()
             wx.GetApp().Yield()
-            # need to convert non-standard space group settings
             print('*** Checking space group setting')
             sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(data['General']['SGData'])
             if sgnum is None:
@@ -3635,9 +3717,14 @@ program; Please cite:
                 return
             newPhase = copy.deepcopy(data)
             try:
+                pgNum = 1 + pgNum % 10
                 if np.allclose(np.eye(3),xmat) and np.allclose(xoff,np.zeros_like(xoff)):
                     print('*** Structure in standard setting')
+                    GoOn = pgbar.Update(pgNum,newmsg=
+                         'Searching for supergroups with original setting')
                 else:
+                    GoOn = pgbar.Update(pgNum,newmsg=
+                         'Revised to standard setting; Now searching for supergroups')
                     print('*** Transforming structure to standard setting')
                     newPhase['ranId'] = ran.randint(0,sys.maxsize),
                     newPhase['General']['SGData'] = G2spc.SpcGroup(sgsym)[1]
@@ -3648,77 +3735,98 @@ program; Please cite:
                     newPhase['MagXform'] = (xmat,xoff,vvec)
                     newPhase,atCodes = G2lat.TransformPhase(
                         data,newPhase,xmat,uvec,vvec,False)
-                    startSet = "transformed starting structure: cell = "
-                    startSet += fmtCell(newPhase['General']['Cell'][1:7])
-                    startSet += f". Space group {newPhase['General']['SGData']['SpGrp']}."
+                    msgs[0] += " Transformed starting structure: new cell = "
+                    msgs[0] += fmtCell(newPhase['General']['Cell'][1:7])
+                    msgs[0] += f". Space group {newPhase['General']['SGData']['SpGrp']}."
             except:
                 G2G.G2MessageBox(G2frame,
                         'Standard setting check failed. Try again later.',
                         'Unexpected error')
                 return
+            if not GoOn[0]: return
+            pgbar.Raise()
+            wx.GetApp().Yield()
 
             # search from a standard space group setting
-            GoOn = pgbar.Update(2,newmsg=
-                f'Searching for supergroup(s) consistent with phase {ophsnam}'+
-                '\nSearching with phase')
-            if not GoOn: return
-            wx.GetApp().Yield()
             pagelist = {}
-            valsdict,csdict,rowdict,savedcookies = SUBGROUPS.BilbaoSymSearch1(
-                sgnum,newPhase,pagelist=pagelist)
-        finally:
-            pgbar.Destroy()
+            keepCell = False
+            if sgnum <= 16: # warn on unimplemented search capability
+                msg = '''
+Code to search for higher symmetry 
+cells with the Bilboa web site is 
+not fully implemented. You are 
+suggested to do this with NIST*LATTICE
+using the Unit Cells List "Cell 
+Symmetry Search" command, or by 
+using "No" here, but either way
+you will need to manually transform
+the structure into any higher 
+symmetry cells. 
 
-        # process initial PSEUDO results
-        if csdict is None and len(rowdict) == 0:   # this was monoclinic or triclinic
-            # look for supergroups of the current cell
-            pgbar = wx.ProgressDialog('Supergroup Search',
-                    f'Searching for supergroup(s) consistent with phase {ophsnam}',
-                    1+len(rowdict),
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE,
-                    parent=G2frame)
-            try:
-                pgbar.CenterOnParent()
+Skip search for higher symmetry cell?'''
+                dlg = wx.MessageDialog(G2frame,msg,'Skip cell search for mono/triclinic?',
+                                           wx.YES_NO | wx.ICON_QUESTION)
+                try:
+                    result = dlg.ShowModal()
+                    if result == wx.ID_YES:
+                        keepCell = True
+                finally:
+                    dlg.Destroy()
+            formDict,csdict,rowdict,stru = SUBGROUPS.BilbaoSymSearch1(sgnum,newPhase,pagelist=pagelist,
+                                                                        keepCell=keepCell)
+            # process initial PSEUDO results
+            if csdict is None and len(rowdict) == 0:   # this was monoclinic or triclinic,
+                # but no new cell. Repeat search looking for supergroups of the current cell
+                # BHT TODO: needs testing
+                pgNum = 1 + pgNum % 10
+                GoOn = pgbar.Update(pgNum,newmsg=
+                    'Mono/Triclinic: No improved cell, repeating supergroup search')
+                if not GoOn[0]: return
+                pgbar.Raise()
                 wx.GetApp().Yield()
-                valsdict,csdict,rowdict,savedcookies = SUBGROUPS.BilbaoSymSearch1(
-                    sgnum,newPhase,pagelist=pagelist,keepCell=True)
-            finally:
-                pgbar.Destroy()
-            ans = _selectSuperGroups(rowdict,csdict,'from '+startSet+
-                        '\n*** Note, no higher symmetry cells found.')
-            if ans == wx.ID_CANCEL: return
-            structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
-            if len(structDict) != 0: ReSearch = SUBGROUPS.find2SearchAgain(pagelist,'')
-        elif csdict is None:   # this was monoclinic or triclinic
-            structDict = {}
-            csdict = len(rowdict)*[True]
-            ans = _selectHiSymCell(rowdict,csdict)
-            if ans == wx.ID_CANCEL: return
-            pgbar = wx.ProgressDialog('Supergroup Search',
-                    f'Searching for supergroup(s) consistent with phase {ophsnam}',
-                    1+len(rowdict),
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
-                    parent=G2frame)
-            try:
-                pgbar.CenterOnParent()
-                wx.GetApp().Yield()
-
-                for i,row in enumerate(rowdict):
+                formDict,csdict,rowdict,stru = SUBGROUPS.BilbaoSymSearch1(sgnum,newPhase,
+                                                                pagelist=pagelist,keepCell=True)
+                ans = _selectSuperGroups(rowdict,csdict,'from '+msgs[0]+
+                            '\n*** Note, no higher symmetry cells found.')
+                if ans == wx.ID_CANCEL: return
+                structDict,pgNum = SUBGROUPS.BilbaoGetStructure(csdict,rowdict,stru,
+                         pagelist=pagelist,dlg=pgbar,dlgNum=pgNum)
+                if structDict is None: return
+                if len(structDict) != 0: NextSearch = SUBGROUPS.find2SearchAgain(pagelist,'')
+            elif csdict is None:   # this was monoclinic or triclinic, but >0 new cells found
+                # BHT TODO: needs testing
+                structDict = {}
+                csdict = len(rowdict)*[True]
+                ans = _selectHiSymCell(rowdict,csdict)
+                
+                G2G.G2MessageBox(G2frame,'Sorry the GSAS-II code is not yet able to convert Triclinic/Monoclinic cells','Sorry')
+                return
+            
+                if ans == wx.ID_CANCEL: return
+                for i,row in enumerate(rowdict):  # only expecting one cell?
                     if not csdict[i]: continue
-                    GoOn = pgbar.Update(i,newmsg=
-        f'Searching for supergroup(s) w/cell {str(row[2])}\nLattice {row[1]} -- starting')
+                    pgNum = 1 + pgNum % 10
+                    GoOn = pgbar.Update(pgNum,newmsg=
+                                            'Starting search for supergroup(s) w/cell'+
+                                            f' {str(row[2])}\nLattice {row[1]}')
+                    pgbar.Raise()
+                    if not GoOn[0]: return
                     wx.GetApp().Yield()
+                 ### WRONG? ******************************************************
                     lbl,latticeList,vals1dict,rowList = SUBGROUPS.BilbaoLowSymSea1(
-                    valsdict,row,savedcookies,pagelist=pagelist)
+                        formDict,row,pagelist=pagelist)
                     msgs[lbl] = (f'Using cell {str(row[2])} with lattice {row[1]}'
                                 + f'. Checking {len([i for i in rowList if i[0]])}'
                                 + f' supergroups (of {len(rowList)} found)')
                     for row1 in rowList:
                         if not row1[0]: continue
-                        GoOn = pgbar.Update(i,newmsg=
+                        pgNum = 1 + pgNum % 10
+                        GoOn = pgbar.Update(pgNum,newmsg=
                                             f'Searching for supergroup(s) w/cell {str(row[2])}'
                                             + f'\nLattice {row[1]} && spacegroup {row1[2]}'
                                             )
+                        if not GoOn[0]: return
+                        pgbar.Raise()
                         wx.GetApp().Yield()
                         lbl1,structure = SUBGROUPS.BilbaoLowSymSea2(
                                                 row[0],vals1dict,row1,savedcookies,
@@ -3727,93 +3835,103 @@ program; Please cite:
                             structDict[lbl1] = structure
                         else:
                             msgs[lbl1] = f'Coordinates inconsistent with space group {row1[2]}'
-            finally:
-                pgbar.Destroy()
-            if len(structDict) != 0: ReSearch = SUBGROUPS.find2SearchAgain(pagelist)
-        else: # not monoclinic or triclinic
-            ans = _selectSuperGroups(rowdict,csdict,'from '+startSet)
-            if ans == wx.ID_CANCEL: return
-            structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
-            if len(structDict) != 0: ReSearch = SUBGROUPS.find2SearchAgain(pagelist,'')
-
-        # searches completed.
-        if len(structDict) != 0:  # were new structures generated?
-            # new phases will need different restraints clear them (probably
-            # should clear constraints too)
-            if ophsnam in Restraints:
-                Restraints[ophsnam]['Bond']['Bonds'] = []
-                Restraints[ophsnam]['Angle']['Angles'] = []
-            # Now generate .gpx files and show results
-            for num,s in structDict.items():   # loop over supergroup settings
-                f = G2IO.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
-                if f: gpxList.append(msgs[num])
-        ans = showSuperResults(G2frame,msgs,pagelist,fileList,ReSearch,pagelist[0],msgs[0])
-        for i in fileList: os.unlink(i) # cleanup tmp web pages
-        fileList = []
-
-        # repeat search on any identified (& selected) supergroups
-        repeatcount = 0
-        while ReSearch:
-            repeatcount += 1
-            NextSearch = {}
-            for key in ReSearch:
-                #print(key,'in ReSearch')
-                pagelist = {}
-                if key.startswith('use_'): continue
-                if not ReSearch.get('use_'+key,False): continue
-                fromMsg = msgs[key]
-                del msgs[key]
-                # need a status bar here
-                if GSASIIpath.GetConfigValue('debug'): print(f"processing {key}")
-                pgbar = wx.ProgressDialog('Supergroup Search',
-                    f'Searching for supergroup(s) from case {key}',
-                    1,
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE,
-                    parent=G2frame)
-                try:
-                    pgbar.CenterOnParent()
+                if len(structDict) != 0: NextSearch = SUBGROUPS.find2SearchAgain(pagelist)
+            else: # not monoclinic or triclinic
+                ans = _selectSuperGroups(rowdict,csdict,'from '+msgs[0])
+                if ans == wx.ID_CANCEL: return
+                if any(csdict.values()):
+                    pgNum = 1 + pgNum % 10
+                    GoOn = pgbar.Update(pgNum,newmsg=
+                            f'Getting coordinates for {sum(csdict.values())} selected supergroup(s)')
+                    if not GoOn[0]: return
+                    pgbar.Raise()
                     wx.GetApp().Yield()
-                    valsdict,csdict,rowdict,savedcookies = SUBGROUPS.BilbaoReSymSearch(
-                        key,ReSearch[key],pagelist=pagelist)
-                finally:
-                    pgbar.Destroy()
-                ans = _selectSuperGroups(rowdict,csdict,
-                    f'case {key}, {fromMsg}',repeatcount,key=key)
-                parentpage = pagelist[key]
-                del pagelist[key]
-                structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
+                    structDict,pgNum = SUBGROUPS.BilbaoGetStructure(csdict,rowdict,stru,
+                             pagelist=pagelist,dlg=pgbar,dlgNum=pgNum)
+                    if structDict is None: return
+                    if len(structDict) != 0: NextSearch = SUBGROUPS.find2SearchAgain(pagelist,'')
+                else:
+                    structDict = {}
+                    NextSearch = {}
+                    
+            # searches completed.
+            if len(structDict) != 0:  # were new structures generated?
+                # new phases will need different restraints clear them (probably
+                # should clear constraints too)
+                try:
+                    Restraints[ophsnam]['Bond']['Bonds'] = []
+                    Restraints[ophsnam]['Angle']['Angles'] = []
+                except:
+                    pass
+                # Now generate .gpx files and show results
                 for num,s in structDict.items():   # loop over supergroup settings
-                    f = G2IO.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
-                    if f:
-                        gpxList.append(msgs[num])
-                fndStruct = SUBGROUPS.find2SearchAgain(pagelist,'')
-                if not fndStruct: continue
-                ans = showSuperResults(G2frame,msgs,pagelist,fileList,fndStruct,parentpage,fromMsg)
-                # rename the msg & structure entry to have a reference to the parent
-                for k in fndStruct:
-                    if k.startswith('use_'): continue
-                    if not fndStruct.get('use_'+k,False): continue
-                    nkey = key + '_' + k
-                    NextSearch[nkey] = fndStruct[k]
-                    NextSearch['use_'+nkey] = True
-                    msgs[nkey] = msgs.pop(k)
-            ReSearch = NextSearch
+                    G2IO.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
+            ans = showSuperResults(G2frame,msgs,pagelist,fileList,NextSearch,pagelist[0],msgs[0])
+            for i in fileList: os.unlink(i) # cleanup tmp web pages
+            fileList = []
 
-        for i in fileList: os.unlink(i) # cleanup tmp web pages
+            # repeat search on any identified (& selected) supergroups
+            repeatcount = 0
+            # pull out entries to be used again
+            ReSearch = {}
+            for key in NextSearch:
+                if key.startswith('use_'): continue
+                if NextSearch.get('use_'+key,False): 
+                    ReSearch[key] = NextSearch[key]
+            while ReSearch:
+                NextSearch = {}
+                repeatcount += 1
+                for key in ReSearch:
+                    newpages = {}
+                    sgnum = ReSearch[key]['stru'].split('\n')[0]
+                    if GSASIIpath.GetConfigValue('debug'): print(f"processing {key} sg# {sgnum}")
+                    pgNum = 1 + pgNum % 10
+                    GoOn = pgbar.Update(pgNum,newmsg=
+                        f'Searching for supergroup(s) from case {key} sg# {sgnum}')
+                    if not GoOn[0]:
+                        NextSearch = ReSearch = {}
+                        break
+                    pgbar.Raise()
+                    wx.GetApp().Yield()
+                    formDict,csdict,rowdict = SUBGROUPS.BilbaoReSymSearch(
+                            key,ReSearch[key],pagelist=pagelist)
+                    ans = _selectSuperGroups(rowdict,csdict,
+                        f'case {key}, {msgs[key]}',repeatcount,key=key)
+                    if ans == wx.ID_CANCEL:
+                        continue
+                    if not any(csdict.values()): continue
+                    pgNum = 1 + pgNum % 10
+                    GoOn = pgbar.Update(pgNum,newmsg=
+                                'Getting coordinates for selected supergroup(s)')
+                    if not GoOn[0]: 
+                        NextSearch = ReSearch = {}
+                        break
+                    pgbar.Raise()
+                    wx.GetApp().Yield()
+                    stru = ReSearch[key]['stru']
+                    structDict,pgNum = SUBGROUPS.BilbaoGetStructure(csdict,rowdict,stru,
+                         pagelist=newpages,dlg=pgbar,dlgNum=pgNum,prefix=key+'-')
+                    if structDict is None:
+                        NextSearch = ReSearch = {}
+                        break
+                    for num,s in structDict.items():   # loop over supergroup settings
+                        G2IO.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
+                    NextSearch.update(SUBGROUPS.find2SearchAgain(newpages,''))
+                    ans = showSuperResults(G2frame,msgs,newpages,fileList,NextSearch,
+                                               pagelist[key],msgs[key])
+                    pagelist.update(newpages)
+                ReSearch = {}
+                for key in NextSearch:
+                    if key.startswith('use_'): continue
+                    if NextSearch.get('use_'+key,False): 
+                        ReSearch[key] = NextSearch[key]
+        finally:
+            pgbar.Destroy()
+            SUBGROUPS.RegisterProgressDialog()
+            for i in fileList: os.unlink(i) # cleanup tmp web pages
 
-        # show final message
-        if len(gpxList):
-            _showSummary(G2frame, msgs, gpxList)
-            print(f'Search done, from {msgs[0]}\n{len(gpxList)} supergroups located:\n')
-            for i in gpxList: print(i)
-        else:
-            G2G.G2MessageBox(G2frame,
-                    'No possible supergroups were found to match the starting model.',
-                    'Search complete')
-            print('Search done, no supergroups located')
-
-        # Restore the original saved project
-        wx.CallLater(100,_GetPhase)
+        ans = showFinalResults(G2frame,msgs,pagelist,fileList) # show final summary
+        wx.CallLater(100,_GetPhase)         # Restore the original saved project
 
     def OnSubSearch(event):
         '''Search for a lower symmetry structure consistent with the
@@ -3826,24 +3944,25 @@ program; Please cite:
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
-        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
-            ' Use whole star',' Filter by','preserve axes','max unique'],
-            values=kvec+[False,'',True,100],
-            limits=[[Kx[1:],Ky[1:],Kz[1:]],[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
+        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',
+            prompts=[' k-vector 1', \
+                ' Use whole star',' Filter by','preserve axes','max unique'],
+            values=kvec[0:1]+[False,'',True,100],
+            limits=[[Kx[1:],Ky[1:],Kz[1:]],[True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],[1,100]],
-            formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
+            formats=[['choice','choice','choice'],'bool','choice',
                     'bool','%d',])
         dlg.CenterOnParent()
         if dlg.ShowModal() != wx.ID_OK: return
             
         subcells = []
         newVals = dlg.GetValues()
-        kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
+        kvec = newVals[0]+7*[' ']
+        star = newVals[1]
+        filterby = newVals[2]
+        keepaxes = newVals[3]
+        maxequiv = newVals[4]
         nkvec = kvec.index(' ')
-        star = newVals[3]
-        filterby = newVals[4]
-        keepaxes = newVals[5]
-        maxequiv = newVals[6]
         if 'maximal' in filterby:
             maximal = True
             Landau = False
@@ -3861,57 +3980,63 @@ program; Please cite:
             wx.MessageBox('Error, multi k-vectors & Landau not compatible',
                 caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
             return
+        dlg = wx.ProgressDialog('SUBGROUPS results','Getting SubGroups',11,
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        if SUBGROUPS.RegisterProgressDialog(dlg):
+            dlg.Destroy()
+            return
         wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
                           G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
                           caption='Bilbao SUBGROUPS',
                           style=wx.ICON_INFORMATION)
-        wx.BeginBusyCursor()
-        SGData = generalData['SGData']
-        from . import SUBGROUPS as kSUB
-        SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
-        wx.EndBusyCursor()
-        if SubGroups is None:
-            wx.MessageBox('Internet connection problem? Check console output.',
+        try:
+            SGData = generalData['SGData']
+            from . import SUBGROUPS as kSUB
+            SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
+            if SubGroups is None:
+                wx.MessageBox('Internet connection problem? Check console output.',
                             caption='Bilbao SUBGROUPS error',
                               style=wx.ICON_EXCLAMATION)
-            return
-        if not SubGroups:
-            if Landau:
-                wx.MessageBox('No results from SUBGROUPS, multi k-vectors & Landau not compatible',
-                    caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
-            else:
-                wx.MessageBox('No results from SUBGROUPS, check your propagation vector(s)',
-                    caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
-            return
+                return
+            if not SubGroups:
+                if Landau:
+                    wx.MessageBox('No results from SUBGROUPS, multi k-vectors & Landau not compatible',
+                        caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+                else:
+                    wx.MessageBox('No results from SUBGROUPS, check your propagation vector(s)',
+                        caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+                return
 
-        # emulate indexing controls 
-        controls = 16*[None]
-        controls[6:12] = generalData['Cell'][1:7] # cell
-        cx,ct,cs,cia = data['General']['AtomPtrs']
-        controls[15] = [atom[:cx+3] for atom in data['Atoms']]
+            # emulate indexing controls 
+            controls = 16*[None]
+            controls[6:12] = generalData['Cell'][1:7] # cell
+            cx,ct,cs,cia = data['General']['AtomPtrs']
+            controls[15] = [atom[:cx+3] for atom in data['Atoms']]
         
-        dlg = wx.ProgressDialog('SUBGROUPS results',f'Processing {SubGroups[0][0]}',len(SubGroups),
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
-        import GSASII.GSASIIpwdGUI
-        for ir,result in enumerate(SubGroups):
-            dlg.Update(ir,newmsg='Processing '+result[0])
-            Trans = np.array(eval(result[1][0]))
-            Uvec = np.array(eval(result[1][1]))
-            phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
-            phase['gid'] = result[2]
-            phase['altList'] = result[3]
-            phase['supList'] = eval(result[4])
-            RVT = None
-            if keepaxes:
-                RVT = G2lat.FindNonstandard(controls,phase)
-            if RVT is not None:
-                result,Uvec,Trans = RVT
-            phase.update(G2lat.makeBilbaoPhase(result,Uvec,Trans))
-            phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)
-            phase['maxequiv'] = maxequiv
-            phase['nAtoms'] = len(GSASII.GSASIIpwdGUI.TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv,maximal))
-            subcells.append(phase)
-        dlg.Destroy()
+            import GSASII.GSASIIpwdGUI
+            for ir,result in enumerate(SubGroups):
+                dlg.Update(ir%10,newmsg=f'Processing {result[0]}')
+                dlg.Raise()
+                wx.GetApp().Yield()
+                Trans = np.array(eval(result[1][0]))
+                Uvec = np.array(eval(result[1][1]))
+                phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
+                phase['gid'] = result[2]
+                phase['altList'] = result[3]
+                phase['supList'] = eval(result[4])
+                RVT = None
+                if keepaxes:
+                    RVT = G2lat.FindNonstandard(controls,phase)
+                if RVT is not None:
+                    result,Uvec,Trans = RVT
+                phase.update(G2lat.makeBilbaoPhase(result,Uvec,Trans))
+                phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)
+                phase['maxequiv'] = maxequiv
+                phase['nAtoms'] = len(GSASII.GSASIIpwdGUI.TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv,maximal))
+                subcells.append(phase)
+        finally:
+            dlg.Destroy()
+            SUBGROUPS.RegisterProgressDialog()
         data['SUBGROUPS'] = (subcells,baseList)
         msg = f'''{len(subcells)} subgroup entries were generated. Use menu commands 
 "Select magnetic/subgroup phase" or "Make subgroup project file(s)"
@@ -3993,7 +4118,7 @@ to use these entries'''
                 UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
             if len(UseList[hist]['HStrain'][0]) != NDij:
                 UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-            newPhase['General']['Map'] = mapDefault.copy()
+            newPhase['General']['Map'] = G2elem.mapDefault.copy()
         # phase name rename
         newName = generalData['Name'] = phaseName
         phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
@@ -4223,7 +4348,7 @@ to use these entries'''
             UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
             UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
             UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-        newPhase['General']['Map'] = mapDefault.copy()
+        newPhase['General']['Map'] = G2elem.mapDefault.copy()
         sub = G2frame.GPXtree.AppendItem(parent=
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
@@ -4332,7 +4457,7 @@ to use these entries'''
                     UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
                 if len(UseList[hist]['HStrain'][0]) != NDij:
                     UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-            newPhase['General']['Map'] = mapDefault.copy()
+            newPhase['General']['Map'] = G2elem.mapDefault.copy()
             # phase name rename
             newName = generalData['Name'] = f"{phsnam}_{magchoice['No.']}_{spg}"
             phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
@@ -4724,7 +4849,7 @@ to use these entries'''
             colType = colLabels.index('Type')
             colR = colLabels.index('refine')
             colSS = colLabels.index('site sym')
-            colF = colLabels.index('frac')
+            #colF = colLabels.index('frac')
             colX = colLabels.index('x')
             colIA = colLabels.index('I/A')
             colU11 = colLabels.index('U11')
@@ -4831,23 +4956,20 @@ to use these entries'''
         vecRBData = data['RBModels'].get('Vector',[])
         global rbAtmDict
         rbAtmDict = {}
+        # exclList will be 'fxu' for non spin RBs
         for rbObj in resRBData+vecRBData:
-            exclList = ['FX' for i in range(len(rbObj['Ids']))]
+            exclList = ['FXU' for i in range(len(rbObj['Ids']))]
             rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
-            if rbObj['ThermalMotion'][0] != 'None':
-                for id in rbObj['Ids']:
-                    rbAtmDict[id] += 'U'
-        # exclList will be 'fx' or 'fxu' if TLS used in RB
         Items = [G2G.wxID_ATOMSEDITINSERT,G2G.wxID_ATOMSEDITDELETE,
             G2G.wxID_ATOMSMODIFY,G2G.wxID_ATOMSTRANSFORM,G2G.wxID_MAKEMOLECULE,
-            G2G.wxID_ATOMVIEWINSERT,G2G.wxID_ATOMMOVE,G2G.wxID_ADDHATOM]
+            G2G.wxID_ATOMMOVE,G2G.wxID_ADDHATOM] # G2G.wxID_ATOMVIEWINSERT,
         if atomData:
             for item in Items:
                 G2frame.dataWindow.AtomsMenu.Enable(item,True)
         else:
             for item in Items:
                 G2frame.dataWindow.AtomsMenu.Enable(item,False)
-        Items = [G2G.wxID_ATOMVIEWINSERT, G2G.wxID_ATOMSVIEWADD,G2G.wxID_ATOMMOVE]
+        Items = [G2G.wxID_ATOMSVIEWADD,G2G.wxID_ATOMMOVE] # G2G.wxID_ATOMVIEWINSERT,
         if 'showABC' in data['Drawing']:
             for item in Items:
                 G2frame.dataWindow.AtomsMenu.Enable(item,True)
@@ -4879,12 +5001,8 @@ to use these entries'''
             G2frame.GetStatusBar().SetStatusText('Warning: Atom positions must correspond to 2nd setting for the space group '+SGData['SpGrp'],1)
         if SGData['SGPolax']:
             G2frame.GetStatusBar().SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'],1)
-        if 'phoenix' in wx.version():
-            Atoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
-            Atoms.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeAtomCell)
-        else:
-            Atoms.Unbind(wg.EVT_GRID_CELL_CHANGE)
-            Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
+        Atoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
+        Atoms.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeAtomCell)
         Atoms.Unbind(wg.EVT_GRID_CELL_LEFT_DCLICK)
         Atoms.Unbind(wg.EVT_GRID_LABEL_LEFT_DCLICK)
         Atoms.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
@@ -4939,7 +5057,7 @@ to use these entries'''
         atomData = data['Atoms']
         generalData = data['General']
         atId = ran.randint(0,sys.maxsize)
-        if 'Q' in El:   #dummy fill spin rb pointer
+        if 'Q' in El:   #dummy fill spin rb pointerat
             generalData['SpnIds'][atId] = -1
         SGData = generalData['SGData']
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
@@ -4948,7 +5066,7 @@ to use these entries'''
         elif generalData['Type'] in ['nuclear','faulted',]:
             if generalData['Modulated']:
                 atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
-                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])            
             else:
                 atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'magnetic':
@@ -5739,7 +5857,9 @@ to use these entries'''
             thresh=[[8.0,6.0],[17.191,11.527]],pickHandler=pickHandler)
 
     def OnShowIsoDistortCalc(event):
-        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        #from importlib import reload
+        #reload(G2cnstG)
+        #print(f'reloading {G2cnstG}')
         G2cnstG.ShowIsoDistortCalc(G2frame,data['General']['Name'])
 
     def OnShowIsoModes(event):
@@ -5866,9 +5986,8 @@ to use these entries'''
             binimage = 'Dysnomia64.exe'
         else:
             binimage = 'Dysnomia'
-        is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
-        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+        #path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
         pathlist = (GSASIIpath.path2GSAS2,
                     os.path.expanduser('~'),
                     os.path.expanduser(os.path.join('~','.GSASII')))
@@ -6040,11 +6159,11 @@ at one of the following locations:
                 return
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['PDFfit']
-            msg = G2pwd.MakePDFfitAtomsFile(data,RMCPdict)
+            msg = G2rmcG.MakePDFfitAtomsFile(data,RMCPdict)
             if msg:
                 G2G.G2MessageBox(G2frame,'ERROR: '+msg,'PDFfit setup failure')
                 return
-            fname = G2pwd.MakePDFfitRunFile(data,RMCPdict)
+            fname = G2rmcG.MakePDFfitRunFile(data,RMCPdict)
             if fname is None:
                 wx.MessageDialog(G2frame,'ERROR: failure to setup PDFfit; check console','PDFfit setup failure',wx.ICON_ERROR).ShowModal()
             else:
@@ -6052,243 +6171,8 @@ at one of the following locations:
                 print('PDFfit file build completed')
 
     def RunPDFfit(event):
-        generalData = data['General']
-        ISOdict = data['ISODISTORT']
-        PDFfit_exec = G2pwd.findPDFfit()  #returns location of python with PDFfit installed
-        if not PDFfit_exec:
-            wx.MessageBox(''' PDFfit2 is not currently installed for this platform.
-    Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
-            return
-        RMCPdict = data['RMC']['PDFfit']
-        pName = generalData['Name'].replace(' ','_')
-        if 'sequential' in RMCPdict['refinement']:
-            rname = 'Seq_PDFfit.py'
-        else:
-            rname = pName+'-PDFfit.py'
-            if not os.path.exists(rname):
-                wx.MessageBox(f'File {rname} does not exist. Has the Operations/"Setup RMC" menu command been run?',
-                                  caption='Run setup',style=wx.ICON_WARNING)
-                return
-        wx.MessageBox(' For use of PDFfit2, please cite:\n\n'+
-                          G2G.GetCite('PDFfit2'),
-                          caption='PDFfit2',style=wx.ICON_INFORMATION)
-        G2frame.OnFileSave(event)
-        print (' GSAS-II project saved')
-        if sys.platform.lower().startswith('win'):
-            batch = open('pdffit2.bat','w')
-            # Include an activate command here
-            p = os.path.split(PDFfit_exec)[0]
-            while p:
-                if os.path.exists(os.path.join(p,'Scripts','activate')):
-                    batch.write('call '+os.path.join(p,'Scripts','activate')+'\n')
-                    break
-                prevp = p
-                p = os.path.split(p)[0]
-                if prevp == p:
-                    print('Note, no activate command found')
-                    break
-            batch.write(PDFfit_exec+' '+rname+'\n')
-            # batch.write('pause')
-            if 'normal' in RMCPdict['refinement']:
-                batch.write('pause')
-            batch.close()
-        else:
-            batch = open('pdffit2.sh','w')
-            batch.write('#!/bin/bash\n')
-            # include an activate command here
-            p = os.path.split(PDFfit_exec)[0]
-            while p:
-                if os.path.exists(os.path.join(p,'bin','activate')):
-                    batch.write('source '+os.path.join(p,'Scripts','activate')+'\n')
-                    break
-                prevp = p
-                p = os.path.split(p)[0]
-                if prevp == p:
-                    print('Note, no activate command found')
-                    break
-
-            batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
-            batch.write(PDFfit_exec + ' ' + os.path.abspath(rname) + '\n')
-            batch.close()
-        if 'sequential' in RMCPdict['refinement']:
-            Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential PDFfit2 results')
-#            if Id:
-#                saveSeqResult = G2frame.GPXtree.GetItemPyData(Id)
-#            else:
-            if not Id:
-                SeqResult = {}
-                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDFfit2 results')
-            G2Names = [item.name for item in ISOdict['G2ModeList']]
-            SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
-            SeqResult['histNames'] = []         #this clears the previous seq. result!
-            SeqNames = []
-            for itm in range(len(RMCPdict['seqfiles'])):
-                SeqNames.append([itm,RMCPdict['seqfiles'][itm][0]])
-            if RMCPdict['SeqReverse']:
-                SeqNames.reverse()
-            nPDF = len(SeqNames)
-            pgbar = wx.ProgressDialog('Sequential PDFfit','PDF G(R) done = 0',nPDF+1,
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-            newParms = {}
-            for itm,Item in enumerate(SeqNames):
-                PDFfile = RMCPdict['seqfiles'][Item[0]]
-                pfdata = PDFfile[1]['G(R)'][1].T
-#                    pfname = PDFfile[0].replace(' ','_')
-                pfname = 'Seq_PDF.gr'
-                pfile = open(pfname,'w')
-                for dp in pfdata:
-                    pfile.write('%12.5f%12.5f\n'%(dp[0],dp[1]))
-                pfile.close()
-                rfile = open('Seq_PDFfit_template.py','r')
-                lines = rfile.readlines()       #template lines
-                rfile.close()
-                newlines = []
-                parms = {}
-                Np = 0
-                for line in lines:
-                    if '#sequential' in line:
-                        newlines += "pf.read_data('%s', '%s', 30.0, %.4f)\n"%(pfname,PDFfile[1]['Type'][0],PDFfile[1]['qdamp'][0])
-                        newlines += 'pf.setdata(1)\n'
-                        newlines += 'pf.pdfrange(1, %6.2f, %6.2f)\n'%(PDFfile[1]['Fitrange'][0],PDFfile[1]['Fitrange'][1])
-                        for item in ['dscale','qdamp','qbroad']:
-                            if PDFfile[1][item][1]:
-                                Np += 1
-                                newlines += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
-                                parms[item] = '%d'%Np
-                                if itm and RMCPdict['SeqCopy']:
-                                    newParms[parms[item]] = RMCPdict['Parms'][parms[item]]
-                                else:
-                                    if not itm and 'result' not in PDFfile[1]:
-                                        newParms[parms[item]] = PDFfile[1][item][0]
-                                    else:
-                                        newParms[parms[item]] = PDFfile[1]['result'][parms[item]][0]
-                    elif '#parameters' in line:
-                        startParms = RMCPdict['Parms']
-                        if newParms or RMCPdict['SeqCopy']:
-                            if newParms:
-                                startParms = newParms
-                            for iprm in startParms:
-                                if int(iprm) > 9:
-                                    break
-                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm])
-                            print('Begin dscale: %d %.4f'%(itm,startParms['1']))
-                            for iprm in RMCPdict['Parms']:
-                                if isinstance(RMCPdict['Parms'][iprm],float):
-                                    newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm])
-                                else:
-                                    newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm][0])
-                        elif not RMCPdict['SeqCopy']:
-                            startParms = PDFfile[1]['result']
-                            for iprm in startParms:
-                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
-                            print('Begin dscale: %d %.4f'%(itm,startParms['1']))
-                    else:
-                        newlines += line
-                rfile= open('Seq_PDFfit.py','w')
-                rfile.writelines(newlines)
-                rfile.close()
-                fName = 'Sequential_PDFfit'     #clean out old PDFfit output files
-                if os.path.isfile(fName+'.res'):
-                    os.remove(fName+'.res')
-                if os.path.isfile(fName+'.rstr'):
-                    os.remove(fName+'.rstr')
-                if os.path.isfile(fName+'.fgr'):
-                    os.remove(fName+'.fgr')
-
-                if sys.platform.lower().startswith('win'):
-                    Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
-                    Proc.wait()     #for it to finish before continuing on
-                else:
-                    if sys.platform == "darwin":
-                        GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
-                    else:
-                        Proc = subp.Popen(['/bin/bash','pdffit2.sh'])
-                        Proc.wait()
-
-                newParms,Rwp =  G2pwd.UpdatePDFfit(data,RMCPdict)
-                if isinstance(newParms,str):
-                    wx.MessageBox('Singular matrix in PDFfit',caption='PDFfit2 failed',style=wx.ICON_INFORMATION)
-                    break
-                for item in ['dscale','qdamp','qbroad']:
-                    if PDFfile[1][item][1]:
-                        PDFfile[1][item][0] = newParms[parms[item]][0]
-                PDFfile[1]['result'] = copy.deepcopy(newParms)
-                parmDict = copy.deepcopy(newParms)
-                parmDict.update({'Temperature':PDFfile[1]['Temp']})
-                tempList = ['%s-%s'%(parms[item],item) for item in parms]       #these come first
-                parmkeys = [int(item) for item in RMCPdict['ParmNames']]
-                parmkeys.sort()
-                tempList += ['%s-%s'%(item,RMCPdict['ParmNames'][item]) for item in parmkeys]
-                print('result dscale: ',parmDict['1'],' Rw: ',Rwp)
-                atParms = [str(i+21) for i in range(len(G2Names))]
-                varyList = []
-                for item in tempList:
-                    pid = item.split('-')[0]
-                    if pid in atParms:
-                        item = '%s-%s'%(pid,G2Names[int(pid)-21])
-                    varyList.append(item)
-                result = np.array(list(newParms.values())).T
-                SeqResult[PDFfile[0]] = {'variables':result[0],'varyList':varyList,'sig':result[1],'Rvals':{'Rwp':Rwp,},
-                    'covMatrix':[],'title':PDFfile[0],'parmDict':parmDict}
-
-                pfile = open('Sequential_PDFfit.fgr')
-                XYcalc = np.loadtxt(pfile).T[:2]
-                pfile.close()
-                pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFfile[0])
-                PDFctrl = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'))
-                XYobs = PDFctrl['G(R)'][1]
-                if XYobs.shape[0] < 4:
-                    XYobs = np.concatenate((XYobs,np.zeros_like(XYobs)),axis=0)
-                ibeg = np.searchsorted( XYobs[0],XYcalc[0][0])
-                ifin = ibeg+XYcalc.shape[1]
-                XYobs[2][ibeg:ifin] = XYcalc[1]
-                XYobs[3] = XYobs[1]-XYobs[2]
-                PDFctrl['G(R)'][1] = XYobs
-                SeqResult['histNames'].append(Item[1])
-                GoOn = pgbar.Update(itm,newmsg='PDF G(R) done = %d'%(itm))
-                if not GoOn[0]:
-                    print(' Sequential PDFfit aborted')
-                    break
-
-            pgbar.Destroy()
-            G2frame.GPXtree.SetItemPyData(Id,SeqResult)
-            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-            G2frame.GPXtree.SelectItem(Id)
-
-        else: #normal
-            #remove any old PDFfit output files
-            fName = generalData['Name'].replace(' ','_')+'-PDFfit'
-            if os.path.isfile(fName+'.res'):
-                os.remove(fName+'.res')
-            if os.path.isfile(fName+'.rstr'):
-                os.remove(fName+'.rstr')
-            if os.path.isfile(fName+'N.fgr'):
-                os.remove(fName+'N.fgr')
-            if os.path.isfile(fName+'X.fgr'):
-                os.remove(fName+'X.fgr')
-
-            if sys.platform.lower().startswith('win'):
-                Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
-                Proc.wait()     #for it to finish before continuing on
-            else:
-                if sys.platform == "darwin":
-                    GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
-                else:
-                    Proc = subp.Popen(['/bin/bash','pdffit2.sh'])
-                    Proc.wait()     #for it to finish before continuing on
-            #update choice? here?
-            dlg = wx.MessageDialog(G2frame,'Check PDFfit console for results; do you want to update?',
-                'PDFfit run finished',wx.YES|wx.NO)
-            try:
-                dlg.CenterOnParent()
-                result = dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            if result == wx.ID_YES:
-                Error =  G2pwd.UpdatePDFfit(data,RMCPdict)
-                if Error:
-                    wx.MessageBox('PDFfit failed',caption='%s not found'%Error[0],style=wx.ICON_EXCLAMATION)
-            G2rmcG.UpdateRMC(G2frame,data)
+        'Run PDFfit2 in a separate process'
+        G2rmcG.RunPDFfit2(G2frame,data,event)
 
     def Runfullrmc(event):
         fullrmc_exec = G2pwd.findfullrmc()
@@ -6484,11 +6368,13 @@ at one of the following locations:
         original cell
         '''
         fullrmcLoadPhase(super=False)
+
     def OnLoadRMCsuper(event):
         '''Used to load the output from fullrmc with atoms in the simulation
         supercell cell
         '''
         fullrmcLoadPhase(super=True)
+
     def fullrmcLoadPhase(super):
         '''Used to load the output from fullrmc. Creates a new phase,
         reads all atoms & converts coordinates to fractional.
@@ -6732,11 +6618,11 @@ at one of the following locations:
                         RMCPdict[pName+label] = np.sum(Ycalc[1])/np.sum(Yobs[1])
                         print(' %s scale Ycalc/Yobs: %.4f'%(label,RMCPdict[pName+label]))
 #partials plots
-            Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
+            PLabels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
                 '_SQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) partials for '],
                 '_SQ2partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)-2','RMCP S(Q) partials for '],
                 '_FQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP F(Q) partials for ']}
-            for label in Labels:
+            for label in PLabels:
                 X = []
                 Partials = []
                 if len(files[label]):
@@ -6757,13 +6643,14 @@ at one of the following locations:
                         else:
                             XY = [[X.T,(DX*Y.T)*X.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
                     Names = [name for name in Names if 'Va' not in name]
-                    ylabel = Labels[label][1]
-                    if 'G(R)' in Labels[label][1]:
+                    ylabel = PLabels[label][1]
+                    if 'G(R)' in PLabels[label][1]:
                         if ifNeut:
-                            title = 'Neutron '+Labels[label][2]+pName
+                            title = 'Neutron '+PLabels[label][2]+pName
                         else:
-                            continue        #skip for now - x-ray partials are missing header record
-                            title = 'X-ray '+Labels[label][2].replace('G','g')+pName
+                            # continue        #skip for now - x-ray partials are missing header record
+                            # title = 'X-ray '+PLabels[label][2].replace('G','g')+pName
+                            title = 'X-ray partials for '+pName
                             ylabel = 'g(R)'
                         sumAtm = 0
                         BLtables = G2elem.GetBLtable(generalData)
@@ -6796,12 +6683,12 @@ at one of the following locations:
                             xy[1] *= bcorr[ixy]
                             xy[1] += Ymin
                         Xmax = np.searchsorted(Ysave[0][0],XY[0][0][-1])
-                        G2plt.PlotXY(G2frame,XY2=XY,XY=[Ysave[0][:,0:Xmax],],labelX=Labels[label][0],
+                        G2plt.PlotXY(G2frame,XY2=XY,XY=[Ysave[0][:,0:Xmax],],labelX=PLabels[label][0],
                             labelY=ylabel,newPlot=True,Title=title,
                             lines=False,names=[r'   $G(R)_{calc}$',]+Names[1:])
                     else:
-                        G2plt.PlotXY(G2frame,XY,labelX=Labels[label][0],
-                            labelY=ylabel,newPlot=True,Title=Labels[label][2]+pName,
+                        G2plt.PlotXY(G2frame,XY,labelX=PLabels[label][0],
+                            labelY=ylabel,newPlot=True,Title=PLabels[label][2]+pName,
                             lines=True,names=Names[1:])
 #chi**2 plot
             X = []
@@ -6966,7 +6853,7 @@ at one of the following locations:
             data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
             data['ISODISTORT']['selection'] = None
             print('ISODISTORT run complete')
-            wx.CallAfter(G2phsG2.UpdateISODISTORT,G2frame.data)
+            wx.CallAfter(G2phsG2.UpdateISODISTORT,G2frame,data)
         elif data['ISODISTORT']['ISOmethod'] != 4 or radio is None:
             G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
         else:
@@ -7220,6 +7107,7 @@ at one of the following locations:
         names = ['Sfrac','Spos','Sadp','Smag']
         flags = dict(zip(names,[[],[],[],[]]))
         for atom in atomData:
+            G2elem.AddWave2atm(atom)
             atNames.append(atom[ct-1])
             waves = atom[-1]['SS1']
             for name in names:
@@ -7249,7 +7137,8 @@ at one of the following locations:
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,'contourMax':1.0,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,'SymFade':False,
-            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
+            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]],
+            'Line':[[0,0,1],False,False,1.0,[255,255,0]]}
         V0 = np.array([0,0,1])
         V = np.inner(Amat,V0)
         V /= np.sqrt(np.sum(V**2))
@@ -7282,8 +7171,8 @@ at one of the following locations:
             drawingData['sliceSize'] = 5.0
         if 'contourColor' not in drawingData:
             drawingData['contourColor'] = 'RdYlGn'
-        if 'Plane' not in drawingData:
-            drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
+        drawingData['Plane'] = drawingData.get('Plane',[[0,0,1.],False,False,0.0,[255,255,0]])
+        drawingData['Line'] = drawingData.get('Line',[[0,0,1.],False,False,1.0,[255,255,0]])
         if 'magMult' not in drawingData:
             drawingData['magMult'] = 1.0
         if 'SymFade' not in drawingData:
@@ -7406,6 +7295,9 @@ at one of the following locations:
 
 #### Draw Atom routines ################################################################################
     def UpdateDrawAtoms(G2frame,data,atomStyle=''):
+        # save pointers to window and routines
+        G2frame.drawAtoms.UpdateDrawAtoms = UpdateDrawAtoms
+        G2frame.drawAtoms.OnReloadDrawAtoms = OnReloadDrawAtoms
         drawAtoms = G2frame.drawAtoms
         def RefreshDrawAtomGrid(event):
             def SetChoice(name,c,n=0):
@@ -7529,7 +7421,7 @@ at one of the following locations:
             drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
             G2plt.PlotStructure(G2frame,data)
     
-    #### UpdateDrawAtoms executable code starts here
+        #### UpdateDrawAtoms executable code starts here
         topSizer = G2frame.dataWindow.topBox
         topSizer.Clear(True)
         parent = G2frame.dataWindow.topPanel
@@ -7584,12 +7476,8 @@ at one of the following locations:
         drawAtoms.SetColSize(colLabels.index('Style'),80)
         drawAtoms.SetColSize(colLabels.index('Color'),50)
         drawAtoms.SetRowLabelSize(45)
-        if 'phoenix' in wx.version():
-            drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
-            drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshDrawAtomGrid)
-        else:
-            drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGE)
-            drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshDrawAtomGrid)
+        drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
+        drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshDrawAtomGrid)
         drawAtoms.Unbind(wg.EVT_GRID_LABEL_LEFT_DCLICK)
         drawAtoms.Unbind(wg.EVT_GRID_CELL_LEFT_DCLICK)
         drawAtoms.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
@@ -8450,6 +8338,13 @@ at one of the following locations:
         G2stMn.DisAglTor(DATData)
 
     def MapVoid(event):
+        def onColor(event):
+            'respond to color button press'
+            c = event.GetEventObject().GetValue() # RGBA
+            voidPar['color'] = [int(i*c.alpha/255) for i in (
+                c.red,c.green,c.blue)] # RGB w/black background
+            event.GetEventObject().SetValue(voidPar['color'])
+        import wx.lib.colourselect as csel
         generalData = data['General']
         rMax = max(data['General']['vdWRadii'])
         cell = data['General']['Cell'][1:7]
@@ -8460,7 +8355,8 @@ at one of the following locations:
                     'Set parameters for void computation for phase '+generalData.get('Name','?')))
         # get cell ranges
         xmax = 2. - rMax/cell[0]
-        voidPar = {'a':1., 'b':1., 'c':1., 'grid':.25, 'probe':0.5}
+        voidPar = {'a':1., 'b':1., 'c':1., 'grid':.25, 'probe':0.5,
+                       'drawsize':0.05,'brightness':3.0, 'color':[50,50,255]}
         for i in ('a', 'b', 'c'):
             mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,i,'Max '+i+' value: ',0.,xmax,100))
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8470,6 +8366,21 @@ at one of the following locations:
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
         hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Probe radius (A)'))
         hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'probe',nDig=(5,2), xmin=0.1, xmax=2., typeHint=float))
+
+        G2G.HorizontalLine(mainSizer,voidDlg)
+        mainSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,
+                    'Void map visualization parameters'))
+        mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,'drawsize',
+                                        'Brightness: ',0.001,1.0,500))
+        mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,'brightness',
+                                        'Brightness: ',0.1,5.0,50))
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Void map color:'))
+        cbut = csel.ColourSelect(voidDlg, wx.ID_ANY, '',
+                                     tuple(voidPar['color']),
+                                     size = wx.DefaultSize)
+        cbut.Bind(csel.EVT_COLOURSELECT, onColor)
+        hSizer.Add(cbut)
         mainSizer.Add(hSizer)
 
         def OnOK(event): voidDlg.EndModal(wx.ID_OK)
@@ -8492,6 +8403,8 @@ at one of the following locations:
         if res != wx.ID_OK: return
         drawingData['Voids'] = VoidMap(data, voidPar['a'], voidPar['b'], voidPar['c'],
             voidPar['grid'],voidPar['probe'])
+        for key in ('drawsize','brightness','color'):
+            drawingData['void'+key] = voidPar[key]
         drawingData['showVoids'] = True
         G2plt.PlotStructure(G2frame,data)
 
@@ -8814,7 +8727,7 @@ at one of the following locations:
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(drawOptions,label=' Background color:'),0,WACV)
             backColor = G2G.setColorButton(drawOptions,drawingData, 'backColor',
-                                       G2plt.PlotStructure,[G2frame,data])
+                G2plt.PlotStructure,[G2frame,data])
             lineSizer.Add(backColor,0,WACV)
             lineSizer.Add(wx.StaticText(drawOptions,-1,' View Dir.:'),0,WACV)
             VD = drawingData['viewDir']
@@ -8912,7 +8825,7 @@ at one of the following locations:
             line3Sizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'sliceSize',nDig=(10,2),xmin=2.0,xmax=20.0,OnLeave=OnSliceSize),0,WACV)
             mapSizer.Add(line3Sizer)
             line4Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            contourMaxTxt = wx.StaticText(drawOptions,label=' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
+            contourMaxTxt = wx.StaticText(drawOptions,label=' Rho max: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
             line4Sizer.Add(contourMaxTxt,0,WACV)
             contourMax = G2G.G2Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),
                 value=int(100*drawingData['contourMax']),minValue=1,maxValue=100)
@@ -8920,7 +8833,7 @@ at one of the following locations:
             line4Sizer.Add(contourMax,1,wx.EXPAND|wx.RIGHT)
             mapSizer.Add(line4Sizer)
             valSize = (50,20)
-            showMap = wx.CheckBox(drawOptions,label=' Show density map?')
+            showMap = wx.CheckBox(drawOptions,label=' Show 3D density map?')
             showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
             showMap.SetValue(drawingData['showMap'])
             mapSizer.Add(showMap,0)
@@ -8929,7 +8842,7 @@ at one of the following locations:
                 'Fraction of rho max ({:.2f}): '.format(generalData['Map']['rhoMax']),0.01,1.0,100.,
                 sizer=sliders,size=valSize,onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data))
             G2G.G2SliderWidget(drawOptions,drawingData,'mapSize',
-                'Visible map radius: ',0.1,10.,10.,sizer=sliders,size=valSize,
+                'Radius of displayed map: ',0.1,10.,5.,sizer=sliders,size=valSize,
                 onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data))
             mapSizer.Add(sliders)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8939,6 +8852,61 @@ at one of the following locations:
             mapSizer.Add(DistanceSettingSizer(drawingData,
                 'PeakDistRadius','atomsExpandRadius','atomsDistRadius'),0,wx.LEFT,20)
             return mapSizer
+        
+        def LineSizer():
+            
+            def OnLine(event):
+                event.Skip()
+                vals = line.GetValue().split()
+                try:
+                    xyz = [float(vals[i]) for i in range(3)]
+                    if not any(xyz):       #can't be all zeros!
+                        raise ValueError
+                except (ValueError,IndexError):
+                    xyz = drawingData['Line'][0]
+                drawingData['Line'][0] = xyz
+                line.SetValue('%5.3f %5.3f %5.3f'%(xyz[0],xyz[1],xyz[2]))
+                G2plt.PlotStructure(G2frame,data)
+
+            def OnShowLine(event):
+                drawingData['Line'][1] = showLine.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+            
+            def OnShowBoth(event):
+                drawingData['Line'][2] = showBoth.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+
+            def OnLength(invalid,value,tc):
+                G2plt.PlotStructure(G2frame,data)
+
+            lineSizer = wx.BoxSizer(wx.VERTICAL)
+            lineSizer1 = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer1.Add(wx.StaticText(drawOptions,label=' Line from view point: '),0,WACV)
+            X = drawingData['Line'][0]
+            line = wx.TextCtrl(drawOptions,value='%5.3f %5.3f %5.3f'%(X[0],X[1],X[2]),
+                style=wx.TE_PROCESS_ENTER,size=(140,20))
+            line.Bind(wx.EVT_TEXT_ENTER,OnLine)
+            line.Bind(wx.EVT_KILL_FOCUS,OnLine)
+            lineSizer1.Add(line,0,WACV)
+            showLine = wx.CheckBox(drawOptions,label=' Show line?')
+            showLine.SetValue(drawingData['Line'][1])
+            showLine.Bind(wx.EVT_CHECKBOX, OnShowLine)
+            lineSizer1.Add(showLine,0,WACV)
+            showBoth = wx.CheckBox(drawOptions,label=' Extend negative?')
+            showBoth.SetValue(drawingData['Line'][2])
+            showBoth.Bind(wx.EVT_CHECKBOX, OnShowBoth)
+            lineSizer1.Add(showBoth,0,WACV)
+            lineSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer2.Add(wx.StaticText(drawOptions,label=' Length multiplier: '),0,WACV)
+            length = G2G.ValidatedTxtCtrl(drawOptions,drawingData['Line'],3,nDig=(10,2),OnLeave=OnLength)
+            lineSizer2.Add(length,0,WACV)
+            lineSizer2.Add(wx.StaticText(drawOptions,-1,' Line color: '),0,WACV)
+            lineColor = G2G.setColorButton(drawOptions,drawingData['Line'], 4,
+                G2plt.PlotStructure,[G2frame,data])
+            lineSizer2.Add(lineColor,0,WACV)
+            lineSizer.Add(lineSizer1)
+            lineSizer.Add(lineSizer2)
+            return lineSizer
 
         def PlaneSizer():
 
@@ -9024,7 +8992,8 @@ at one of the following locations:
         topSizer = G2frame.dataWindow.topBox
         topSizer.Clear(True)
         parent = G2frame.dataWindow.topPanel
-        lbl= f"Drawing controls for {data['General']['Name']!r}"[:60]
+        lbl= f"Drawing controls for phase {data['General']['Name']!r}"
+        if len(lbl) > 60: lbl = lbl[:60] + '...'
         topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
@@ -9047,6 +9016,7 @@ at one of the following locations:
             mainSizer.Add(MapSizer())
         G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(PlaneSizer(),0,)
+        mainSizer.Add(LineSizer(),0,)
 
         SetPhaseWindow(drawOptions,mainSizer)
 
@@ -9506,7 +9476,7 @@ at one of the following locations:
         #     print(hist, G2lat.A2cell(newA)[:3], G2lat.calc_V(newA))
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
 
-#### Rigid bodies ################################################################################
+#### Rigid bodies 
     def FillRigidBodyGrid(refresh=True,vecId=None,resId=None,spnId=None):
         '''Fill the Rigid Body Phase information tab page.
         Note that the page is a ScrolledWindow, not a Grid
@@ -9526,25 +9496,39 @@ at one of the following locations:
                 RBObj['ThermalMotion'][0] = 'TL'
             elif val == 'TLS':
                 RBObj['ThermalMotion'][0] = 'TLS'
-            elif val == 'None':
-                RBObj['ThermalMotion'][0] = 'None'
-            if val != 'None':
-                cia = data['General']['AtomPtrs'][3]
-                for i,Id in enumerate(RBObj['Ids']):
-                    data['Atoms'][AtLookUp[Id]][cia] = Ttype
-            resId,vecId = None,None         #,spnId,None
+            cia = data['General']['AtomPtrs'][3]
+            for i,Id in enumerate(RBObj['Ids']):
+                data['Atoms'][AtLookUp[Id]][cia] = Ttype
+            resId,vecId,spnId = None,None,None
             if resSelect is not None:
                 resId = resSelect.GetSelection()
             if vecSelect is not None:
                 vecId = vecSelect.GetSelection()
-            # if spnSelect:
-            #     spnId = spnSelect.GetSelection()
-            wx.CallAfter(FillRigidBodyGrid,True,vecId=vecId,resId=resId)    ##,spnId=spnId
+            if spnSelect:
+                spnId = spnSelect.GetSelection()
+            wx.CallAfter(FillRigidBodyGrid,True,vecId=vecId,resId=resId,spnId=spnId)
             G2plt.PlotStructure(G2frame,data)
 
         def ThermDataSizer(RBObj,rbType):
 
             def OnThermval(invalid,value,tc):
+                # update equivalent TL terms here
+                if 'T' in model[0]: #for 'T','TL' & 'TLS'
+                    np = tc.key
+                    #vals =  tc.result
+                    cid = CSI[0][np%6]
+                    for i,tls in enumerate(TLSobj):
+                        if i <= np:
+                            continue
+                        if np < 6 and i > 5:
+                            break
+                        if cid == CSI[0][i%6]:
+                            newValue = value*CSI[1][i%6]
+                            try:
+                                tls.ChangeValue(newValue)
+                            except TypeError:
+                                tls.ChangeValue('%.4f'%newValue)
+                            model[1][i] = value*CSI[1][i%6]
                 Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[1]
                 Uout = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
                 cia = data['General']['AtomPtrs'][3]
@@ -9553,15 +9537,32 @@ at one of the following locations:
                         data['Atoms'][AtLookUp[Id]][cia+1] = Uout[i][1]
                     else:
                         data['Atoms'][AtLookUp[Id]][cia+2:cia+8] = Uout[i][2:8]
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms(G2frame,data)
                 G2plt.PlotStructure(G2frame,data)
 
             def OnTLSRef(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
-                RBObj['ThermalMotion'][2][item] = Obj.GetValue()
+                ref = Obj.GetValue()
+                RBObj['ThermalMotion'][2][item] = ref
+                if item < 12:
+                    csid = CSI[0][item%6]
+                    for i,csi in enumerate(CSI[0]):
+                        if csi == csid:
+                            if item < 6:
+                                RBObj['ThermalMotion'][2][i] = ref
+                            else:
+                                RBObj['ThermalMotion'][2][i+6] = ref
 
+            SGData = data['General']['SGData']
             thermSizer = wx.FlexGridSizer(0,9,5,5)
             model = RBObj['ThermalMotion']
+            #patch - remove 'None' as option
+            if model[0] == 'None':
+                model[0] = 'Uiso'
+                model[1][0] = 0.01
+            #end patch
             if model[0] == 'Uiso':
                 names = ['Uiso',]
             elif 'T' in model[0]:
@@ -9570,18 +9571,28 @@ at one of the following locations:
                 names += ['L11','L22','L33','L12','L13','L23']
             if 'S' in model[0]:
                 names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
+            Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+            TLSobj = []
+            CSI = G2spc.GetCSuinel(Sytsym)
             for i,name in enumerate(names):
                 thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,WACV)
-                thermVal = G2G.ValidatedTxtCtrl(RigidBodies,model[1],i,nDig=(8,4),OnLeave=OnThermval)
-                thermSizer.Add(thermVal)
-                Tcheck = wx.CheckBox(RigidBodies,-1,'Refine?')
-                Tcheck.Bind(wx.EVT_CHECKBOX,OnTLSRef)
-                Tcheck.SetValue(model[2][i])
-                Indx[Tcheck.GetId()] = i
-                thermSizer.Add(Tcheck,0,WACV)
+                if (np.any(CSI[0][i%6]) and CSI[0][i%6] not in CSI[0][:i%6]) or i > 11:
+                    thermVal = G2G.ValidatedTxtCtrl(RigidBodies,model[1],i,nDig=(8,4),OnLeave=OnThermval)
+                    thermSizer.Add(thermVal)
+                    Tcheck = wx.CheckBox(RigidBodies,-1,'Refine?')
+                    Tcheck.Bind(wx.EVT_CHECKBOX,OnTLSRef)
+                    Tcheck.SetValue(model[2][i])
+                    Indx[Tcheck.GetId()] = i
+                    thermSizer.Add(Tcheck,0,WACV)
+                else:
+                    thermVal = G2G.ReadOnlyTextCtrl(RigidBodies,value='%.4f'%(model[1][i]))
+                    model[2][i] = False         #patch to remove bad refine flags
+                    thermSizer.Add(thermVal)
+                    thermSizer.Add((5,5),0)
+                TLSobj.append(thermVal)
             return thermSizer
 
-        def LocationSizer(RBObj,rbType):
+        def LocationSizer(RBObj,rbType,rbId):
 
             def OnOrigRef(event):
                 RBObj['Orig'][1] = Ocheck.GetValue()
@@ -9602,10 +9613,46 @@ at one of the following locations:
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
                     data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
+                    data['Atoms'][AtLookUp[Id]][cs,cs+2] = G2spc.SytSym(newXYZ[i],SGData)[:2]
                 data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(G2frame,data)
                 G2plt.PlotStructure(G2frame,data)
+                
+            def ApplyAV(A,V):
+                Q = G2mth.AVdeg2Q(A,V)
+                if not any(Q):
+                    raise ValueError
+                RBObj['Orient'][0] = Q
+                if rbType != 'Spin':                    
+                    newXYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)
+                    Uout = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
+                    maxFrac = 0.0
+                    for i,Id in enumerate(RBObj['Ids']):
+                        maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
+                    for i,Id in enumerate(RBObj['Ids']):
+                        data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                        data['Atoms'][AtLookUp[Id]][cs:cs+2] = G2spc.SytSym(newXYZ[i],SGData)[:2]
+                        if Uout[i][0] == 'I':
+                            data['Atoms'][AtLookUp[Id]][cia+1] = Uout[i][1]
+                        else:
+                            data['Atoms'][AtLookUp[Id]][cia+2:cia+8] = Uout[i][2:8]
+                        data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
+                    data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
+                
+            def OnAng(event):
+                move = Ang.GetValue()*2.0
+                Ang.SetValue(0)
+                A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
+                A += move
+                Indx['Ang'].ChangeValue(A)
+                try:
+                    ApplyAV(A,V)
+                    data['Drawing']['Atoms'] = []
+                    UpdateDrawAtoms(G2frame,data)
+                    G2plt.PlotStructure(G2frame,data)
+                except ValueError:
+                    pass
 
             def OnOrien(*args, **kwargs):
                 '''Called when the orientation info is changed (vector
@@ -9615,21 +9662,12 @@ at one of the following locations:
                 '''
                 try:
                     orient = [float(Indx['Orien'][i].GetValue()) for i in range(4)]
-                    A = orient[0]
-                    V = np.inner(Amat,orient[1:]) # normalized in AVdeg2Q
-                    Q = G2mth.AVdeg2Q(A,V)
-                    if not any(Q):
-                        raise ValueError
-                    RBObj['Orient'][0] = Q
-                    if rbType != 'Spin':
-                        newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
-                        maxFrac = 0.0
-                        for Id in RBObj['Ids']:
-                            maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
-                        for i,Id in enumerate(RBObj['Ids']):
-                            data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
-                            data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
-                        data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
+                except:
+                    return
+                A = orient[0]
+                V = np.inner(Amat,orient[1:]) # normalized in AVdeg2Q
+                try:
+                    ApplyAV(A,V)
                     data['Drawing']['Atoms'] = []
                     if 'mode' in kwargs:
                         UpdateDrawAtoms(G2frame,data,kwargs['mode'])
@@ -9639,9 +9677,24 @@ at one of the following locations:
                 except ValueError:
                     pass
 
+            def OnSymRadioSet(event):
+                '''Set the polar axis for the sp. harm. as
+                RBdata['Spin'][RBId]['symAxis']. This may never be
+                set, so use RBdata['Spin'][RBId].get('symAxis') to
+                access this so the default value is [0,0,1].
+                '''
+                Obj = event.GetEventObject()
+                axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1])[Obj.GetSelection()]
+                RBObj['symAxis'] = axis
+                A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
+                ApplyAV(A,V)
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms(G2frame,data)
+                G2plt.PlotStructure(G2frame,data)
+
             SGData = data['General']['SGData']
             rbSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer = wx.FlexGridSizer(0,6,5,5)
+            topSizer = wx.FlexGridSizer(0,7,5,5)
             if rbType != 'Spin':
                 if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
                     if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
@@ -9659,8 +9712,8 @@ at one of the following locations:
                 Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
                 Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
                 Ocheck.SetValue(RBObj['Orig'][1])
-                # TODO: does spin RB need orientation vector? Does need angle & fix vector = [0,0,1]?
                 topSizer.Add(Ocheck,0,WACV)
+                topSizer.Add((-1,-1))
                 Name = 'Origin'
                 G2frame.testRBObjSizers['OnOrien'] = OnOrien
                 G2frame.testRBObjSizers['FillUnitCell'] = FillUnitCell
@@ -9672,6 +9725,8 @@ at one of the following locations:
                 atXYZ = Atom[cx:cx+3]
                 Sytsym,Mult = G2spc.SytSym(atXYZ,SGData)[:2]
                 Name = Atom[ct-1]
+                A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
+                ApplyAV(A,V)
             topSizer.Add(wx.StaticText(RigidBodies,-1,
                 'Rotation angle (deg)\n&& Orient. vector (frac)'),0,WACV)
             Indx['Orien'] = {}
@@ -9681,12 +9736,22 @@ at one of the following locations:
             dp,xmin,xmax = 2,-180.,360.
             OrientVecSiz = []
             for ix,x in enumerate(Orien):
+                if not ix: #add spinner to angle
+                    Ang = wx.SpinButton(RigidBodies,style=wx.SP_VERTICAL,size=(20,24))
+                    Ang.SetValue(0)
+                    Ang.SetRange(-1,1)
+                    Ang.Bind(wx.EVT_SPIN, OnAng)
+#                    OrientVecSiz.append(Ang)
+                    topSizer.Add(Ang,0,WACV)
                 orien = G2G.ValidatedTxtCtrl(RigidBodies,Orien,ix,nDig=(8,dp),
                     typeHint=float,OnLeave=OnOrien,xmin=xmin,xmax=xmax,size=(70,-1))
+                if not ix:
+                    Indx['Ang'] = orien
                 OrientVecSiz.append(orien)
                 dp, xmin,xmax = 4,-1.,1.
                 Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
+                    
             G2frame.testRBObjSizers.update({'OrientVecSiz':OrientVecSiz})
             Qchoice = [' ','A','AV','V']
             Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=Qchoice,
@@ -9698,11 +9763,30 @@ at one of the following locations:
             sytsymtxt = wx.StaticText(RigidBodies,label='%s site symmetry: %s, multiplicity: %d '%(Name,Sytsym,Mult))
             rbSizer.Add(topSizer)
             rbSizer.Add(sytsymtxt)
+            choices = [' x ',' y ',' z ','x+y','x+y+z']
+            RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
+            try:
+                symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
+            except KeyError:
+                symax = ' z '
+            if rbType == 'Spin':
+                symRadioSet = wx.RadioBox(RigidBodies,choices=choices,label='RB polar axis is aligned along:')
+                symRadioSet.SetStringSelection(symax)
+                symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+                Indx[symRadioSet.GetId()] = rbId
+                rbSizer.Add(symRadioSet)
+            else:
+                rbSizer.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis is %s'%symax))
             return rbSizer
 
         def SpnrbSizer(RBObj,spnIndx):
             '''Displays details for selected spinning rigid body'''
 
+            def OnShowAx(event):
+                RBObj['showAxes'] = not RBObj['showAxes']
+                G2frame.selectRB['showAxes'] = RBObj['showAxes']
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnDelSpnRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
@@ -9719,17 +9803,6 @@ at one of the following locations:
                 data['Drawing']['Atoms'] = []
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
-
-            def OnSymRadioSet(event):
-                '''Set the polar axis for the sp. harm. as
-                RBdata['Spin'][RBId]['symAxis']. This may never be
-                set, so use RBdata['Spin'][RBId].get('symAxis') to
-                access this so the default value is [0,0,1].
-                '''
-                Obj = event.GetEventObject()
-                axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1])[Obj.GetSelection()]
-                RBObj['symAxis'] = axis
-                G2plt.PlotStructure(G2frame,data)
 
             def OnAddShell(event):
                 rbNames = []
@@ -9765,6 +9838,26 @@ at one of the following locations:
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
 
+            def OnSymSel(event):
+                Obj = event.GetEventObject()
+                iSh = Indx[Obj.GetId()]
+                RBObj['RBsym'][iSh] = Obj.GetValue()
+                RBObj['SHC'][iSh] = SetSHCoef(iSh,RBObj['nSH'][iSh])
+                rbId = RBObj['RBId']
+                G2plt.PlotStructure(G2frame,data)
+                wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)                    
+                    
+            def SetSHCoef(iSh,Order):
+                Sytsym = RBObj['SytSym']
+                cofNames,cofSgns = G2lat.GenRBCoeff(Sytsym,RBObj['RBsym'][iSh],Order)
+                cofTerms = [[0.0,val,False] for val in cofSgns]
+                newSHcoef = dict(zip(cofNames,cofTerms))
+                SHcoef = RBObj['SHC'][iSh]
+                for cofName in SHcoef:      #transfer old values to new set
+                    if cofName in newSHcoef:
+                        newSHcoef[cofName] = SHcoef[cofName]
+                return newSHcoef
+
             def SHsizer():
                 def OnSHOrder(event):
                     Obj = event.GetEventObject()
@@ -9773,17 +9866,6 @@ at one of the following locations:
                     RBObj['SHC'][iSh] = SetSHCoef(iSh,RBObj['nSH'][iSh])
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
-
-                def SetSHCoef(iSh,Order):
-                    Sytsym = RBObj['SytSym']
-                    cofNames,cofSgns = G2lat.GenRBCoeff(Sytsym,RBObj['RBsym'][iSh],Order)
-                    cofTerms = [[0.0,val,False] for val in cofSgns]
-                    newSHcoef = dict(zip(cofNames,cofTerms))
-                    SHcoef = RBObj['SHC'][iSh]
-                    for cofName in SHcoef:      #transfer old values to new set
-                        if cofName in newSHcoef:
-                            newSHcoef[cofName] = SHcoef[cofName]
-                    return newSHcoef
 
                 def OnSchRef(event):
                     Obj = event.GetEventObject()
@@ -9820,8 +9902,13 @@ at one of the following locations:
                     RBObj['atColor'][iSh] = G2elem.GetAtomInfo(RBObj['atType'][iSh])['Color']  #correct atom color for shell
                     if iSh:
                         subLine = wx.BoxSizer(wx.HORIZONTAL)
-                        subLine.Add(wx.StaticText(RigidBodies,label='Shell %d: Name: %s   Atom type: %s RB sym: %s '  \
-                            %(iSh,RBObj['RBname'][iSh],RBObj['atType'][iSh],RBObj['RBsym'][iSh])),0,WACV)
+                        subLine.Add(wx.StaticText(RigidBodies,label='Shell %d: Name: %s   Atom type: %s RB sym: '  \
+                            %(iSh,RBObj['RBname'][iSh],RBObj['atType'][iSh])),0,WACV)
+                        simsel = wx.ComboBox(RigidBodies,choices=symchoice,value=RBObj['RBsym'][iSh],
+                            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                        Indx[simsel.GetId()] = iSh
+                        simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
+                        subLine.Add(simsel,0,WACV)
                         delShell = wx.Button(RigidBodies,label='Delete shell',style=wx.BU_EXACTFIT)
                         Indx[delShell.GetId()] = iSh
                         delShell.Bind(wx.EVT_BUTTON,OnDelShell)
@@ -9864,7 +9951,7 @@ at one of the following locations:
                         for item in RBObj['SHC'][iSh]:
                             shcSizer.Add(wx.StaticText(RigidBodies,label='%s'%item.strip('+').strip('-')))
                             shcSizer.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['SHC'][iSh][item],0,nDig=(8,5),
-                                typeHint=float,size=(70,-1),OnLeave=NewSHC))
+                                typeHint=float,size=(70,-1),OnLeave=NewSHC,xmin=-1.0,xmax=1.0))
                             schref = wx.CheckBox(RigidBodies,label=' refine? ')
                             schref.SetValue(RBObj['SHC'][iSh][item][2])
                             schref.Bind(wx.EVT_CHECKBOX,OnSchRef)
@@ -9887,6 +9974,12 @@ at one of the following locations:
                 RBObj['fadeSh'] = not RBObj['fadeSh']
                 G2plt.PlotStructure(G2frame,data)
 
+            def OnSliceShell(event):
+                RBObj['sliceSh'] = not RBObj['sliceSh']
+                G2plt.PlotStructure(G2frame,data)
+                
+            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','3m','32','-3','3','4/mmm','-42m',
+                'mmm','2/m','2','m','-1','1']
             RBObj['hide'] = RBObj.get('hide',[False for i in range(len(RBObj['atType']))])
             rbId = RBObj['RBId'][0]
             atId = RBObj['Ids'][0]
@@ -9895,52 +9988,66 @@ at one of the following locations:
             sprbSizer = wx.BoxSizer(wx.VERTICAL)
             G2G.HorizontalLine(sprbSizer,RigidBodies)
             topLine = wx.BoxSizer(wx.HORIZONTAL)
+            secLine = wx.BoxSizer(wx.HORIZONTAL)
+            plotLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,label='Shell 0: Name: %s Atom name: %s Atom type: %s RB sym: %s '%
                 (RBObj['RBname'][0],atName,RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
+            simsel = wx.ComboBox(RigidBodies,choices=symchoice,value=RBObj['RBsym'][0],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[simsel.GetId()] = 0
+            simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
+            topLine.Add(simsel,0,WACV)
+            showAx = wx.CheckBox(RigidBodies,label='Show RB axes on plot?')
+            showAx.SetValue(RBObj['showAxes'])
+            showAx.Bind(wx.EVT_CHECKBOX,OnShowAx)
             rbId = RBObj['RBId']
             if len(RBObj['nSH']) == 1:
                 delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
                 delRB.Bind(wx.EVT_BUTTON,OnDelSpnRB)
                 Indx[delRB.GetId()] = rbId
                 topLine.Add(delRB,0,WACV)
-            addShell = wx.Button(RigidBodies,wx.ID_ANY,'Add new shell',style=wx.BU_EXACTFIT)
+            RBObj['noNeg'] = RBObj.get('noNeg',[False,0.01])
+            addShell = wx.Button(RigidBodies,wx.ID_ANY,'Add shell',style=wx.BU_EXACTFIT)
             addShell.Bind(wx.EVT_BUTTON,OnAddShell)
             Indx[addShell.GetId()] = rbId
-            topLine.Add(addShell,0,WACV)
             hidesh = wx.CheckBox(RigidBodies,label='Hide shell?')
             hidesh.SetValue(RBObj['hide'][0])
             hidesh.Bind(wx.EVT_CHECKBOX,OnHideSh)
             Indx[hidesh.GetId()] = 0
             topLine.Add(hidesh,0,WACV)
             sprbSizer.Add(wx.StaticText(RigidBodies,label='Spinning RB orientation parameters for %s:'%RBObj['RBname'][0]))
-            sprbSizer.Add(LocationSizer(RBObj,'Spin'))
-            choices = [' x ',' y ',' z ','x+y','x+y+z']
-            RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
-            symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
-            symRadioSet = wx.RadioBox(RigidBodies,choices=choices,label='Sp harm polar axis is aligned along:')
-            symRadioSet.SetStringSelection(symax)
-            symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
-            Indx[symRadioSet.GetId()] = rbId
-            sprbSizer.Add(symRadioSet)
-            plotLine = wx.BoxSizer(wx.HORIZONTAL)
+            sprbSizer.Add(LocationSizer(RBObj,'Spin',rbId))
             RBObj['useAtColor'] = RBObj.get('useAtColor',True)
             atColor = wx.CheckBox(RigidBodies,label='Use atom color?')
             atColor.SetValue(RBObj['useAtColor'])
             atColor.Bind(wx.EVT_CHECKBOX,OnAtColor)
-            plotLine.Add(atColor,0,WACV)
             RBObj['fadeSh'] = RBObj.get('fadeSh',True)
             fadeShell = wx.CheckBox(RigidBodies,label='Fade shells?')
             fadeShell.SetValue(RBObj['fadeSh'])
             fadeShell.Bind(wx.EVT_CHECKBOX,OnFadeShell)
+            RBObj['sliceSh'] = RBObj.get('sliceSh',False)
+            sliceShell = wx.CheckBox(RigidBodies,label='Slice shells?')
+            sliceShell.SetValue(RBObj['sliceSh'])
+            sliceShell.Bind(wx.EVT_CHECKBOX,OnSliceShell)
+            plotLine.Add(atColor,0,WACV)
+            plotLine.Add(showAx,0,WACV)
             plotLine.Add(fadeShell,0,WACV)
+            plotLine.Add(sliceShell,0,WACV)
+            plotLine.Add(addShell,0,WACV)
             sprbSizer.Add(plotLine)
             G2G.HorizontalLine(sprbSizer,RigidBodies)
             sprbSizer.Add(topLine)
+            sprbSizer.Add(secLine)
             sprbSizer.Add(SHsizer())
             return sprbSizer
 
         def ResrbSizer(RBObj,resIndx):
             '''Displays details for selected residue rigid body'''
+            
+            def OnShowAx(event):
+                RBObj['showAxes'] = not RBObj['showAxes']
+                G2frame.selectRB['showAxes'] = RBObj['showAxes']
+                G2plt.PlotStructure(G2frame,data)
             def OnTorsionRef(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
@@ -9954,6 +10061,21 @@ at one of the following locations:
                 UpdateDrawAtoms(G2frame,data,atomStyle)
                 G2frame.drawAtoms.ClearSelection()
                 G2plt.PlotStructure(G2frame,data)
+                
+            def OnTang(event):
+                Obj = event.GetEventObject()
+                Tid,torsTxt = Indx[Obj.GetId()]
+                move = Obj.GetValue()*5.0
+                Obj.SetValue(0)
+                RBObj['Torsions'][Tid][0] += move
+                torsTxt.ChangeValue(RBObj['Torsions'][Tid][0])
+                newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]
+                for i,Id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms(G2frame,data,atomStyle)
+                G2frame.drawAtoms.ClearSelection()
+                G2plt.PlotStructure(G2frame,data)                
 
             def OnFrac(invalid,value,tc):
                 for i,Id in enumerate(RBObj['Ids']):
@@ -9975,39 +10097,38 @@ at one of the following locations:
             G2G.HorizontalLine(resrbSizer,RigidBodies)
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,-1,'Name: '+RBObj['RBname']+RBObj['numChain']+'   '),0,WACV)
+            showAx = wx.CheckBox(RigidBodies,label='Show RB axes on plot?')
+            showAx.SetValue(RBObj['showAxes'])
+            showAx.Bind(wx.EVT_CHECKBOX,OnShowAx)
+            topLine.Add(showAx,0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             delRB.Bind(wx.EVT_BUTTON,OnDelResRB)
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
-            symAxis = RBObj.get('symAxis')
-            if np.any(symAxis):
-                if np.all(symAxis):
-                    lbl = 'x+y+z'
-                elif np.all(symAxis[:2]):
-                    lbl = 'x+y'
-                elif symAxis[0]:
-                    lbl = 'x'
-                elif symAxis[1]:
-                    lbl = 'y'
-                else:
-                    lbl = 'z'
-                topLine.Add(wx.StaticText(RigidBodies,-1,
-                    '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
+            lbl = ' z '
+            topLine.Add(wx.StaticText(RigidBodies,-1,
+                '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
             try:
-                varname = str(data['pId'])+'::RBRxxx:'+resVarLookup[resIndx]
+                varname = str(data['pId'])+'::RBRxx:'+resVarLookup[resIndx]
             except:  # happens when phase has no histograms
-                varname = '?::RBRxxx:'+resVarLookup[resIndx]
+                varname = '?::RBRxx:'+resVarLookup[resIndx]
             topLine.Add(wx.StaticText(RigidBodies,-1,
                     '  (variables '+varname+')'),0,WACV)
             resrbSizer.Add(topLine)
-            resrbSizer.Add(LocationSizer(RBObj,'Residue'))
+            resrbSizer.Add(LocationSizer(RBObj,'Residue',rbId))
             if len(RBObj['Torsions']):
                 resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0)
-            torSizer = wx.FlexGridSizer(0,6,5,5)
+            torSizer = wx.FlexGridSizer(0,8,5,5)
             for itors,tors in enumerate(RBObj['Torsions']):
                 torSizer.Add(wx.StaticText(RigidBodies,-1,'Torsion '+'%d'%(itors)),0,WACV)
                 torsTxt = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Torsions'][itors],0,nDig=(10,3),OnLeave=OnTorsion)
+                Tang = wx.SpinButton(RigidBodies,style=wx.SP_VERTICAL,size=(20,24))
+                Tang.SetValue(0)
+                Tang.SetRange(-1,1)
+                Tang.Bind(wx.EVT_SPIN, OnTang)
+                Indx[Tang.GetId()] = [itors,torsTxt]
+                torSizer.Add(Tang,0,WACV)
                 torSizer.Add(torsTxt)
                 torCheck = wx.CheckBox(RigidBodies,-1,'Refine?')
                 torCheck.Bind(wx.EVT_CHECKBOX,OnTorsionRef)
@@ -10030,7 +10151,7 @@ at one of the following locations:
             fracRef.Bind(wx.EVT_CHECKBOX,OnRefFrac)
             fracSizer.Add(fracRef,0,WACV)
             resrbSizer.Add(fracSizer)
-            tchoice = ['None','Uiso','T','TL','TLS']
+            tchoice = ['Uiso','T','TL','TLS']
             thermSizer = wx.BoxSizer(wx.HORIZONTAL)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,WACV)
             thermSel = wx.ComboBox(RigidBodies,-1,value=RBObj['ThermalMotion'][0],choices=tchoice,
@@ -10040,13 +10161,11 @@ at one of the following locations:
             thermSizer.Add(thermSel,0,WACV)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,WACV)
             resrbSizer.Add(thermSizer)
-            if RBObj['ThermalMotion'][0] != 'None':
-                resrbSizer.Add(ThermDataSizer(RBObj,'Residue'))
+            resrbSizer.Add(ThermDataSizer(RBObj,'Residue'))
             dragSizer = wx.BoxSizer(wx.HORIZONTAL)
             dragSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Draw mode after dragging the rigid body: '),0,WACV)
             RBObj['drawMode'] = RBObj.get('drawMode',DrawStyleChoice[4])
-            modeOpt = G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
-                                             strLoc=RBObj, strKey='drawMode')
+            modeOpt = G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],strLoc=RBObj,strKey='drawMode')
             dragSizer.Add(modeOpt)
             modeOpt.Enable(False) # not implemented yet
             G2frame.testRBObjSizers['fillMode'] = G2frame.testRBObjSizers.get('fillMode',False)
@@ -10057,6 +10176,12 @@ at one of the following locations:
 
         def VecrbSizer(RBObj,resIndx):
             '''Displays details for selected vector rigid body'''
+            
+            def OnShowAx(event):
+                RBObj['showAxes'] = not RBObj['showAxes']
+                G2frame.selectRB['showAxes'] = RBObj['showAxes']
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnFrac(invalid,value,tc):
                 for Id in RBObj['Ids']:
                     if data['Atoms'][AtLookUp[Id]][cx+3]:
@@ -10078,13 +10203,17 @@ at one of the following locations:
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,-1,
                 'Name: '+RBObj['RBname']+'   '),0,WACV)
+            showAx = wx.CheckBox(RigidBodies,label='Show RB axes on plot?')
+            showAx.SetValue(RBObj['showAxes'])
+            showAx.Bind(wx.EVT_CHECKBOX,OnShowAx)
+            topLine.Add(showAx,0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             delRB.Bind(wx.EVT_BUTTON,OnDelVecRB)
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
             vecrbSizer.Add(topLine)
-            vecrbSizer.Add(LocationSizer(RBObj,'Vector'))
+            vecrbSizer.Add(LocationSizer(RBObj,'Vector',rbId))
             members = 'Rigid body members: '
             for Id in RBObj['Ids']:
                 members += data['Atoms'][AtLookUp[Id]][ct-1].strip()+', '
@@ -10098,7 +10227,7 @@ at one of the following locations:
             fracRef.Bind(wx.EVT_CHECKBOX,OnRefFrac)
             fracSizer.Add(fracRef,0,WACV)
             vecrbSizer.Add(fracSizer)
-            tchoice = ['None','Uiso','T','TL','TLS']
+            tchoice = ['Uiso','T','TL','TLS']
             thermSizer = wx.BoxSizer(wx.HORIZONTAL)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,WACV)
             thermSel = wx.ComboBox(RigidBodies,-1,value=RBObj['ThermalMotion'][0],choices=tchoice,
@@ -10108,39 +10237,13 @@ at one of the following locations:
             thermSizer.Add(thermSel,0,WACV)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,WACV)
             vecrbSizer.Add(thermSizer)
-            if RBObj['ThermalMotion'][0] != 'None':
-                vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
+            vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
             return vecrbSizer
-
-        def OnVecSelect(event):
-            global prevVecId
-            prevVecId = vecSelect.GetSelection()
-            try:
-                resSelect.Deselect(resSelect.GetSelection())
-            except:
-                pass
-            try:
-                spnSelect.Deselect(spnSelect.GetSelection())
-            except:
-                pass
-            wx.CallLater(100,RepaintRBInfo,'Vector',prevVecId)
-
-        def OnResSelect(event):
-            global prevResId
-            prevResId = resSelect.GetSelection()
-            try:
-                vecSelect.Deselect(vecSelect.GetSelection())
-            except:
-                pass
-            try:
-                spnSelect.Deselect(spnSelect.GetSelection())
-            except:
-                pass
-            # define the parameters needed to drag the RB with the mouse
-            data['testRBObj'] = {}
-            rbType = 'Residue'
-            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
-            rbId = data['RBModels'][rbType][prevResId]['RBId']
+        
+        def SetTestRB(rbType,prevRBId,data):
+            
+            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevRBId])
+            rbId = data['RBModels'][rbType][prevRBId]['RBId']
             RBdata = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
             data['testRBObj']['rbData'] = RBdata
@@ -10171,10 +10274,75 @@ at one of the following locations:
             for item in RBData[rbType][rbId].get('rbSeq',[]):
                 data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
                 data['testRBObj']['torAtms'].append([-1,-1,-1])
+
+        def OnVecSelect(event):
+            global prevVecId
+            prevVecId = vecSelect.GetSelection()
+            try:
+                resSelect.Deselect(resSelect.GetSelection())
+            except:
+                pass
+            try:
+                spnSelect.Deselect(spnSelect.GetSelection())
+            except:
+                pass
+            data['testRBObj'] = {}
+            rbType = 'Vector'
+            SetTestRB(rbType,prevVecId,data)
+            wx.CallLater(100,RepaintRBInfo,'Vector',prevVecId)
+
+        def OnResSelect(event):
+            global prevResId
+            prevResId = resSelect.GetSelection()
+            try:
+                vecSelect.Deselect(vecSelect.GetSelection())
+            except:
+                pass
+            try:
+                spnSelect.Deselect(spnSelect.GetSelection())
+            except:
+                pass
+            # define the parameters needed to drag the RB with the mouse
+            data['testRBObj'] = {}
+            rbType = 'Residue'
+            SetTestRB(rbType,prevResId,data)
+            # data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
+            # rbId = data['RBModels'][rbType][prevResId]['RBId']
+            # RBdata = G2frame.GPXtree.GetItemPyData(
+            #     G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+            # data['testRBObj']['rbData'] = RBdata
+            # data['testRBObj']['rbType'] = rbType
+            # data['testRBObj']['rbAtTypes'] = RBdata[rbType][rbId]['rbTypes']
+            # data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
+            # data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
+            # data['testRBObj']['Sizers'] = {}
+            # data['testRBObj']['rbRef'] = RBData[rbType][rbId]['rbRef']
+
+            # refType = []
+            # for ref in data['testRBObj']['rbRef'][:3]:
+            #     reftype = data['testRBObj']['rbAtTypes'][ref]
+            #     refType.append(reftype)
+            #     #refName.append(reftype+' '+str(rbRef[0]))
+            # atNames = [{},{},{}]
+            # AtNames = {}
+            # cx,ct,cs,cia = data['General']['AtomPtrs']
+            # for iatm,atom in enumerate(data['Atoms']):
+            #     AtNames[atom[ct-1]] = iatm
+            #     for i,reftype in enumerate(refType):
+            #         if atom[ct] == reftype:
+            #             atNames[i][atom[ct-1]] = iatm
+            # data['testRBObj']['atNames'] = atNames
+            # data['testRBObj']['AtNames'] = AtNames
+            # data['testRBObj']['torAtms'] = []
+            # # unclear why these torsion entries are being added to rbObj.
+            # for item in RBData[rbType][rbId].get('rbSeq',[]):
+            #     data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
+            #     data['testRBObj']['torAtms'].append([-1,-1,-1])
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
 
         def OnSpnSelect(event):
             global prevSpnId
+            data['testRBObj'] = {}
             prevSpnId = spnSelect.GetSelection()
             try:
                 resSelect.Deselect(resSelect.GetSelection())
@@ -10189,24 +10357,34 @@ at one of the following locations:
         def RepaintRBInfo(rbType,rbIndx,Scroll=0):
             oldFocus = wx.Window.FindFocus()
             try:
-                if 'phoenix' in wx.version():
-                    G2frame.bottomSizer.Clear(True)
-                else:
-                    G2frame.bottomSizer.DeleteWindows()
+                G2frame.bottomSizer.Clear(True)
             except:
                 return
             Indx.clear()
             rbObj = data['RBModels'][rbType][rbIndx]
+            rbObj['showAxes'] = rbObj.get('showAxes',False)
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             if rbType == 'Residue':
+                G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+                G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','showAxes']}
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
+                text = ''
+                for ish,pMax in enumerate(rbObj.get('Pmax',[])):
+                    text += ('Shell %d: 4'+chr(0x03c0)+'*Pmax=%.3f, 4'+chr(0x03c0)+'*Pmin=%.3f ')%(ish,forpi*pMax,forpi*rbObj['Pmin'][ish])
+                G2frame.GetStatusBar().SetStatusText(text,1)
+                G2frame.selectRB = {item:rbObj[item] for item in ['Orient','symAxis','showAxes']}
+                G2frame.selectRB['Orig'] = [data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3],False]
                 data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
                 G2frame.bottomSizer =  SpnrbSizer(rbObj,rbIndx)
             else: #Vector
+                G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+                #patch
+                rbObj['symAxis'] = rbObj.get('symAxis',[0,0,1])
+                G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','symAxis','showAxes']}
                 G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()
@@ -10217,7 +10395,7 @@ at one of the following locations:
             G2plt.PlotStructure(G2frame,data)
             if oldFocus: wx.CallAfter(oldFocus.SetFocus)
 
-        # FillRigidBodyGrid executable code starts here
+        #### FillRigidBodyGrid main
         if refresh:
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
         if 'testRBObj' in data: del data['testRBObj']
@@ -10237,7 +10415,6 @@ at one of the following locations:
         atomStyle = 'balls & sticks'
         if 'macro' in general['Type']:
             atomStyle = 'sticks'
-        G2frame.GetStatusBar().SetStatusText('',1)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = G2frame.dataWindow.topBox
         topSizer.Clear(True)
@@ -10252,6 +10429,7 @@ at one of the following locations:
         vecSelect = None
         spnSelect = None
         rbSizer = wx.BoxSizer(wx.HORIZONTAL)
+        
         if 'Residue' in data['RBModels'] and len(data['RBModels']['Residue']):
             nobody = False
             resSizer = wx.BoxSizer(wx.VERTICAL)
@@ -10262,6 +10440,7 @@ at one of the following locations:
                 # patch
                 if 'AtomFrac' not in RBObj:
                     RBObj['AtomFrac'] = [1.0,False]
+                RBObj['fixOrig'] = False
                 #end patch
                 name = RBObj['RBname']+RBObj['numChain']
                 RBnames.append(name)
@@ -10293,6 +10472,7 @@ at one of the following locations:
                 # patch
                 if 'AtomFrac' not in RBObj:
                     RBObj['AtomFrac'] = [1.0,False]
+                RBObj['fixOrig'] = False
                 #end patch
                 RBnames.append(RBObj['RBname'])
             vecId = -1
@@ -10338,6 +10518,13 @@ at one of the following locations:
             spnSelect.Bind(wx.EVT_LISTBOX,OnSpnSelect)
             spnSizer.Add(spnSelect,0)
             rbSizer.Add(spnSizer)
+            data['Drawing']['Atoms'] = []
+            UpdateDrawAtoms(G2frame,data)
+        try:
+            rbObj['showAxes'] = rbObj.get('showAxes',False)
+            G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','OrientVec','symAxis','showAxes']}
+        except:
+            G2frame.selectRB = {}
         mainSizer.Add(rbSizer,0,wx.EXPAND)
         G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
         G2frame.bottomSizer.Add(wx.StaticText(RigidBodies,label=' '))
@@ -10356,11 +10543,12 @@ at one of the following locations:
         SetPhaseWindow(RigidBodies,mainSizer)
 
     def OnRBCopyParms(event):
+        #### copy implies setting equal but not same, is what is intended here is make all parms the same?
         RBObjs = []
-        for rbType in ['Vector','Residue']:
+        for rbType in ['Vector',]:
             RBObjs += data['RBModels'].get(rbType,[])
         if not len(RBObjs):
-            print ('**** ERROR - no rigid bodies defined ****')
+            print ('**** ERROR - only allowed for defined Vector rigid bodies ****')
             return
         if len(RBObjs) == 1:
             print ('**** INFO - only one rigid body defined; nothing to copy to ****')
@@ -10369,7 +10557,7 @@ at one of the following locations:
         sourceRB = {}
         for RBObj in RBObjs:
             Source.append(RBObj['RBname'])
-        dlg = wx.SingleChoiceDialog(G2frame,'Select source','Copy rigid body parameters',Source)
+        dlg = wx.SingleChoiceDialog(G2frame,'Select source','Duplicate rigid body parameters',Source)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             for item in ['Orig','Orient','ThermalMotion','AtomFract']:
@@ -10377,11 +10565,12 @@ at one of the following locations:
         dlg.Destroy()
         if not sourceRB:
             return
-        dlg = wx.MultiChoiceDialog(G2frame,'Select targets','Copy rigid body parameters',Source)
+        dlg = wx.MultiChoiceDialog(G2frame,'Select targets','Duplicate rigid body parameters',Source)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
             for x in sel:
-                RBObjs[x].update(copy.copy(sourceRB))
+                RBObjs[x].update(sourceRB)   #NB: this duplicates the objects; not make independent copies!
+#                RBObjs[x].update(copy.copy(sourceRB))   #NB: this duplicates the objects; not make independent copies!
         G2plt.PlotStructure(G2frame,data)
         wx.CallAfter(FillRigidBodyGrid,True)
 
@@ -10396,6 +10585,7 @@ at one of the following locations:
 
         rbType = data['testRBObj']['rbType']
         rbObj = data['testRBObj']['rbObj']
+        rbObj['Invert'] = rbObj.get('Invert',False)
         rbId = rbObj['RBId']
         matchTable = []
         if rbType == 'Spin':
@@ -10529,6 +10719,7 @@ at one of the following locations:
                     G2lat.RBsymCheck(atomData,ct,cx,cs,AtLookUp,Amat,Ids,SGData)
                 if updateNeeded:
                     SetupGeneral()
+                    data['Drawing']['Atoms'] = []
                     UpdateDrawAtoms(G2frame,data)
                     G2plt.PlotStructure(G2frame,data)
 
@@ -10546,7 +10737,8 @@ at one of the following locations:
                     rbObj.update(data['testRBObj']['rbData']['Spin'][rbId])
                     del rbObj['rbPos']
                 else:
-                    rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'] = ['Uiso',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'][1][0] = 0.01    #Uiso default
                 i = 0
                 while True:     #find unique name
                     rbName = '%s:%d'%(rbObj['RBname'],i)
@@ -10562,6 +10754,8 @@ at one of the following locations:
                         item = rbObj[name]
                         rbObj[name] = [rbObj[name],]
                     rbObj['Radius'] = [[1.0,False],]
+                rbObj['symAxis'] = data['testRBObj']['symAxis']
+                rbObj['showAxes'] = False
                 data['RBModels'][rbType].append(copy.deepcopy(rbObj))
                 RBData[rbType][rbId]['useCount'] += 1
                 del data['testRBObj']
@@ -10632,9 +10826,12 @@ at one of the following locations:
                 rbObj['OrientVec'][0] = float(Obj.GetValue())/10.
                 for i in range(4):
                     val = rbObj['OrientVec'][i]
-                    G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
-                Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
-                                np.inner(Amat,rbObj['OrientVec'][1:]))
+                    if not i:    #in that BoxSizer from G2SpinWidget
+                        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]    #.GetChildren()[-2].GetWindow()
+                    else:
+                        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]
+                    BSI.ChangeValue(val)
+                Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
                 A,V = G2mth.Q2AVdeg(Q)
                 rbObj['OrientVec'][1:] = np.inner(Bmat,V)
@@ -10648,6 +10845,7 @@ at one of the following locations:
                 Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
                     np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
+                azSlide.SetValue(int(10*rbObj['OrientVec'][0]))
                 try:
                     G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
                         int(10*rbObj['OrientVec'][0]))
@@ -10666,7 +10864,9 @@ at one of the following locations:
 
                 Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
                 sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
-                UpdateTablePlot(args,kwargs)
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
+                UpdateTable()
+#                UpdateTablePlot(args,kwargs)
 
             def getSelectedAtoms():
                 'Find the FB atoms that have been assigned to specific atoms in structure'
@@ -10695,12 +10895,13 @@ at one of the following locations:
                         msg += i
                         msg += ', '
                     wx.MessageBox(msg[:-2],caption='Duplicated Fixed Atoms',style=wx.ICON_EXCLAMATION)
-                    return
+                    return {}
                 return selDict
 
-            def getDeltaXYZ(selDict,data,rbObj):
+            def getDeltaXYZ(selDict,data,rbObj,ortho=True):
                 '''Evaluate the RB position & return the difference between the coordinates
-                and RB coordinates with origin and orientation from data['testRBObj']
+                and RB coordinates using origin and orientation from data['testRBObj'].
+                returns orthogonal coordinates unless ortho=False
                 '''
                 Amat,Bmat = G2lat.cell2AB(data['General']['Cell'][1:7])
                 rbXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,data['testRBObj']['rbData'],data['testRBObj']['rbType'])[0]
@@ -10708,25 +10909,49 @@ at one of the following locations:
                 deltaList = []
                 for i in selDict:
                     if selDict[i] is None: continue
-                    deltaList.append(phaseXYZ[selDict[i]]-rbXYZ[i])
+                    XYZf = phaseXYZ[selDict[i]]-rbXYZ[i] # fractional 
+                    if ortho:
+                        XYZo = np.inner(Amat,XYZf) # orthogonal
+                        deltaList.append(XYZo)
+                    else:
+                        deltaList.append(XYZf)
                 return np.array(deltaList)
 
             def objectiveDeltaPos(vals,selDict,data,rbObj_in):
                 '''Objective function for minimization.
                 Returns a list of distances between atom positions and
-                located rigid body positions
+                located rigid body positions. Generates the 4th quaterian from 
+                the 1st three. 
 
-                :param list vals: a 4 or 7 element array with 4 quaterian values
-                   or 4 quaterian values followed by 3 origin (x,y,z) values
+                :param list vals: a 3 or 6 element array with 3 (of 4) 
+                  quaterian values or 3 quaterian values followed by 3 
+                  origin (x,y,z) values
 
-                :returns: the 3*n distances between the n selected atoms
+                :returns: the 3*n distances between the n selected atoms 
+                  in orthogonal coordinates
                 '''
                 rbObj = copy.deepcopy(rbObj_in)
-                rbObj['Orient'][0][:] = G2mth.normQ(vals[:4])
-                if len(vals) == 7:
-                    rbObj['Orig'][0][:] = vals[4:]
-                #print(np.sqrt(sum(getDeltaXYZ(selDict,data,rbObj).flatten()**2)))
+                rbObj['Orient'][0][:] = quat3to4(vals[:3])
+                if len(vals) == 6:
+                    rbObj['Orig'][0][:] = vals[3:]
+                elif len(vals) != 3:
+                    raise Exception('Wrong use of objectiveDeltaPos')
                 return getDeltaXYZ(selDict,data,rbObj).flatten()
+
+            def quat3to4(vals):
+                '''Derive the 4th value for a quaternion from the 1st three
+                making sure to use normalization etc. 
+                
+                :param list vals: a 3 element list or array with the 1st 
+                  three quaterion terms
+                :returns: a normalized 4 term quaterion
+                '''
+                s = sum(np.array(vals)**2)
+                if s < 1:
+                    q4 = np.sqrt(1 - s)
+                else:
+                    q4 = 0.
+                return G2mth.normQ(np.append(vals,q4))
 
             def onSetOrigin(event):
                 'Set Origin to best fit selected atoms'
@@ -10739,7 +10964,7 @@ at one of the following locations:
                     wx.MessageBox('No existing atoms were selected',caption='Select Atom(s)',
                                       style=wx.ICON_EXCLAMATION)
                     return
-                deltaList = getDeltaXYZ(selDict,data,rbObj)
+                deltaList = getDeltaXYZ(selDict,data,rbObj,ortho=False)
                 data['testRBObj']['rbObj']['Orig'][0] += deltaList.sum(axis=0)/len(deltaList)
                 for i,item in enumerate(Xsizers):
 #                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
@@ -10750,12 +10975,12 @@ at one of the following locations:
                 'Set Orientation to best fit selected atoms'
                 selDict = getSelectedAtoms()
                 if len(selDict) < 2:
-                    wx.MessageBox('At least two existing atoms must be selected',caption='Select Atoms',
+                    wx.MessageBox('At least two RB atoms must be assigned',caption='Assign Atoms',
                                       style=wx.ICON_EXCLAMATION)
                     return
-                vals = rbObj['Orient'][0][:] #+ rbObj['Orig'][0][:]
+                vals = rbObj['Orient'][0][:3] #+ rbObj['Orig'][0][:]
                 out = so.leastsq(objectiveDeltaPos,vals,(selDict,data,rbObj))
-                data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0])
+                data['testRBObj']['rbObj']['Orient'][0][:] = quat3to4(out[0])
                 updateAddRBorientText(G2frame,data['testRBObj'],Bmat)
                 UpdateTablePlot()
 
@@ -10767,13 +10992,13 @@ at one of the following locations:
                     return
                 selDict = getSelectedAtoms()
                 if len(selDict) < 3:
-                    wx.MessageBox('At least three existing atoms must be selected',caption='Select Atoms',
+                    wx.MessageBox('At least three RB atoms must be assigned',caption='Assign Atoms',
                                       style=wx.ICON_EXCLAMATION)
                     return
-                vals = np.concatenate((rbObj['Orient'][0], rbObj['Orig'][0]))
+                vals = np.concatenate((rbObj['Orient'][0][:3], rbObj['Orig'][0]))
                 out = so.leastsq(objectiveDeltaPos,vals,(selDict,data,rbObj))
-                data['testRBObj']['rbObj']['Orig'][0][:] = out[0][4:]
-                data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0][:4])
+                data['testRBObj']['rbObj']['Orig'][0][:] = out[0][3:]
+                data['testRBObj']['rbObj']['Orient'][0][:] = quat3to4(out[0][:3])
                 for i,item in enumerate(Xsizers):
 #                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
                     item.ChangeValue(data['testRBObj']['rbObj']['Orig'][0][i])
@@ -10819,7 +11044,7 @@ at one of the following locations:
                 set, so use data['testRBObj']['rbObj'].get('symAxis') to
                 access this so the default value is None.
                 '''
-                axis = (None,[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]
+                axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]
                     )[event.GetEventObject().GetSelection()]
                 if axis:
                     axis = np.array(axis)/nl.norm(axis)
@@ -10831,6 +11056,10 @@ at one of the following locations:
                 for i,item in enumerate(Xsizers):
                     item.ChangeValue(data['testRBObj']['rbObj']['Orig'][0][i])
                 UpdateSytSym()
+                UpdateTablePlot()
+                
+            def OnInvert(event):
+                UpdateTable()
                 UpdateTablePlot()
 
             showAtom = [None]
@@ -10855,6 +11084,7 @@ at one of the following locations:
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add((5,5),0)
             rbObj = data['testRBObj']['rbObj']
+            rbObj['Invert']  = rbObj.get('Invert',False)
             data['RBModels']['SpnIds'] = data['RBModels'].get('SpnIds',{})
             rbType = data['testRBObj']['rbType']
             rbName = rbObj['RBname']
@@ -10939,10 +11169,7 @@ of the crystal structure.
                     xmin=-1.5,xmax=1.5,typeHint=float,OnLeave=UpdateSytSym)
                 OriSizer.Add(origX,0,WACV)
                 Xsizers.append(origX)
-            try:
-                rbObj['fixOrig']
-            except:
-                rbObj['fixOrig'] = False
+            rbObj['fixOrig'] = rbObj.get('fixOrig',False)
             if rbType != 'Spin':
                 fixOrig = G2G.G2CheckBox(RigidBodies,'Lock',rbObj,'fixOrig')
                 OriSizer.Add(fixOrig,0,WACV,10)
@@ -10963,18 +11190,18 @@ of the crystal structure.
                 mainSizer.Add(OriSizer1)
                 mainSizer.Add((5,5),0)
                 OriSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-                if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [0.,0.,0.,0.]
+                if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [180.,0.,0.,1.]
                 rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
                 rbObj['OrientVec'][1:] = np.inner(Bmat,V)
-                OriSizer2.Add(wx.StaticText(RigidBodies,label='Orientation azimuth: '),0,WACV)
                 OrientVecSiz = []
-                OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
-                    xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
-                OriSizer2.Add(OrientVecSiz[-1],0,WACV)
+                Orientvec,orientVal = G2G.G2SpinWidget(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),typeHint=float,
+                    label='Orientation azimuth: ',xmin=0.,xmax=360.,onChange=UpdateOrientation)
+                OrientVecSiz.append(orientVal)
+                OriSizer2.Add(Orientvec,0,WACV)
                 azSlide = G2G.G2Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25),
                     minValue=0,maxValue=3600,value=int(10*rbObj['OrientVec'][0]))
                 azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
-                OriSizer2.Add(azSlide,0,WACV)
+                OriSizer2.Add(azSlide)
                 mainSizer.Add(OriSizer2)
                 OriSizer3 = wx.BoxSizer(wx.HORIZONTAL)
                 OriSizer3.Add(wx.StaticText(RigidBodies,label='Orientation vector'),0,WACV)
@@ -10989,11 +11216,17 @@ of the crystal structure.
                 mainSizer.Add(OriSizer3)
                 mainSizer.Add((5,5),0)
                 OriSizer4 = wx.BoxSizer(wx.HORIZONTAL)
-                OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
-                choices = ['None']+RBdirlbl
-                symRadioSet = wx.RadioBox(RigidBodies,choices=choices)
-                symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
-                OriSizer4.Add(symRadioSet)
+                if data['testRBObj']['rbType'] == 'Vector':
+                    OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
+                    symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],RBdirlbl))[str(data['testRBObj']['symAxis'])]
+                    symRadioSet = wx.RadioBox(RigidBodies,choices=RBdirlbl)
+                    symRadioSet.SetStringSelection(symax)
+                    symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+                    OriSizer4.Add(symRadioSet)
+                else:
+                    OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis is z; '),0, WACV)
+                Invert = G2G.G2CheckBox(RigidBodies,'Invert',rbObj,'Invert',OnInvert)
+                OriSizer4.Add(Invert,0,WACV)
                 mainSizer.Add(OriSizer4)
                 mainSizer.Add((5,5),0)
                 RefSizer = wx.FlexGridSizer(0,7,5,5)
@@ -11044,7 +11277,7 @@ of the crystal structure.
                     ' All rigid body atoms will be added to structure.'),0)
                 misc['UpdateTable'] = None
                 mainSizer.Layout()
-#                G2plt.PlotStructure(G2frame,data,True)
+                G2plt.PlotStructure(G2frame,data,True)
                 RigidBodies.atomsGrid = None
                 return
 
@@ -11213,6 +11446,7 @@ of the crystal structure.
                 print('Invalid RB selection',selection,'How did this happen?')
                 return
         rbType,rbId = rbNames[selection]
+        data['testRBObj']['symAxis'] = RBData[rbType][rbId].get('symAxis',[0,0,1])
         if rbType == 'Spin':
             data['testRBObj']['rbAtTypes'] = [RBData[rbType][rbId]['rbType'],]
             data['testRBObj']['AtInfo'] = {RBData[rbType][rbId]['rbType']:[1.0,(128, 128, 255)],}
@@ -11331,7 +11565,8 @@ of the crystal structure.
                     QuatC = G2mth.prodQQ(QuatB,QuatA)
                     rbObj['Orient'] = [QuatC,' ']
                     rbObj['AtomFract'] = [1.0,False]
-                    rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'] = ['Uiso',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'][1][0] = 0.01    #Uiso default
                     SXYZ = []
                     TXYZ = []
                     rbObj['Torsions'] = []
@@ -11367,6 +11602,7 @@ of the crystal structure.
         RBData = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         for RBType in ['Vector','Residue','Spin']:
+            RBData[RBType] = RBData.get(RBType,[])
             for rbId in RBData[RBType]:
                 RBData[RBType][rbId]['useCount'] = 0
         FillRigidBodyGrid(True)
@@ -11385,9 +11621,8 @@ of the crystal structure.
                 Ttype = 'I'
             for rbObj in RBObjs:
                 rbObj['ThermalMotion'][0] = parm
-                if parm != 'None':
-                    for i,Id in enumerate(rbObj['Ids']):
-                        data['Atoms'][AtLookUp[Id]][cia] = Ttype
+                for i,Id in enumerate(rbObj['Ids']):
+                    data['Atoms'][AtLookUp[Id]][cia] = Ttype
         dlg.Destroy()
         wx.CallAfter(FillRigidBodyGrid,True)
 
@@ -11770,10 +12005,7 @@ of the crystal structure.
 
         def RepaintRBInfo(rbId,Scroll=0):
             oldFocus = wx.Window.FindFocus()
-            if 'phoenix' in wx.version():
-                G2frame.bottomSizer.Clear(True)
-            else:
-                G2frame.bottomSizer.DeleteWindows()
+            G2frame.bottomSizer.Clear(True)
             Indx.clear()
             rbObj = data['MCSA']['Models'][rbId]
             G2frame.bottomSizer.Insert(0,rbSizer(rbObj))
@@ -12057,7 +12289,8 @@ of the crystal structure.
                         for row in range(G2frame.PawleyRefl.GetNumberRows()): PawleyPeaks[row][c]=True
                     else:
                         for row in range(G2frame.PawleyRefl.GetNumberRows()): PawleyPeaks[row][c]=False
-                wx.CallAfter(FillPawleyReflectionsGrid)
+                #wx.CallAfter(FillPawleyReflectionsGrid)
+                G2frame.PawleyRefl.ForceRefresh()
 
         def KeyEditPawleyGrid(event):
             colList = G2frame.PawleyRefl.GetSelectedCols()
@@ -12581,7 +12814,7 @@ tab, use Operations->"Pawley create")''')
     def OnPeaksDelete(event):
         if 'Map Peaks' in data:
             mapPeaks = np.array(data['Map Peaks'])
-            Ind = getAtomSelections(mapPeaks)
+            Ind = getAtomSelections(G2frame.MapPeaks)
             Ind.sort()
             Ind.reverse()
             for ind in Ind:
@@ -12638,8 +12871,8 @@ tab, use Operations->"Pawley create")''')
 
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
-            mapPeaks = np.array(data['Map Peaks'])
-            Ind = getAtomSelections(mapPeaks)
+            #mapPeaks = np.array(data['Map Peaks'])
+            Ind = getAtomSelections(G2frame.MapPeaks)
             if Ind:
                 wx.BeginBusyCursor()
                 try:
@@ -12697,7 +12930,7 @@ tab, use Operations->"Pawley create")''')
         # set view point
         indx = getAtomSelections(G2frame.MapPeaks)
         if not indx:
-            G2frame.ErrorDialog('Set viewpoint','No peaks selected')
+            G2frame.ErrorDialog('Set view point','No peaks selected')
             return
         mapPeaks = data['Map Peaks']
         drawingData = data['Drawing']
@@ -12775,7 +13008,7 @@ tab, use Operations->"Pawley create")''')
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
-        data['Drawing']['mapSize'] = 10.
+        data['Drawing']['mapSize'] = 4.
         data['Drawing']['showMap'] = True
         ftext = dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
         print (ftext)
@@ -12785,7 +13018,7 @@ tab, use Operations->"Pawley create")''')
 
     def OnFourClear(event):
         generalData = data['General']
-        generalData['Map'] = mapDefault.copy()
+        generalData['Map'] = G2elem.mapDefault.copy()
         data['Drawing']['showMap'] = False
         G2plt.PlotStructure(G2frame,data)
 
@@ -12880,7 +13113,7 @@ tab, use Operations->"Pawley create")''')
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
-        data['Drawing']['mapSize'] = 10.
+        data['Drawing']['mapSize'] = 4.
         print (' 4D Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         if mapData['Rcf'] < 99.:
             OnSearchMaps(event)             #does a plot structure at end
@@ -12925,7 +13158,7 @@ tab, use Operations->"Pawley create")''')
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
-        data['Drawing']['mapSize'] = 10.
+        data['Drawing']['mapSize'] = 4.
         data['Drawing']['showMap'] = True
         print (' Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         if mapData['Rcf'] < 99.:
@@ -13010,7 +13243,6 @@ tab, use Operations->"Pawley create")''')
         on a Phase data item window
         '''
         page = event.GetSelection()
-        G2frame.phaseDisplay.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         # force edits in open grids to complete
         newlist = []
         for p in G2frame.phaseDisplay.gridList:
@@ -13020,9 +13252,14 @@ tab, use Operations->"Pawley create")''')
                 newlist.append(p)
             except:
                 pass
-        G2frame.phaseDisplay.gridList = newlist  # remove deleted grids from lis
-        # let the pending events clear before posting the new NB page
-        wx.CallAfter(ChangePage,page)
+        G2frame.phaseDisplay.gridList = newlist  # remove deleted grids from list
+        try:
+            G2frame.phaseDisplay.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
+
+            # let the pending events clear before posting the new NB page
+            wx.CallAfter(ChangePage,page)
+        except:
+            pass
 
     def ChangePage(page):
         text = G2frame.phaseDisplay.GetPageText(page)
@@ -13105,7 +13342,9 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnSuperSearch, id=G2G.wxID_SUPERSRCH)
         G2frame.Bind(wx.EVT_MENU, OnISOSearch, id=G2G.wxID_ISOSRCH)
         G2frame.Bind(wx.EVT_MENU, OnSubSearch, id=G2G.wxID_SUBSRCH)
+        # G2frame.Bind(wx.EVT_MENU, OnNISTLatSym, id=G2G.wxID_NISTLATCELL)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
+        G2frame.Bind(wx.EVT_MENU, TestBilbao, id=G2G.wxID_TESTBCS)
         G2frame.Bind(wx.EVT_MENU, OnCompareCells, id=G2G.wxID_COMPARECELLS)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
         G2frame.Bind(wx.EVT_MENU, OnApplySubgroups, id=G2G.wxID_USEBILBAOSUB)
@@ -13139,7 +13378,7 @@ tab, use Operations->"Pawley create")''')
 
         G2frame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2G.wxID_ATOMSEDITADD)
         G2frame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2G.wxID_ATOMSVIEWADD)
-        G2frame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2G.wxID_ATOMVIEWINSERT)
+        #G2frame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2G.wxID_ATOMVIEWINSERT)
         G2frame.Bind(wx.EVT_MENU, OnHydAtomUpdate, id=G2G.wxID_UPDATEHATOM)
         G2frame.Bind(wx.EVT_MENU, OnAtomMove, id=G2G.wxID_ATOMMOVE)
         G2frame.Bind(wx.EVT_MENU, MakeMolecule, id=G2G.wxID_MAKEMOLECULE)
@@ -13188,7 +13427,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, SetViewPoint, id=G2G.wxID_DRAWVIEWPOINT)
         G2frame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2G.wxID_DRAWADDEQUIV)
         G2frame.Bind(wx.EVT_MENU, AddSphere, id=G2G.wxID_DRAWADDSPHERE)
-        G2frame.Bind(wx.EVT_MENU, AddBox, id=G2G.wxID_DRAWADDBOX)
+        #G2frame.Bind(wx.EVT_MENU, AddBox, id=G2G.wxID_DRAWADDBOX)
         G2frame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2G.wxID_DRAWTRANSFORM)
         G2frame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2G.wxID_DRAWFILLCOORD)
         G2frame.Bind(wx.EVT_MENU, FillUnitCell, id=G2G.wxID_DRAWFILLCELL)
@@ -13197,6 +13436,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnDrawDistVP, id=G2G.wxID_DRAWDISTVP)
         G2frame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2G.wxID_DRAWDISAGLTOR)
         G2frame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2G.wxID_DRAWPLANE)
+        G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_DRAWISO)
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRBOND)
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRANGLE)
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRPLANE)
@@ -13533,79 +13773,6 @@ def CheckAddHKLF(G2frame,data):
     wx.EndBusyCursor()
     return result
 
-def checkPDFfit(G2frame):
-    '''Checks to see if PDFfit2 is available and can be imported. PDFfit2 can be installed
-    in a separate Python interpreter (saved in the pdffit2_exec config variable). If this is
-    defined, no attempt is made to check that it actually runs.
-    Otherwise, if diffpy.PDFfit has been installed with conda/pip, it is checked if the
-    install command.
-
-    :returns: False if PDFfit2 cannot be run/accessed. True if it appears it can be run.
-    '''
-    # if a separate Python interpreter has been specified, just use it, no checking
-    if GSASIIpath.GetConfigValue('pdffit2_exec') is not None and is_exe(
-            GSASIIpath.GetConfigValue('pdffit2_exec')):
-        return True
-
-    # see if diffpy has been installed directly
-    try:
-        from diffpy.pdffit2 import PdfFit
-        PdfFit
-        return True
-    except:
-        pass
-
-    # Last effort: With conda we should be able to create a separate
-    # Python in a separate environment
-    try:     # have conda. Can we access it programmatically?
-        import conda.cli.python_api
-        conda.cli.python_api
-    except:
-        G2G.G2MessageBox(G2frame,'You are running a directly installed Python. You will need to install PDFfit2 directly as well, preferably in a separate virtual environment.')
-        return
-
-    msg = ('Do you want to use conda to install PDFfit2 into a separate environment? '+
-               '\n\nIf successful, the pdffit2_exec configuration option will be set to the '+
-               'this new Python environment.')
-    dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-                                   style=wx.YES_NO|wx.ICON_QUESTION)
-    if dlg.ShowModal() != wx.ID_YES:
-        return False
-    try:
-        wx.BeginBusyCursor()
-        print('Preparing to create a conda environment. This may take a few minutes...')
-        # for now use the older diffpy version of pdffit:
-        #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.3.4 -c conda-forge -c diffpy
-        res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
-                    ['python', 'conda', 'gsl', 'diffpy.pdffit2>=1.4.3',
-                         '-c', 'conda-forge']) #  not needed , '-c', 'diffpy'])
-    finally:
-        wx.EndBusyCursor()
-    if os.path.exists(PDFpython) and is_exe(PDFpython):
-        vars = G2G.GetConfigValsDocs()
-        vars['pdffit2_exec'][1] = PDFpython
-        GSASIIpath.SetConfigValue(vars)
-        G2G.SaveConfigVars(vars)
-        print('pdffit2_exec config set with ',GSASIIpath.GetConfigValue('pdffit2_exec'))
-        print('\n\nSuccess: PDFfit2 installed.')
-        return True
-    else:
-        print(f'Failed to install PDFfit2 with error:\n{PDFpython}')
-        if ('PackagesNotFoundError' in PDFpython
-                and 'darwin' in sys.platform
-                and 'arm' in platform.machine()):
-            msg = ('It appears that PDFfit2 is not yet available as a conda package for Macs with arm processors. '+
-                       '\n\nYou could install PDFfit2 with x86 Python and use that '+
-                       'in compatibility mode.')
-        else:
-            msg = ('An attempt to install PDFfit2 has failed. '+
-                       'Do you have write access to where GSAS-II is installed? '+
-                       'You may be able to install PDFfit2 manually.')
-        msg += '\n\nIf you install PDFfit2 yourself, set the pdffit2_exec config variable to the install location'
-        G2G.G2MessageBox(G2frame,
-                'PDFfit2 Install failed. See console for error message\n\n'+msg,
-                'PDFfit2 install error')
-        return False
 
 def makeIsoNewPhase(phData,cell,atomList,sglbl,sgnum):
     '''create a new phase from a supergroup structure generated by ISOCIF
@@ -13709,3 +13876,133 @@ def renamePhaseName(G2frame,data,phaseItem,generalData,newName):
             if len(Restraints) and oldName in Restraints:
                 Restraints[newName] = Restraints[oldName]
                 del Restraints[oldName]
+
+def showFinalResults(G2frame,msgs,pagelist,fileList):
+    '''Show a summary with info from a search of supergroups in
+    :func:`OnSuperSearch` (in :func:`UpdatePhaseData`)
+    '''
+    def _showWebPage(event):
+        import tempfile
+        f = event.GetEventObject().webFile
+        tmp = tempfile.NamedTemporaryFile(suffix='.html',
+                        delete=False)
+        with open(tmp.name,'w') as fp:
+            fp.write(f.replace(
+                '<head>',
+                f'<head><base href="{SUBGROUPS.bilbaoURL}/">',
+                ))
+        fileList.append(tmp.name)
+        G2G.ShowWebPage('file://'+tmp.name,G2frame)
+    width = 700
+    dlg = wx.Dialog(G2frame,wx.ID_ANY,'Search results',
+                        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+            f'''Summary of results from the Bilbao Crystallographic Server Pseudosymmetry 
+search (PSEUDO) program; Please cite:
+{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''))
+    txt = wx.StaticText(dlg,wx.ID_ANY,'Starting from '+msgs[0].replace('\n',' '))
+    txt.Wrap(width)
+    mainSizer.Add((-1,10))
+    mainSizer.Add(txt)
+    mainSizer.Add((-1,5))
+    showSizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_ANY,label='Show')
+    btn.webFile = pagelist[0]
+    btn.Bind(wx.EVT_BUTTON,_showWebPage)
+    showSizer.Add(btn)
+    showSizer.Add(wx.StaticText(dlg,wx.ID_ANY,' Web page with supergroup search results'))
+    mainSizer.Add(showSizer)
+    mainSizer.Add((-1,10))
+    spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(width, 400))
+    txtSizer = wx.BoxSizer(wx.VERTICAL)
+    level = -1
+    while True:
+        level += 1
+        keys = [i for i in pagelist if i !=0 and i.count('-') == level and 'R' not in i]
+        if not keys: break
+        txtSizer.Add((-1,10))
+        G2G.HorizontalLine(txtSizer,spanel)
+        G2G.HorizontalLine(txtSizer,spanel)
+        txt = wx.StaticText(spanel,wx.ID_ANY,f'Level {level} supergroups',style=wx.ALIGN_CENTER)
+        txtSizer.Add(txt,0,wx.EXPAND)
+        for num in keys:
+            if num in msgs:
+                if '@' not in num: G2G.HorizontalLine(txtSizer,spanel)
+                txt = wx.StaticText(spanel,wx.ID_ANY,f'Case {num}: ' + msgs[num])
+                txt.Wrap(width-50)
+                txtSizer.Add(txt)
+                if pagelist[num] is None:
+                    txtSizer.Add((-1,10))
+                    continue
+            elif pagelist[num] is not None:
+                txt = wx.StaticText(spanel,wx.ID_ANY,
+                                    f'Processing for case {num} incomplete')
+                txt.Wrap(width-50)
+                txtSizer.Add(txt)
+            elif pagelist[num] is None:
+                txtSizer.Add((-1,5))
+                txtSizer.Add(wx.StaticText(spanel,wx.ID_ANY,
+                                    f'Processing of case {num} failed'))
+                txtSizer.Add((-1,10))
+                continue
+            if num in pagelist:
+                txtSizer.Add((-1,5))
+                showSizer = wx.BoxSizer(wx.HORIZONTAL)
+                btn = wx.Button(spanel, wx.ID_ANY,label='Show')
+                btn.webFile = pagelist[num]
+                btn.Bind(wx.EVT_BUTTON,_showWebPage)
+                showSizer.Add(btn)
+                showSizer.Add(wx.StaticText(spanel,wx.ID_ANY,' Web page with transform info'))
+                txtSizer.Add(showSizer)
+            if num+'R' in pagelist:
+                txtSizer.Add((-1,5))
+                showSizer = wx.BoxSizer(wx.HORIZONTAL)
+                btn = wx.Button(spanel, wx.ID_ANY,label='Show')
+                btn.webFile = pagelist[num+'R']
+                btn.Bind(wx.EVT_BUTTON,_showWebPage)
+                showSizer.Add(btn)
+                showSizer.Add(wx.StaticText(spanel,wx.ID_ANY,' Web page with supergroup search info'))
+                txtSizer.Add(showSizer)
+        txtSizer.Add((-1,10))
+    if level == 0:
+        mainSizer.Add((-1,10))
+        mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                        'No matching supergroups were found'))
+        spanel.Destroy()
+    else:
+        spanel.SetSizer(txtSizer)
+        mainSizer.Add(spanel,1,wx.ALL|wx.EXPAND,1)
+        spanel.SetAutoLayout(1)
+        spanel.SetupScrolling()
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_CLOSE, label="Continue")
+    btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+    btnsizer.Add(btn)
+    mainSizer.Add((-1,10))
+    mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    dlg.CenterOnParent()
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    return ans
+
+def TestBilbao(event):
+    G2frame = wx.GetApp().GetMainTopWindow()
+    SUBGROUPS.do_once = None   # force reinitialization
+    if SUBGROUPS.BCS_init():
+        msg = 'Bilbao key (BCS_API_KEY) has not been defined.'
+        G2G.G2MessageBox(G2frame,msg,'Bilbao access failed')
+        return
+    try:
+        sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(G2spc.SpcGroup('R 3 C r')[1])
+        if sgnum != 161: 
+            G2G.G2MessageBox(G2frame,'Bilbao problem: unexpected result','Bilbao problem')
+    except Exception as msg:
+        if GSASIIpath.GetConfigValue('debug'): print(msg)
+        G2G.G2MessageBox(G2frame,'Bilbao access failed. Invalid key?','Bilbao access failed')
+        return
+    G2G.G2MessageBox(G2frame,'Bilbao accessed OK','Bilbao accessed')
+    print('done')

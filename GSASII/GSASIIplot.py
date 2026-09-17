@@ -46,6 +46,7 @@ from . import GSASIIctrlGUI as G2G
 from . import GSASIIobj as G2obj
 from . import GSASIIpwdplot as G2pwpl
 from . import GSASIIfiles as G2fil
+from . import GSASIIElem as G2elem
 try:
     if GSASIIpath.binaryPath:    # TODO: I think this may use a fair amount of memory; delay import?
         import pytexture as ptx
@@ -94,6 +95,7 @@ npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
+vnorm = lambda v: v/nl.norm(v)
 try:  # fails on doc build
     sq8ln2 = np.sqrt(8.0*np.log(2.0))
 except TypeError:
@@ -231,10 +233,7 @@ class G2PlotMpl(_tabPlotWin):
         self.SetSizer(sizer)
 
     def SetToolTipString(self,text):
-        if 'phoenix' in wx.version():
-            return self.canvas.SetToolTip(text)
-        else:
-            return self.canvas.SetToolTipString(text)
+        return self.canvas.SetToolTip(text)
 
     def ToolBarDraw(self):
         try:
@@ -265,10 +264,7 @@ class G2PlotOgl(_tabPlotWin):
         self.SetSizer(sizer)
 
     def SetToolTipString(self,text):
-        if 'phoenix' in wx.version():
-            self.canvas.SetToolTip(wx.ToolTip(text))
-        else:
-            self.canvas.SetToolTipString(text)
+        self.canvas.SetToolTip(wx.ToolTip(text))
 
 class G2Plot3D(_tabPlotWin):
     'Creates a 3D Matplotlib plot in the GSAS-II graphics window'
@@ -286,10 +282,7 @@ class G2Plot3D(_tabPlotWin):
         self.SetSizer(sizer)
 
     def SetToolTipString(self,text):
-        if 'phoenix' in wx.version():
-            self.canvas.SetToolTip(wx.ToolTip(text))
-        else:
-            self.canvas.SetToolTipString(text)
+        self.canvas.SetToolTip(wx.ToolTip(text))
 
     def ToolBarDraw(self):
         try:
@@ -953,20 +946,11 @@ class GSASIItoolbar(Toolbar):
 def SetCursor(page):
     mode = page.toolbar.GetActive()
     if mode == 'Pan':
-        if 'phoenix' in wx.version():
-            page.canvas.Cursor = wx.Cursor(wx.CURSOR_SIZING)
-        else:
-            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_SIZING)
     elif mode == 'Zoom':
-        if 'phoenix' in wx.version():
-            page.canvas.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
-        else:
-            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
     else:
-        if 'phoenix' in wx.version():
-            page.canvas.Cursor = wx.Cursor(wx.CURSOR_CROSS)
-        else:
-            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_CROSS)
 
 def PlotFPAconvolutors(G2frame,NISTpk,conv2T=None,convI=None,convList=None):
     '''Plot the convolutions used for the current peak computed with
@@ -1165,6 +1149,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
 
     if not G2frame.PatternId:
         return
+    if newPlot:
+        G2frame.G2plotNB.Delete('Structure Factors')
     Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     if not Title:
         Title = Name
@@ -1427,13 +1413,13 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             XD = np.vstack((X,X,np.zeros_like(X)-Ymax/10.,Y-Z-Ymax/10.)).reshape((2,2,-1)).T
             lines = mplC.LineCollection(XY,color=colors[0])
             Plot.add_collection(lines)
-            lines = mplC.LineCollection(XZ,color=colors[1])
+            lines = mplC.LineCollection(XZ,color=colors[2])
             Plot.add_collection(lines)
-            lines = mplC.LineCollection(XD,color=colors[2])
+            lines = mplC.LineCollection(XD,color=colors[1])
             Plot.add_collection(lines)
         else:
             Plot.errorbar(X, Y, yerr=Z, fmt='.', color='b',picker=5)
-            Plot.plot(X, X, color='r')
+            Plot.plot(X, X, color='g')
 
         xylim = np.array([[np.min(X),np.max(X)],[np.min(Y-Z-Ymax/10.),np.max(np.concatenate((Y,Z)))]])
         dxylim = np.array([xylim[0][1]-xylim[0][0],xylim[1][1]-xylim[1][0]])/20.
@@ -1637,7 +1623,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
-    Yl = np.array([255,255,0])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]],
@@ -1706,24 +1691,24 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 dFsig = (Fosq-Fcsq)/sig
                 if dFsig > 0:
                     R.append(Fosq)
-                    dFsig = min(10.,dFsig)
-                    dw = int(255.*(1.0-(dFsig/10.)))
+                    dFsig = min(3.,dFsig)
+                    dw = int(255.*(1.0-(dFsig/3.)))
                     color = np.array([dw,255,0])
                 else:
                     R.append(Fosq)
-                    dFsig = max(-10.,dFsig)
-                    dw = int(255.*(1.0+(dFsig/10.)))
+                    dFsig = max(-3.,dFsig)
+                    dw = int(255.*(1.0+(dFsig/3.)))
                     color = np.array([255,dw,0])
                 C.append(color)
             elif Data['Type'] == 'dFsq':
                 dF = Fosq-Fcsq
                 if dF > 0:
                     R.append(Fosq)
-                    dw = int(255.*(1.0-(dF/-dFmin)))
+                    dw = int(255.*(1.0-(dF/dFmin)))
                     color = np.array([dw,255,0])
                 else:
                     R.append(Fosq)
-                    dw = int(255.*(1.0+(dF/dFmax)))
+                    dw = int(255.*dF/dFmax)
                     color = np.array([255,dw,0])
                 C.append(color)
         if len(R):
@@ -1873,7 +1858,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed A')
             return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
@@ -3089,11 +3074,19 @@ def PlotStrain(G2frame,data,newPlot=False):
     Plot.set_xlabel(r'Azimuth',fontsize=14)
     NC = len(Colors)
     for N,item in enumerate(data['d-zero']):
-        Y,X = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
-        Plot.plot(X,Y,marker='+',color=Colors[N%NC],linewidth=0)
-        Y,X = np.array(item['ImtaCalc'])
-        Plot.plot(X,Y,Colors[N%NC])
-        Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5))
+        Yo,Xo = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
+        Yc,Xc = np.array(item['ImtaCalc'])
+        if N:
+            Plot.plot(Xo,Yo,marker='+',color=Colors[N%NC],linewidth=0)
+            Plot.plot(Xc,Yc,Colors[N%NC])
+            Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5))
+            Plot.plot([0.,360.],[item['Dset'],item['Dset']],Colors[5])
+        else:    
+            Plot.plot(Xo,Yo,marker='+',color=Colors[N%NC],linewidth=0,label='Obs')
+            Plot.plot(Xc,Yc,Colors[N%NC],label='Calc')
+            Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5),label='d-zero ave')
+            Plot.plot([0.,360.],[item['Dset'],item['Dset']],Colors[5],label='d-zero')
+    Plot.legend(loc='best')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -3575,9 +3568,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
             A = data[4]/1000.
             B = data[6]/1000.
         s = np.sqrt(data[isig])*np.pi/18000.   #var -> sig(radians)
-        g = data[igam]*np.pi/18000.    #centideg -> radians
-        G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn
-        Y = sq8ln2*s/nptand(X/2.)
+        g = data[igam]*np.pi/36000.    #centideg -> radians
+        G = G2pwd.getgamFW(g,s)/2.  #delt-theta from TCH fxn
+        Y = sq8ln2*s/nptand(X/2.)/2.0
         Z = g/nptand(X/2.)
         W = G/nptand(X/2.)
         if Parms['Type'][0][2] in ['A','B']:
@@ -3595,9 +3588,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Af = fit[4]/1000.
             Bf = fit[6]/1000.
         sf = np.sqrt(fit[isig])*np.pi/18000.
-        gf = fit[igam]*np.pi/18000.
-        Gf = G2pwd.getgamFW(gf,sf)      #/2.
-        Yf = sq8ln2*sf/nptand(X/2.)
+        gf = fit[igam]*np.pi/36000.
+        Gf = G2pwd.getgamFW(gf,sf)/2.
+        Yf = sq8ln2*sf/nptand(X/2.)/2.0
         Zf = gf/nptand(X/2.)
         Wf = Gf/nptand(X/2.)
         if Parms['Type'][0][2] in ['A','B']:
@@ -3632,9 +3625,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
                 s = math.sqrt(peak[isig])*math.pi/18000.
             except ValueError:
                 s = 0.01
-            g = peak[igam]*math.pi/18000.
-            G = G2pwd.getgamFW(g,s)         #/2.
-            yp = sq8ln2*s
+            g = peak[igam]*math.pi/36000.
+            G = G2pwd.getgamFW(g,s)/2.
+            yp = sq8ln2*s/2.0
             Yp.append(yp/tpd)
             sYp.append(0.5*sq8ln2*(math.pi/18000.)**2*peakEsds.get('sig%d'%ip,0.0)/(s*tpd))
             Zp.append(g/tpd)
@@ -4266,6 +4259,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     MapType = mapData['MapType']
     rhoSize = np.array(Map['rho'].shape)
     atxyz = np.array(atom[cx:cx+3])
+    G2elem.AddWave2atm(atom)
     Spos = atom[-1]['SS1']['Spos']
     tau = np.linspace(0.,2.,101)
     wave = np.zeros((3,101))
@@ -5805,6 +5799,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             for N,ring in enumerate(StrSta['d-zero']):
                 if 'ImxyCalc' in ring:
                     xringc,yringc = ring['ImxyCalc']
+                    nr = np.where(np.diff(xringc) > 5)[0]+1
+                    xringc = np.roll(xringc,-nr)
+                    yringc = np.roll(yringc,-nr)
                     Plot.plot(xringc,yringc,Colors[N%NC])
                 xring,yring = ring['ImxyObs']
                 Plot.plot(xring,yring,'.',color=Colors[N%NC])
@@ -6500,16 +6497,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 
         if event.Dragging():
             if event.AltDown() and rbObj:  # dragging of a rigid body
-                if event.CmdDown(): # Mac middlebutton workaround
+                if event.MiddleIsDown() or event.CmdDown(): # Mac middlebutton workaround
                     SetRBRotationZ(newxy)
                     if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     Q = rbObj['Orient'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                    G2frame.G2plotNB.status.SetStatusText('New RB quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 elif event.LeftIsDown():
                     SetRBRotation(newxy)
                     if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     Q = rbObj['Orient'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                    G2frame.G2plotNB.status.SetStatusText('New RB quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 elif event.RightIsDown():
                     if 'fixOrig' in rbObj:
                         if rbObj.get('fixOrig',False): return
@@ -6518,12 +6515,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     SetRBTranslation(newxy)
                     Tx,Ty,Tz = rbObj['Orig'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New origin: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
-                elif event.MiddleIsDown():
-                    SetRBRotationZ(newxy)
-                    if rbObj.get('fillMode'): rbObj['needsFill'] = True
-                    Q = rbObj['Orient'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                    G2frame.G2plotNB.status.SetStatusText('New RB origin: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
                 Draw('move')
             elif not event.ControlDown():
                 if event.LeftIsDown():
@@ -6544,7 +6536,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             SetCursorStatus(newxy,drawingData.get('showSlice',False) in [1,3])
 
     def OnMouseWheel(event):
-        if event.ShiftDown():
+        if event.ShiftDown() or event.AltDown():
             return
         drawingData['cameraPos'] += event.GetWheelRotation()/24.
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
@@ -6678,7 +6670,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed B')
             return
         GL.glShadeModel(GL.GL_SMOOTH)
         GL.glEnable(GL.GL_LIGHTING)
@@ -6727,13 +6719,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         V = np.array([-dxy[0],dxy[1],0.])
 #then transform to rotated crystal coordinates & apply to view point
         Q = drawingData['Quaternion']
-        V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
-        Tx,Ty,Tz = drawingData['viewPoint'][0]
-        Tx += V[0]*0.01
-        Ty += V[1]*0.01
-        Tz += V[2]*0.01
-        drawingData['viewPoint'][0] =  np.array([Tx,Ty,Tz])
-        SetViewPointText([Tx,Ty,Tz])
+        drawingData['viewPoint'][0] += 0.01*np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
+        SetViewPointText(drawingData['viewPoint'][0])
 
     def SetRBTranslation(newxy):
 #first get translation vector in screen coords.
@@ -6746,12 +6733,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         V = np.array([-dxy[0],dxy[1],0.])
 #then transform to rotated crystal coordinates & apply to RB origin
         Q = drawingData['Quaternion']
-        V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
-        Tx,Ty,Tz = rbObj['Orig'][0]
-        Tx -= V[0]*0.01
-        Ty -= V[1]*0.01
-        Tz -= V[2]*0.01
-        rbObj['Orig'][0][:] =  Tx,Ty,Tz
+        rbObj['Orig'][0] -= 0.01*np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
         SetRBText()
 
     def SetRotation(newxy):
@@ -6762,14 +6744,14 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         dxy = newxy-oldxy
         if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         drawingData['oldxy'] = list(newxy)
-        V = np.array([dxy[1],dxy[0],0.])
-        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
-        if not A: return # nothing changed, nothing to do
+        dV = np.array([dxy[1],dxy[0],0.])
+        dA = 0.25*np.sqrt(np.sum(dV**2))
+        if not dA: return # nothing changed, nothing to do
     # next transform vector back to xtal coordinates via inverse quaternion
     # & make new quaternion
         Q = drawingData['Quaternion']
-        V = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,V))
-        DQ = G2mth.AVdeg2Q(A,V)
+        dV = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,dV))
+        DQ = G2mth.AVdeg2Q(dA,dV)
         Q = G2mth.prodQQ(Q,DQ)
         drawingData['Quaternion'] = Q
     # finally get new view vector - last row of rotation matrix
@@ -6778,7 +6760,29 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['viewDir'] = VD
         SetViewDirText(VD)
 
+    def SetRBRotation(newxy):
+        ''' invoked by Alt-left button down drag when in Phase/Rigid bodies
+        '''
+#first get rotation vector in screen coords. & angle increment
+        oldxy = drawingData['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        drawingData['oldxy'] = list(newxy)
+        dV = 0.025*np.array([dxy[0],-dxy[1],0.])
+        if not -np.sqrt(np.sum(dV**2)): return # nothing changed, nothing to do
+# next transform vector back to xtal coordinates via inverse quaternion
+# & make new quaternion
+        Q = rbObj['Orient'][0]
+        A,V = G2mth.Q2AV(Q)
+        QC = drawingData['Quaternion']      #rotate x,y,0 to Cart
+        dV = G2mth.prodQVQ(G2mth.invQ(QC),dV)
+        dV = np.inner(Bmat,dV)  #Cart to crystal
+        rbObj['Orient'][0][:] = G2mth.AV2Q(A,V+dV)
+        SetRBText()
+        
     def SetRotationZ(newxy):
+        ''' invoked by middle button down drag 
+        '''
 #first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
@@ -6798,33 +6802,17 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 # next transform vector back to xtal coordinates & make new quaternion
         Q = drawingData['Quaternion']
         V = np.inner(Amat,V)
-        Qx = G2mth.AVdeg2Q(A[0],V)
-        Qy = G2mth.AVdeg2Q(A[1],V)
-        Q = G2mth.prodQQ(Q,Qx)
-        Q = G2mth.prodQQ(Q,Qy)
+        if A[0]:
+            Qx = G2mth.AVdeg2Q(A[0],V)
+            Q = G2mth.prodQQ(Q,Qx)
+        if A[1]:
+            Qy = G2mth.AVdeg2Q(A[1],V)
+            Q = G2mth.prodQQ(Q,Qy)
         drawingData['Quaternion'] = Q
 
-    def SetRBRotation(newxy):
-#first get rotation vector in screen coords. & angle increment
-        oldxy = drawingData['oldxy']
-        if not len(oldxy): oldxy = list(newxy)
-        dxy = newxy-oldxy
-        if dxy[0] == dxy[1] == 0: return
-        drawingData['oldxy'] = list(newxy)
-        V = np.array([dxy[1],dxy[0],0.])
-        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
-# next transform vector back to xtal coordinates via inverse quaternion
-# & make new quaternion
-        Q = rbObj['Orient'][0]              #rotate RB to Cart
-        QC = drawingData['Quaternion']      #rotate Cart to drawing
-        V = G2mth.prodQVQ(G2mth.invQ(QC),V)
-        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
-        DQ = G2mth.AVdeg2Q(A,V)
-        Q = G2mth.prodQQ(Q,DQ)
-        rbObj['Orient'][0][:] = Q
-        SetRBText()
-
     def SetRBRotationZ(newxy):
+        ''' invoked by Alt-middle button down drag when in Phase/Rigid bodies
+        '''
 #first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
@@ -6834,22 +6822,19 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if dxy[0] == dxy[1] == 0: return
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
-        A = [0,0]
-        A[0] = dxy[1]*.25
-        A[1] = dxy[0]*.25
+        dA = [-dxy[1]*.1,-dxy[0]*.1]
         if newxy[0] < cent[0]:
-            A[0] *= -1
+            dA[0] *= -1
         if newxy[1] > cent[1]:
-            A[1] *= -1
-# next transform vector back to RB coordinates & make new quaternion
-        Q = rbObj['Orient'][0]              #rotate RB to cart
-        V = np.inner(Amat,V)
-        V = -G2mth.prodQVQ(G2mth.invQ(Q),V)
-        Qx = G2mth.AVdeg2Q(A[0],V)
-        Qy = G2mth.AVdeg2Q(A[1],V)
-        Q = G2mth.prodQQ(Q,Qx)
-        Q = G2mth.prodQQ(Q,Qy)
-        rbObj['Orient'][0][:] = Q
+            dA[1] *= -1
+# next apply to angle part & make new quaternion
+        Q = rbObj['Orient'][0]
+        A,V = G2mth.Q2AVdeg(Q)
+        if dA[0]:
+            A += dA[0]
+        if dA[1]:
+            A += dA[1]
+        rbObj['Orient'][0] = G2mth.AVdeg2Q(A%360.,V)
         SetRBText()
 
     def RenderBox():
@@ -6894,7 +6879,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
 
-    def RenderRBtriplet(orig,Q,Bmat,symAxis=None):
+    def RenderRBtriplet(orig,Q0,Bmat):
         '''draw an axes triplet located at the origin of a rigid body
         and with the x, y & z axes drawn as red, green and blue.
         '''
@@ -6906,20 +6891,23 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glEnable(GL.GL_LINE_SMOOTH)
         GL.glPushMatrix()
         GL.glTranslate(*orig)
+        GL.glLineStipple(1,255)
+        GL.glEnable(GL.GL_LINE_STIPPLE)
         GL.glBegin(GL.GL_LINES)
-        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,symAxis)
+        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q0,None)
         colors = [Rd,Gr,Bl]
         # lines along axial directions
         for line,color in zip(lines,colors):
             GL.glColor3ubv(color)
             GL.glVertex3fv(np.zeros(3))
             GL.glVertex3fv(line)
-        A,V = G2mth.Q2AVdeg(Q)
+        A,V = G2mth.Q2AVdeg(Q0)
         Vfrac = np.inner(Bmat,V)
         GL.glColor3ubv([255,255,255])
         GL.glVertex3fv(np.zeros(3))
         GL.glVertex3fv(1.5*Vfrac)
         GL.glEnd()
+        GL.glDisable(GL.GL_LINE_STIPPLE)
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_LINE_SMOOTH)
@@ -7009,7 +6997,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
 
-    def RenderTextureSphere(x,y,z,radius,ATcolor=None,shape=[20,10],Texture=None,ifFade=True):
+    def RenderTextureSphere(x,y,z,radius,E,R4,ATcolor=None,shape=[20,10],Texture=None,ifFade=True):
+        ''' radius > 0. do CCW wrap for outside else do CW wrap.
+        
+        '''
+        s1,s2,s3 = np.array(E)+abs(radius)
         SpFade = np.zeros(list(Texture.shape)+[4,],dtype=np.dtype('B'))
         if ATcolor is None:
             acolor = GetColorMap('RdYlGn')
@@ -7018,13 +7010,15 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             SpFade[:,:,:3] = Texture[:,:,nxs]*list(ATcolor)
             SpFade[:,:,3] = 255
         if ifFade:
-            SpFade[:,:,3] = 60
+            SpFade[:,:,3] = 127
         spID = GL.glGenTextures(1)
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
         GL.glEnable(GL.GL_BLEND)
-        GL.glFrontFace(GL.GL_CCW)       #shows outside
-        GL.glEnable(GL.GL_CULL_FACE)    #removes striping
-        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        # if radius > 0.:
+        #     GL.glFrontFace(GL.GL_CCW)       #shows outside
+        # else:
+        #     GL.glFrontFace(GL.GL_CW)       #shows outside
+#        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glBindTexture(GL.GL_TEXTURE_2D, spID)
         GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
@@ -7034,15 +7028,19 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glTexParameter(GL.GL_TEXTURE_2D,GL.GL_TEXTURE_MIN_FILTER,GL.GL_LINEAR)
         GL.glTexParameter(GL.GL_TEXTURE_2D,GL.GL_TEXTURE_MAG_FILTER,GL.GL_LINEAR)
         GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,shape[0], shape[1],0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,SpFade)
-        q = GLU.gluNewQuadric()
-        GLU.gluQuadricDrawStyle(q,GLU.GLU_FILL)
-        GLU.gluQuadricTexture(q, GL.GL_TRUE)
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
-        GLU.gluSphere(q,radius,shape[0],shape[1])
+        GL.glMultMatrixf(R4.T)
+        GL.glEnable(GL.GL_NORMALIZE)
+        GL.glScale(s1,s2,s3)
+        q = GLU.gluNewQuadric()
+        GLU.gluQuadricDrawStyle(q,GLU.GLU_FILL)
+        GLU.gluQuadricTexture(q, GL.GL_TRUE)
+        GLU.gluSphere(q,1.0,shape[0],shape[1])
+        GL.glDisable(GL.GL_NORMALIZE)
         GL.glPopMatrix()
-        GL.glDisable(GL.GL_CULL_FACE)
+#        GL.glDisable(GL.GL_CULL_FACE)
         GL.glDisable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_BLEND)
 
@@ -7178,6 +7176,23 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         for bond in Bonds:
             GL.glVertex3fv(xyz)
             GL.glVertex3fv(xyz+bond)
+        GL.glEnd()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glPopMatrix()
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glShadeModel(GL.GL_SMOOTH)
+
+    def RenderLine(X0,X,color):
+        X0= np.array(X0)
+        X = np.array(X)
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(1)
+        GL.glColor3fv(color)
+        GL.glPushMatrix()
+        GL.glBegin(GL.GL_LINES)
+        GL.glVertex3fv(X0)
+        GL.glVertex3fv(X0+X)
         GL.glEnd()
         GL.glColor4ubv([0,0,0,0])
         GL.glPopMatrix()
@@ -7364,6 +7379,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
 
     def Draw(caller='',Fade=[],NPkey=False):
+        
+        def SetProjection(Zclip):
+            GL.glLoadIdentity()
+            if sys.platform == "darwin":
+                f = int(Page.GetContentScaleFactor())
+                GL.glViewport(0,0,f*VS[0],f*VS[1])
+            else:
+                GL.glViewport(0,0,VS[0],VS[1])
+            GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
+            GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
+            SetLights()
+
         #reinitialize geometry stuff - needed after tab change
         global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
         if 'key down' not in caller:
@@ -7403,9 +7430,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             indx = np.array(ma.nonzero(rho)).T
             rhoXYZ = indx*steps+VP-incre
             Nc = max(len(rhoXYZ),1)
-            rcube = 2000.*Vol/(ForthirdPI*Nc)
+            rcube = 20000.*Vol/(ForthirdPI*Nc) # raised from 2000 to allow larger maps -- not sure where 2000 came from
             rmax = math.exp(math.log(rcube)/3.)**2
-            radius = min(drawingData.get('mapSize',10.)**2,rmax)
+            radius = min(drawingData.get('mapSize',4.)**2,rmax)
             view = drawingData['viewPoint'][0]
             Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
         Ind = GetSelectedAtoms()
@@ -7435,16 +7462,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPushName(0)
 
         GL.glMatrixMode(GL.GL_PROJECTION)
-        GL.glLoadIdentity()
-        if sys.platform == "darwin":
-            f = int(Page.GetContentScaleFactor())
-            GL.glViewport(0,0,f*VS[0],f*VS[1])
-        else:
-            GL.glViewport(0,0,VS[0],VS[1])
-        GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
-        GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
-        SetLights()
-
+        SetProjection(Zclip)
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
@@ -7456,6 +7474,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if drawingData['showABC']:
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)
+        if pageName == 'RB Models' and G2frame.selectRB.get('showAxes',False):
+            Q0 = G2frame.selectRB['Orient'][0]
+            RenderRBtriplet(G2frame.selectRB['Orig'][0],Q0,Bmat)
         Backbones = {}
         BackboneColor = []
 #        glEnable(GL_BLEND)
@@ -7512,6 +7533,15 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         radius = ballScale*BondRadii[atNum]
                 if 'Q' in atom[ct]:
+                    E = [1.,1.,1.]
+                    R4 = np.eye(4)
+                    if atom[cs+3] == 'A':
+                        Uij = atom[cs+5:cs+11]
+                        U = np.multiply(G2spc.Uij2U(Uij),GS)
+                        U = np.inner(Amat,np.inner(U,Amat).T)
+                        E,R = nl.eigh(U)
+                        R4 = np.concatenate((np.concatenate((R,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+                        E = np.sqrt(E)
                     SpnData = G2mth.GetSpnRBData(SpnRB,atom[ci])
                     try:
                         SpnData['nSH'][0]
@@ -7522,19 +7552,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         radius = SpnData.get('Radius',[[1.0,False],])   #patch for missing Radius
                         atColor = SpnData['atColor']
                         ifFade = SpnData.get('fadeSh',True)
+                        ifSlice = SpnData.get('sliceSh',False)
                         useAtColor = SpnData.get('useAtColor',True)
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
                         Npsi,Ngam = 90,45 
-                        QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
-                        QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
-                        QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel
-                        Q = G2mth.prodQQ(QB,QA)
-                        Q = G2mth.prodQQ(Q,QP)
+                        Q = G2mth.invQ(G2mth.QsymAxis(SpnData['Orient'][0],symAxis))
                         PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                         PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
                         GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                         Rp,PSIp,GAMp = G2mth.RotPolbyQ(np.ones_like(PSI),PSI,GAM,Q)
                         SpnData['hide'] = SpnData.get('hide',[False for i in range(len(SpnData['atType']))])
+                        SpnData['Pmax'] = [0. for i in range(len(SpnData['atType']))]
+                        SpnData['Pmin'] = [0. for i in range(len(SpnData['atType']))]
                         for ish,nSH in enumerate(SpnData['nSH']):
                             if not SpnData['hide'][ish]:
                                 if nSH > 0:
@@ -7543,12 +7572,26 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                     if useAtColor:
                                         atcolor = atColor[ish]
                                     P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
+                                    P = np.roll(P,22,0)     #properly position texture map on sphere
+                                    SpnData['Pmax'][ish] = np.max(P)
+                                    SpnData['Pmin'][ish] = np.min(P)
                                     if np.min(P) < np.max(P):
                                         P = (P-np.min(P))/(np.max(P)-np.min(P))
-                                    RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                    if ifSlice:
+                                        GL.glMatrixMode(GL.GL_PROJECTION)
+                                        GL.glPushMatrix()
+                                        SetProjection(np.sqrt(cPos)/5.)
+                                        GL.glMatrixMode(GL.GL_MODELVIEW)
+                                        RenderTextureSphere(x,y,z,radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                        GL.glMatrixMode(GL.GL_PROJECTION)
+                                        GL.glPopMatrix()
+                                        GL.glMatrixMode(GL.GL_MODELVIEW)
+                                    else:
+                                        # negative radius to ensure correct wrap so stuff is on outside
+                                        RenderTextureSphere(x,y,z,radius[ish][0],E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
-                else:
+                else:   #not a Q atom
                     #### put deformation texture on sphere here
                     if atom[ci] in deformationData:
                         defCtrls = deformationData[-atom[ci]]
@@ -7575,7 +7618,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                             if np.min(P) < np.max(P):
                                 P = (P-np.min(P))/(np.max(P)-np.min(P))
-                            RenderTextureSphere(x,y,z,radius,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
+                            E = [0.,0.,0.]
+                            R4 = np.eye(4)
+                            RenderTextureSphere(x,y,z,radius,E,R4,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
                         else:
                             RenderSphere(x,y,z,radius,atColor)
                     else:
@@ -7685,9 +7730,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         RenderMapPeak(x,y,z,Or,-2*mag/peakMax)
                 if showBonds:
                     RenderLines(x,y,z,mapBonds[ind],Wt)
-        if len(testRBObj) and pageName == 'RB Models' and 'OnOrien' not in G2frame.testRBObjSizers:
+#        if len(testRBObj) and pageName == 'RB Models' and 'OnOrien' not in G2frame.testRBObjSizers:
+        if len(testRBObj) and pageName == 'RB Models':
             # plot a test rigid body as ball & [green] sticks when adding the RB into cell
             XYZ = G2mth.UpdateRBXYZ(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])[0]
+#            symAxis = None
             if testRBObj['rbType'] != 'Spin':
                 rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
@@ -7709,8 +7756,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if testRBObj['rbType'] != 'Spin':
                     RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
-            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],testRBObj['rbObj']['Orient'][0],
-                Bmat,testRBObj['rbObj'].get('symAxis'))
+#                symAxis = testRBObj.get('symAxis',None)
+            Q0 = testRBObj['rbObj']['Orient'][0]
+            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],Q0,Bmat)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = mcsaTypes[ind]
@@ -7725,17 +7773,29 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
         if drawingData['showVoids']:
-            RC = len(drawingData['Voids'])*[[0.05,2*Bl]]
+            color = drawingData.get('voidcolor',Bl)
+            brightness = drawingData.get('voidbrightness',2.)
+            drawsize = drawingData.get('voiddrawsize',0.05)
+#            RC = len(drawingData['Voids'])*[[0.05,2*Bl]]
+            RC = len(drawingData['Voids'])*[
+                [drawsize,brightness*np.array(color)]]
             RenderDots(drawingData['Voids'],RC)
             # for x,y,z in drawingData['Voids']:
             #     RenderSphere(x,y,z,.05,(0.,0.,1.),True)
         if drawingData['unitCellBox']:
             RenderBox()
-            if drawingData['Plane'][1]:
-                H,phase,stack,phase,color = drawingData['Plane']
-                Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
-                for plane in Planes:
-                    RenderPlane(plane,color)
+        if drawingData['Plane'][1]:
+            H,phase,stack,phase,color = drawingData['Plane']
+            Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
+            for plane in Planes:
+                RenderPlane(plane,color)
+        if drawingData['Line'][1]:
+            X,phase,both,length,color = drawingData['Line']
+            X0 = np.array(drawingData['viewPoint'][0])
+            X = np.array(X)*length
+            RenderLine(X0,X,color)
+            if both:
+                RenderLine(X0,-X,color)
         if drawingData.get('showSlice',''):      #must be done last to properly show things behind as faded
             global contourSet
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
@@ -7987,7 +8047,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed C')
             return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
@@ -8240,7 +8300,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed D')
             return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
@@ -8295,7 +8355,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         Q = G2mth.prodQQ(Q,Qy)
         defaults['Quaternion'] = Q
 
-    def RenderUnitVectors(x,y,z):
+    def RenderUnitVectors(x,y,z,symAxis):
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         GL.glLineWidth(1)
         GL.glPushMatrix()
@@ -8305,6 +8365,11 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             GL.glColor3ubv(color)
             GL.glVertex3fv(-line[1])
             GL.glVertex3fv(line[1])
+        if symAxis:
+            Vfrac = vnorm(np.array(symAxis))
+            GL.glColor3ubv([255,255,255])
+            GL.glVertex3fv(np.zeros(3))
+            GL.glVertex3fv(1.5*Vfrac)
         GL.glEnd()
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
@@ -8376,7 +8441,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         GL.glMultMatrixf(matRot.T)
-        RenderUnitVectors(0.,0.,0.)
+        RenderUnitVectors(0.,0.,0.,symAxis)
         radius = 0.2
         s = 1
         selected = rbData.get('Selection')
@@ -8456,6 +8521,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
     uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
     uColors = [Rd,Gr,Bl]
+    symAxis = rbData.get('symAxis',[0,0,1])
     if rbType == 'Vector':
         atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['rbTypes'])]
         XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
@@ -8710,7 +8776,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
         except:
-            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed E')
             return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
@@ -8981,12 +9047,12 @@ def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
 #### Plot Cluster Analysis ####################################################
 
 def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
-    ''' To plot cluster analysis results
+    '''To plot cluster analysis results
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param array YM: data matrix; plotted as contour
     :param array XYZ: array of 3D PCA coordinates; plotted as 3D scatter plot
-    ;param dict CLuDict: Cluster info; may have dendrogram & Kmeans results
+    :param dict CLuDict: Cluster info; may have dendrogram & Kmeans results
     :param str Title: plot title
     :param str PlotName: plot tab name
     '''

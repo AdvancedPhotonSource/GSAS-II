@@ -132,8 +132,13 @@ def GetCheckImageFile(G2frame,treeId):
         while pth and pth != prevpth:
             prevpth = pth
             if os.path.exists(os.path.join(G2frame.dirname,fil)):
-                print ('found image file '+os.path.join(G2frame.dirname,fil))
                 imagefile = os.path.join(G2frame.dirname,fil)
+                print (f'found image file {imagefile}')
+                G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
+                return Npix,imagefile,imagetag
+            if os.path.exists(os.path.join(G2frame.LastGPXdir,fil)):
+                imagefile = os.path.join(G2frame.LastGPXdir,fil)
+                print (f'found image file {imagefile}')
                 G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
                 return Npix,imagefile,imagetag
             pth,enddir = os.path.split(pth)
@@ -701,7 +706,7 @@ def ProjFileSave(G2frame):
     'Save a GSAS-II project file'
     if not G2frame.GPXtree.IsEmpty():
         try:
-            file = open(G2frame.GSASprojectfile,'wb')
+            gpxfile = open(G2frame.GSASprojectfile,'wb')
         except PermissionError:
             G2G.G2MessageBox(G2frame,'Read only file','Project cannot be saved; change permission & try again')
             return
@@ -740,8 +745,8 @@ def ProjFileSave(G2frame):
                     data.append([name,G2frame.GPXtree.GetItemPyData(item2)])
                     item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
-                pickle.dump(data,file,2)
-            file.close()
+                pickle.dump(data,gpxfile,2)
+            gpxfile.close()
             pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
             if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveGPXdirectory(pth)
             G2frame.LastGPXdir = pth
@@ -811,12 +816,25 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         Sample['Phi'] = data['GonioAngles'][2]
         Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center
         polariz = data['PolaVal'][0]
-        for item in Comments:
-            for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2','FreePrm3','Omega',
-                'Chi','Phi'):
-                if key.lower() in item.lower():
+        # Scan the comments, but take ones containing "GSAS" as a priority
+        priorityG2 = [j for j,item in enumerate(Comments) if 'gsas' in item.lower()]
+        priorityList = priorityG2 + [i for i in range(len(Comments)) if i not in priorityG2]
+        for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2',
+                        'FreePrm3','Omega','Chi','Phi'):
+            for j in priorityList:
+                item = Comments[j]
+                if '=' in item:
+                    itemSp = item.split('=')
+                elif ':' in item:
+                    itemSp = item.split(':')
+                else:
+                    continue
+                if key.lower() in itemSp[0].lower():
                     try:
-                        Sample[key] = float(item.split('=')[1])
+                        Sample[key] = float(itemSp[1])
+                        if GSASIIpath.GetConfigValue('debug'):
+                            print(f'Setting {key} from {item}')
+                        break
                     except:
                         pass
             if 'label_prm' in item.lower():
@@ -1274,7 +1292,7 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
     nacomp,nccomp = G2mth.phaseContents(phData)
     msgs[phlbl] = f"With space group {sgsym} and cell={fmtCell(generalData['Cell'][1:7])}"
     msgs[phlbl] += f", vol={generalData['Cell'][7]:.2f} A^3"
-    msgs[phlbl] += f", project file created as {G2frame.GSASprojectfile}"
+    msgs[phlbl] += f". Project file created as {os.path.split(G2frame.GSASprojectfile)[1]}"
 
     msgs[phlbl] += f". After transform, unit cell {G2mth.fmtPhaseContents(nccomp)}"
     msgs[phlbl] += f", density={G2mth.getDensity(generalData)[0]:.2f} g/cm^3"
@@ -1310,8 +1328,9 @@ def mkParmDictfromTree(G2frame,sigDict=None):
     covDict = {}
     consDict = {}
 
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if G2frame.GPXtree.IsEmpty(): return # nothing to do
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    if not Phases or not Histograms: return # nothing to do
     rigidbodyDict = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     covDict = G2frame.GPXtree.GetItemPyData(
@@ -1344,6 +1363,9 @@ def mkParmDictfromTree(G2frame,sigDict=None):
         if item.startswith('_'): continue
         constList += consDict[item]
     G2mv.InitVars()     # process constraints
+    d = {str(k):v for k,v in zip(consDict.get('_OffsetKeys',[]),
+                                 consDict.get('_OffsetVals',[]))}
+    G2mv.ProcessOffsets(d)
     constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList)
     varyList = list(covDict.get('varyListStart',[]))
     if varyList is None and len(constrDict) == 0:

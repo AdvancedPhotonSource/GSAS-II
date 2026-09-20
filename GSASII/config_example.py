@@ -145,9 +145,13 @@ Plot_Pos = (200,200)
 these widows. If position is outside screen then it will be repositioned to default.
 This is used internally by GSAS-II and would not normally be changed by a user. 
 '''
-Split_Loc = 250
-'''Location of the splitter bar between the data tree and the data window. 
-Can be dragged by user. Is saved automatically with the window size and position
+Split_Loc = 300
+'''Location of the splitter bar between the data tree and the data window
+in pixels. The splitter bar can be dragged by user. This position is saved 
+automatically with the window size/position, except on Mac, where the 
+retrieved position seems incorrect.
+The initial position will not be set below 250 or larger than half the 
+window size.
 '''
 
 Tick_length = 8.0

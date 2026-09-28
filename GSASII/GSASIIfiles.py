@@ -11,6 +11,7 @@ wx is not installed.
 from __future__ import division, print_function
 import platform
 import os
+import struct
 import sys
 import glob
 import copy
@@ -119,8 +120,12 @@ def get_python_versions(packagelist):
             versions.append([pack.__name__, pack.__version__])
         except:
             pass
+    # struct.calcsize('P') gives the pointer size, producing the same
+    # '32bit'/'64bit' string as platform.architecture()[0] without
+    # launching an external process (platform.architecture runs
+    # 'file <executable>' on POSIX systems every time it is called)
     versions.append(['Platform',
-                     sys.platform + ' ' + platform.architecture()[0] +
+                     sys.platform + ' ' + f"{struct.calcsize('P')*8}bit" +
                      ' ' + platform.machine()])
     return versions
 

@@ -1524,6 +1524,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     GS = G/np.outer(ast,ast)
     Ginv = g/np.outer(ainv,ainv)
     uAmat = G2lat.Gmat2AB(GS)[0]
+#    uAmat = G2lat.Gmat2AB(nl.inv(Ginv))[0] #cryst->Cart for moments (components along unit a,b,c)
     Bmat = G2lat.Gmat2AB(G)[1]
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
@@ -1605,6 +1606,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         sinm = np.sin(mphase)                               #ditto - match magstrfc.for
         cosm = np.cos(mphase)                               #ditto
         HM = np.inner(Bmat,H)                             #put into cartesian space
+#        HM = np.inner(Bmat.T,H)                             #put into cartesian space
         HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Kdata = MAGS & HM = UVEC in magstrfc.for both OK
         eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
@@ -2143,7 +2145,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
-            HM = np.inner(Bmat,HP.T)                #put into cartesian space X||H,Z||H*L; Bmat.T correct Cart coordinates
+            HM = np.inner(Bmat.T,HP.T)                #put into cartesian space X||H,Z||H*L; Bmat.T correct Cart coordinates
             eM = (HM*refl.T[5]).T                   # normalize HP by d*    Nref,hkl=Unit vectors || Q
 
             if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution
@@ -4883,11 +4885,8 @@ def HessRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawle
                     GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 else:
                     GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
-                if type(GoOn) is tuple:
-                    if not GoOn[0]:
-                        raise G2obj.G2RefineCancel('Cancel pressed')
-                elif not GoOn:
-                    raise G2obj.G2RefineCancel('Cancel pressed')
+                # if not GoOn[0]:
+                #     raise G2obj.G2RefineCancel('Cancel pressed')
                 #dlg.Raise()
             if len(Hess):
                 Hess += np.inner(dMdvh,dMdvh)
@@ -4916,11 +4915,8 @@ def HessRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawle
                     GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 else:
                     GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
-                if type(GoOn) is tuple:
-                    if not GoOn[0]:
-                        raise G2obj.G2RefineCancel('Cancel pressed')
-                elif not GoOn:
-                    raise G2obj.G2RefineCancel('Cancel pressed')
+                # if not GoOn[0]:
+                #     raise G2obj.G2RefineCancel('Cancel pressed')
                 #dlg.Raise()
             if len(Hess):
                 Vec += np.sum(dMdvh*wdf,axis=1)
@@ -5016,11 +5012,8 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
                     GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 else:
                     GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
-                if type(GoOn) is tuple:
-                    if not GoOn[0]:
-                        raise G2obj.G2RefineCancel('Cancel pressed')
-                elif not GoOn:
-                    raise G2obj.G2RefineCancel('Cancel pressed')
+                # if not GoOn[0]:
+                #     raise G2obj.G2RefineCancel('Cancel pressed')
                 #dlg.Raise()
             M = ma.concatenate((M,wdy))
 #end of PWDR processing
@@ -5171,11 +5164,8 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
                     GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 else:
                     GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
-                if type(GoOn) is tuple:
-                    if not GoOn[0]:
-                        raise G2obj.G2RefineCancel('Cancel pressed')
-                elif not GoOn:
-                    raise G2obj.G2RefineCancel('Cancel pressed')
+                # if not GoOn[0]:
+                #     raise G2obj.G2RefineCancel('Cancel pressed')
                 #dlg.Raise()
             M = np.concatenate((M,df))
             # end of HKLF processing
@@ -5188,12 +5178,8 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
     if dlg:
         if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(-1,'overall')
         GoOn = dlg.Update(int(Rw),newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))
-        if type(GoOn) is tuple:
-            if not GoOn[0]:
-                parmDict['saved values'] = values
-                raise G2obj.G2RefineCancel('Cancel pressed')
-        elif not GoOn:
-            parmDict['saved values'] = values
+        if not GoOn[0]:
+            parmDict['saved values'] = values       #unused at present
             raise G2obj.G2RefineCancel('Cancel pressed')
         #dlg.Raise()
     pDict,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)

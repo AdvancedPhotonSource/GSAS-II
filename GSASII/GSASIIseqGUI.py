@@ -1322,6 +1322,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
         if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
         histNames = [name for name in data['histNames'] if name in data]
+    if len(histNames) == 0:
+        print ('No entries in sequential refinement results')
+        return
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2frame.GetStatusBar().SetStatusText("Select column to export; LMB/RMB column to plot data/change label; LMB/RMB on row for PWDR/Covariance plot",1)

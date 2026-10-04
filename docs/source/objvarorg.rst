@@ -129,22 +129,34 @@ _OffsetVals  A list of offset values (as floats) that will be
              modes, currently.
 ===========  ====================================================
 
-For `_seqmode` the meaning of the settings for constrained HAP and
-histogram parameters is:
+The `_seqmode` is used for sequential fits and the meaning of the
+settings for constrained HAP and histogram parameters is:
 
-  * 'auto-wildcard' (Set hist # to \*): Any constraint specified with
-     a specific histogram number will be changed to apply to each
-     histogram as it is processed.
+  * 'auto-wildcard' (Set hist # to \*)
+    Any constraint that has a specific histogram number will be
+    changed to apply to each histogram as it is processed.
+    Note that for grouped sequential fits, a table of "equivalent
+    histograms" is created and any histogram number that matches
+    will be converted to a histogram number in the current group.
+    Also for grouped sequential fits, wildcards used in equivalences
+    will be processed as described as in  'wildcards-only' mode, below.
  
-  * 'wildcards-only' (Ignore unless hist=\*): Only constraints
-     specified with a wildcard for the histogram will be
-     used and will be applied to each histogram as it is
-     processed. Contraints that include a specific histogram number
-     will be ignored.
+  * 'wildcards-only' (Ignore unless hist=\*)
+    Only constraints
+    specified with a wildcard for the histogram will be
+    used and will be applied to each histogram as it is
+    processed. Contraints that include a specific histogram number
+    will be ignored.
+    For grouped sequential fits, wildcards only make sense for
+    equivalences and for them the constraint will be expanded to
+    include all histograms in the current group. Thus, a constraint on
+    `p:*:D11` will force the reciprocal cell offset to be the same for
+    all histograms in a group. 
 
-  * 'use-all' (Use as supplied): This uses both wildcard histograms
+  * 'use-all' (Use as supplied)
+    This uses both wildcard histograms
      and those where specific histograms are specified. Wildcards are
-     applied to each histogram as it is processed. Contraints that
+     applied to each histogram as it is processed. Constraints that
      include a specific histogram number are used only for that histogram.
 
 .. _Constraint_definitions_table:

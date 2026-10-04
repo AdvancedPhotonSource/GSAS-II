@@ -128,11 +128,61 @@ def GetControls(GPXfile):
     Controls.update(datum[1])
     return Controls
 
-def ReadConstraints(GPXfile, seqHist=None):
+def groupEquivTbl(key,groupDict,Histograms,warn=False):
+    '''For grouped sequential fits, create a table of histogram hId numbers
+    that match sequentially to those in the current group. The dict created 
+    here is used to generate substitutions in constraints. Note that only 
+    groups with the same number of histograms as the current are considered.
+    
+    :param str key: name associated with current group
+    :param dict groupDict: dict with histograms in each group
+    :param dict Histograms: dict with all histograms
+    :param bool warn: if True, messages are sent to console when a referenced
+      histogram is not found.
+    :returns: a dict (grEquivTbl) and a list (grHIDlist), where 
+      for grEquivTbl the key is a hId # that is the same sequence number
+      within a different group than the present and the associated value is 
+      the hId number in the current group; 
+      and grHIDlist is a list of hId values for the histograms referenced
+      by key (groupDict[key])
+    '''
+    grEquivTbl = {}
+    grHIDlist = []
+    for i,h in enumerate(groupDict[key]):
+        if h not in Histograms:
+            if warn: print(f'Grouped Sequential histogram {h} not found')
+            continue
+        hId = Histograms[h]['hId']
+        grHIDlist.append(hId)
+        #print(f'equiv to {hId} {h}')
+        for key1 in groupDict.keys():
+            if key == key1: continue
+            if len(groupDict[key]) != len(groupDict[key1]): continue
+            h1 = groupDict[key1][i]
+            if h1 not in Histograms:
+                if warn: print(f'Grouped Sequential histogram {h1} not found')
+                continue
+            hId1 = Histograms[h1]['hId']
+            #print(f'... {hId1} {h1}')
+            grEquivTbl[hId1] = hId
+    return grEquivTbl,grHIDlist
+
+def ReadConstraints(GPXfile, seqHist=None, grEquivTbl=None, grHIDlist=None):
     '''Read the constraints from the GPX file and interpret them
 
-    called in :func:`ReadCheckConstraints`, :func:`GSASIIstrMain.Refine`
+    Called in :func:`ReadCheckConstraints`, :func:`GSASIIstrMain.Refine`
     and :func:`GSASIIstrMain.SeqRefine`.
+
+    :param str GPXfile: GSAS-II project file name
+    :param int seqHist: defines a specific histogram that is used in a 
+      (non-grouped) sequential refinement. None for a non-sequential or a 
+      grouped sequential fit.
+    :param dict grEquivTbl: for grouped sequential refinements: converts 
+      histogram numbers (hId) that are in other histogram
+      groups to one in the current group
+    :param list grHIDlist: for grouped sequential refinements: is a list of 
+      hId values for the current group of histograms
+    :returns: constrDict,fixedList with evaluated constraint information
     '''
     IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
@@ -152,25 +202,35 @@ def ReadConstraints(GPXfile, seqHist=None):
     d = {str(k):v for k,v in zip(ConstraintsItem[1].get('_OffsetKeys',[]),
                                  ConstraintsItem[1].get('_OffsetVals',[]))}
     G2mv.ProcessOffsets(d)
-    constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList,seqmode,seqHist)
+    constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList,seqmode,seqHist,grEquivTbl,grHIDlist)
     #if ignored:
     #    G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
     return constrDict,fixedList
 
-def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
-    '''Load constraints and related info and return any error or warning messages
-    This is done from the GPX file rather than the tree.
+def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None,
+                         grHistList=None,grEquivTbl=None):
+    '''Load constraints and related info and return any error or 
+    warning messages prior to a refinement. 
+    This is done from the GPX file rather than the tree. It is similar
+    to GSASIIconstrGUI.CheckConstraint, which instead reads from the
+    data tree.
 
     :param str GPXfile: specifies the path to a .gpx file.
-    :param str seqHist: specifies a histogram to be loaded for
-      a sequential refinement. If None (default) all are loaded.
-    :param dict Histograms: output from :func:`GetUsedHistogramsAndPhases`,
+    :param str/list seqHist: can be the name of a histogram or can be a list
+      of histograms that will be fit together in a grouped sequential fit.
+    :param dict Histograms: output from :func:`GetUsedHistogramsAndPhases`;
       can optionally be supplied to save time for sequential refinements
-    :param dict Phases: output from :func:`GetUsedHistogramsAndPhases`, can
+      where reading this can take a fair amount of time
+    :param dict Phases: output from :func:`GetUsedHistogramsAndPhases`; can
       optionally be supplied to save time for sequential refinements
+    :param list grHistList: for grouped sequential refinements: a list of 
+        the histogram names in the current refinement group.
+    :param dict grEquivTbl: for grouped sequential refinements: converts 
+      histogram numbers (hId) that are in other histogram
+      groups to one in the current group
     '''
     G2mv.InitVars()    # init constraints
-    # get variables
+    # get input if not already read
     if Histograms is None or Phases is None:
         Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
@@ -180,17 +240,29 @@ def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     if seqHist:
         Histograms = {seqHist:Histograms[seqHist]}  # sequential fit: only need one histogram
         hId = Histograms[seqHist]['hId']
+        constrDict,fixedList = ReadConstraints(GPXfile,hId) # load user constraints from file (uses ProcessConstraints)
+    elif grHistList:
+        grHIDlist = [Histograms[i]['hId'] for i in grHistList]
+        Histograms = {i:Histograms[i] for i in grHistList}  # sequential fit: only need one histogram
+        constrDict,fixedList = ReadConstraints(GPXfile,grEquivTbl=grEquivTbl,grHIDlist=grHIDlist) # load user constraints from file (uses ProcessConstraints)
     else:
         hId = None
-    constrDict,fixedList = ReadConstraints(GPXfile, hId) # load user constraints from file (uses ProcessConstraints)
+        constrDict,fixedList = ReadConstraints(GPXfile) # load user constraints from file (uses ProcessConstraints)
     parmDict = {}
     # generate symmetry constraints to check for conflicts
     rigidbodyDict = GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
     parmDict.update(rbDict)
-    (Natoms, atomIndx, phaseVary,phaseDict, pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave) = \
-        GetPhaseData(Phases,RestraintDict=None,seqHistName=seqHist,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+    if seqHist:
+        (Natoms, atomIndx, phaseVary,phaseDict, pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave) = \
+            GetPhaseData(Phases,RestraintDict=None,seqHistName=seqHist,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+    elif grHistList:
+        (Natoms, atomIndx, phaseVary,phaseDict, pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave) = \
+            GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False,grHistList=grHistList) # generates atom symmetry constraints
+    else:
+        (Natoms, atomIndx, phaseVary,phaseDict, pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave) = \
+            GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
     parmDict.update(phaseDict)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
     parmDict.update(hapDict)
@@ -199,8 +271,13 @@ def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     varyList = rbVary+phaseVary+hapVary+histVary
     msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
     if msg:
-        return 'Unable to interpret multiplier(s): '+msg,''
-    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,seqHistNum=hId)
+        return f'Unable to interpret multiplier(s): {msg}'
+    if grHistList:
+        errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,seqHistNum=None,
+                                                                  grEquivTbl=grEquivTbl,grHIDlist=grHIDlist)
+    else:
+        errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,seqHistNum=hId)
+    
     G2mv.Map2Dict(parmDict,varyList)   # changes varyList
     return errmsg, warnmsg
 
@@ -575,15 +652,15 @@ def GetUsedHistogramsAndPhases(GPXfile):
                         # renamed or deleted
                         G2fil.G2Print('Warning: For phase "'+phase+
                               '" unresolved reference to histogram "'+hist+'"')
-    # load the fix background info into the histograms
+    # load the fixed background values into the histograms
     for hist in Histograms:
         if 'Background' not in Histograms[hist]: continue
-        fixedBkg = Histograms[hist]['Background'][1].get('background PWDR')
-        if fixedBkg:
-            if not fixedBkg[0]: continue
+        h = Histograms[hist]['Background'][1]
+        h['fixback'] = None  # fixed background is computed here when needed; best if never saved
+        fixedBkg = h['background PWDR'] = h.get('background PWDR',['',1.,False])
+        if fixedBkg and fixedBkg[0]:
             # patch: add refinement flag, if needed
             if len(fixedBkg) == 2: fixedBkg += [False]
-            h = Histograms[hist]['Background'][1]
             try:
                 Limits = Histograms[hist]['Limits'][1]
                 x = Histograms[hist]['Data'][0]
@@ -1059,6 +1136,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
             pFile.write(i)
         pFile.write('Orientation defined by: atom %s -> atom %s & atom %s -> atom %s\n'%
             (RBModel['rbRef'][0],RBModel['rbRef'][1],RBModel['rbRef'][0],RBModel['rbRef'][2]))
+
     if Print and pFile is None: raise Exception("specify pFile or Print=False")
     rbVary = []
     rbDict = {}
@@ -1127,7 +1205,7 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
 ##### Phase data
 ################################################################################
 def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
-                 seqHistName=None,symHold=None):
+                 seqHistName=None,symHold=None,grHistList=None):
     '''Setup the phase information for a structural refinement, used for
     regular and sequential refinements, optionally printing information
     to the .lst file (if Print is True). Used as part of refinements but also
@@ -1138,7 +1216,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     dict(s) from the tree.
 
     :param dict PhaseData: the contents of the Phase tree item (may be read from
-      .gpx file) with information on all phases
+      .gpx file) with information on all phases, or if not all phases are 
+      needed (for a sequential fit), this should contain only the phase(s)
+      that will be needed for the current histogram(s)
     :param dict RestraintDict: an optional dict with restraint information
     :param dict rbIds: an optional dict with rigid body information
     :param bool Print: a flag that determines if information will be formatted and
@@ -1152,6 +1232,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     :param list symHold: if not None (None is the default) the names of parameters
        held due to symmetry are placed in this list even if not varied. (Used
        in G2constrGUI and for parameter impact estimates in AllPrmDerivs).
+    :param list grHistList: for grouped sequential refinements: a list of 
+        the histogram names in the current refinement group.
     :returns: lots of stuff: Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
         FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave (see code for details).
     '''
@@ -1664,7 +1746,13 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
     atomIndx = {}
     for name in PhaseData:
-        if seqHistName is not None and seqHistName != 'All': # sequential: load only used phases
+        if grHistList is not None: # only select phases used in one of the current group's histograms
+            for h in grHistList:
+                if h in PhaseData[name]['Histograms'] and PhaseData[name]['Histograms'][h]['Use']:
+                    break
+            else:
+                continue
+        elif seqHistName is not None and seqHistName != 'All': # sequential: load only phases used in current histogram
             if seqHistName not in PhaseData[name]['Histograms']: continue
             if not PhaseData[name]['Histograms'][seqHistName]['Use']: continue
         General = PhaseData[name]['General']
@@ -2694,9 +2782,6 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                 AtomSS[Stype][iw+1][0][iname] = parmDict[pfx+name]
                                 if pfx+name in sigDict:
                                     wavesSig[name] = sigDict[pfx+name]
-
-
-
 
             Deformations = Phase.get('Deformations',{})
             for iAt in Deformations:

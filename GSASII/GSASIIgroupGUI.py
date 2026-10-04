@@ -421,12 +421,16 @@ def indexArrayVal(dataSource,hist,arrayIndices):
     '''Find the value for a GSAS-II parameter in the data tree 
     from a 'val' or the refinement flag from the entry
 
-    :returns: the parameter value (usually float or bool)
+    :returns: the parameter value (usually float or bool). Will return 
+      None if the arrayIndices list does not match the nested array/lists keys.
     '''
     if arrayIndices is None: return None
     arr = dataSource[hist]
-    for i in  arrayIndices:
-        arr = arr[i]
+    for i in arrayIndices:
+        try:
+            arr = arr[i]
+        except:
+            return None
     return arr
 
 ClearAllLbl = '☐'
@@ -719,7 +723,8 @@ def HistFrame(G2frame,Histograms,Phases):
                 if 'val' in prmArray[hist][key] and 'init' in prmArray[hist][key]:
                     arr,indx = prmArray[hist][key]['init']
                     val = indexArrayVal(dataSource,hist,prmArray[hist][key]['val'])
-                    if abs(val-arr[indx]) > 1e-5: nonZeroRows.append(key)
+                    if val is not None and abs(val-arr[indx]) > 1e-5: 
+                        nonZeroRows.append(key)
             if key not in rowLabels:
                 if prevkey is None:
                     rowLabels.insert(lpos,key)
@@ -1197,6 +1202,8 @@ def computeShiftInfo(G2frame):
     covdata = G2frame.GPXtree.GetItemPyData(
                   G2gd.GetGPXtreeItemId(G2frame,
                                         G2frame.root,'Covariance'))
+    for key in 'varyList','sig','Lastshft': # has a refinement been run?
+        if key not in covdata: return
     shiftOsig = {}
     if len(covdata['varyList']) == len(covdata['sig']) == len(covdata['Lastshft']):
         for var,sig,shift in zip(covdata['varyList'],covdata['sig'],covdata['Lastshft']):

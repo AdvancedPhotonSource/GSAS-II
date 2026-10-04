@@ -965,18 +965,32 @@ class GSASII(wx.Frame):
             print(f'Note: {len(msgs)} importer(s) could not be installed. See the'+
                    '\n  "Import->Show importer error(s)" menu command for more information')
 
-    def testSeqRefineMode(self):
-        '''Returns the list of histograms included in a sequential refinement or
-        an empty list if a standard (non-sequential) refinement.
-        Also sets Menu item status depending on mode
+    def testSeqRefineMode(self, quick=False):
+        '''Returns the list of histograms included in a sequential 
+        refinement or for a grouped sequential fit, a dict 
+        where each value is a list of histograms.
+        
+        For a standard (non-sequential) refinement, an empty list 
+        is returned.
+        
+        :param bool quick: Sets the Refine Menu item to Refine or Seq Refine 
+          when quick=False (default setting)
+        :returns: an empty list for a standard refinement, a list of 
+          histograms for a normal sequential fit or a dict for a grouped 
+          sequential fit.
         '''
         cId = GetGPXtreeItemId(self,self.root, 'Controls')
+        groupDict = None
+        seqSetting = None
         if cId:
             controls = self.GPXtree.GetItemPyData(cId)
             seqSetting = controls.get('Seq Data',[])
-        else:
-            seqSetting = None
+            groupDict = controls.get('Groups',{}).get('groupDict',{})
+        if groupDict:
+            #seqSetting = [tuple(groupDict[g]) for g in seqSetting]
+            seqSetting = groupDict
 
+        if quick: return seqSetting
         for item in self.Refine:
             if 'Le Bail' in item.GetItemLabel() or 'partials' in item.GetItemLabel() :
                 item.Enable(not seqSetting)
@@ -3327,7 +3341,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.testRBObjSizers = {}   #rigid body sizer datafile contents
         self.RMCchoice = 'RMCProfile'
         self.ifSetLimitsMode = 0
-
+        self.PlotBindings = []  # stores plot bindings so they can be revised
 
     def __init__(self, parent):
         self.ExportLookup = {}
@@ -4249,15 +4263,20 @@ If you continue from this point, it is quite likely that all intensity computati
         item, cookie = self.GPXtree.GetFirstChild(self.root)
         used = False
         seqUse = False
+        seqList = self.testSeqRefineMode(True)
         while item:
             name = self.GPXtree.GetItemText(item)
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
             if name in ['Notebook','Controls','Covariance','Constraints',
-                'Restraints','Phases','Rigid bodies','Hist/Phase']:
+                            'Restraints','Phases','Rigid bodies','Hist/Phase',
+                            'Groups/Powder']:
                 continue
             if 'Sequential' in name:
                 continue
-            if name in self.testSeqRefineMode():
+            if type(seqList) is dict and [True for i in seqList.values() if name in i]:
+                seqUse = True
+                continue
+            elif name in seqList:
                 seqUse = True
                 continue
             if 'PWDR' in name[:4]:
@@ -4284,9 +4303,9 @@ If you continue from this point, it is quite likely that all intensity computati
                 print (f'PWDR{pdfName[4:]} for {pdfName} not found')
         if len(TextList) == 0:
             if used:
-                msg = 'All histograms are associated with at least one phase. You must unset a histogram "use" flag in all phase(s) where it is referenced before it can be deleted'
+                msg = 'All histograms are associated with at least one phase. You must remove a histogram from all phase(s) where it is referenced before it can be deleted'
             elif seqUse:
-                msg = 'All histograms are in used in the sequential list. You must remove it from the list (in Controls) before it can be deleted'
+                msg = 'All histograms are in used in the sequential list. You must remove a histogram from the list (in Controls) before it can be deleted'
             else:
                 msg = 'No data items found in tree to delete'
             G2G.G2MessageBox(self,msg,'Nothing to delete')
@@ -4458,10 +4477,10 @@ If you continue from this point, it is quite likely that all intensity computati
             self.dataWindow.ClearData()
         if self.dataWindow and askSave:
             dlg = wx.MessageDialog(self,
-                    'Do you want to save and replace the current project?\n'
+                    'Do you want to save before replacing the current project?\n'
                     '(Use No to read without saving or Cancel to continue '
-                    'with current project)',
-                'Save & Overwrite?',
+                    'with the current project)',
+                'Save before Overwrite?',
                 wx.YES|wx.NO|wx.CANCEL)
             try:
                 result = dlg.ShowModal()
@@ -4583,7 +4602,7 @@ If you continue from this point, it is quite likely that all intensity computati
                         Id = GetGPXtreeItemId(self,item,'Image Controls')
                     else:
                         Id = item
-            elif name.startswith("Sequential") and self.testSeqRefineMode():
+            elif name.startswith("Sequential") and bool(self.testSeqRefineMode(True)):
                 seqId = item
             elif name == "Phases":
                 phaseId = item
@@ -4644,8 +4663,8 @@ If you continue from this point, it is quite likely that all intensity computati
         the project.
         '''
         dlg = wx.MessageDialog(self,
-                    'Do you want to save the current project and start with an empty one?\n(Use No to clear without saving or Cancel to continue with current project)',
-                    'Save & Clear?',
+                    'Do you want to save the current project before starting with an empty one?\n(Use No to clear without saving or Cancel to continue with current project)',
+                    'Save before Clear?',
                     wx.YES | wx.NO | wx.CANCEL)
         try:
             result = dlg.ShowModal()
@@ -4713,7 +4732,7 @@ If you continue from this point, it is quite likely that all intensity computati
         '''
         projName = os.path.split(self.GSASprojectfile)[1]
         if not projName: projName = "<unnamed project>"
-        if self.testSeqRefineMode():
+        if bool(self.testSeqRefineMode(False)):
             s = ' (sequential refinement)'
         else:
             s = ''
@@ -5675,9 +5694,11 @@ If you continue from this point, it is quite likely that all intensity computati
         G2mv.Map2Dict(parmValDict,G2mv.saveVaryList)
         rigidbodyDict = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Rigid bodies'))
 
-        if self.testSeqRefineMode():
+        if bool(self.testSeqRefineMode(True)):
             seqDict = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Sequential results'))
-            histNames = [h for h in self.testSeqRefineMode() if h in seqDict]
+            # not sure why this used the current sequential list
+            #histNames = [h for h in self.testSeqRefineMode(True) if h in seqDict]
+            histNames = [h for h in seqDict if h in Histograms]
             if len(histNames) == 0:
                 print('no histograms')
                 return
@@ -5691,15 +5712,15 @@ If you continue from this point, it is quite likely that all intensity computati
         dlg = G2exG.ExpressionDialog(self,parmValDict,
                     header="Evaluate an expression of GSAS-II parameters",
                     VarLabel = "Expression",
-                    fit=False,wildCard=self.testSeqRefineMode())
+                    fit=False,wildCard=bool(self.testSeqRefineMode(True)))
         exprobj = dlg.Show(True)
         if not exprobj: return
 
-        if not self.testSeqRefineMode():
+        if not bool(self.testSeqRefineMode(True)):
             histNames = [0]
         for h in histNames:
             prfx = ''
-            if self.testSeqRefineMode():
+            if bool(self.testSeqRefineMode(True)):
                 parmValDict = seqDict[h]['parmDict']
                 covMatrix = seqDict[h]['covMatrix']
                 CvaryList = seqDict[h]['varyList']
@@ -5751,7 +5772,7 @@ If you continue from this point, it is quite likely that all intensity computati
         '''
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         self._cleanPartials(Controls)  # phase partials invalid after a refinement
-        if self.testSeqRefineMode():
+        if bool(self.testSeqRefineMode(True)):
             self.OnSeqRefine(event)
             return
 
@@ -5917,10 +5938,11 @@ is being refined.
             rChi2initial = 'GOF: {:.3f}'.format(covData['Rvals']['GOF']**2)
         except:
             rChi2initial = '?'
-
+ 
+        seqList = self.testSeqRefineMode(True)
         if GSASIIpath.GetConfigValue('G2RefinementWindow'):
-            if (self.testSeqRefineMode()):
-                l = len(self.testSeqRefineMode())
+            if bool(seqList):
+                l = len(seqList)
             else:
                 l = 0
             dlg = G2G.G2RefinementProgress(parent=self,trialMode=False,
@@ -5934,13 +5956,13 @@ is being refined.
         else:
             refPlotUpdate = None
 
-        seqList = self.testSeqRefineMode()
+        seqList = self.testSeqRefineMode(True)
         try:
             OK,Rvals = G2stMn.DoLeBail(self.GSASprojectfile,dlg,cycles=1,refPlotUpdate=refPlotUpdate,seqList=seqList)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
-        if OK and seqList:
+        if OK and bool(seqList):
             print('continuing with sequential fit')
         elif OK:
             text = ''
@@ -6021,7 +6043,7 @@ is being refined.
         Sets Controls['PhasePartials'] to a file name to trigger save of
         info in :meth:`GSASIIstrMath.getPowderProfile` and then clear that.
         '''
-        if self.testSeqRefineMode():  # should not happen, as should not be enabled
+        if bool(self.testSeqRefineMode(True)):  # should not happen, as should not be enabled
             G2G.G2MessageBox(self,
                 'Phase partials cannot be computed for sequential fits',
                 'Sequential not allowed')
@@ -6259,8 +6281,10 @@ is being refined.
         '''Perform a sequential refinement.
         Called from self.OnRefine (Which is called from the Calculate/Refine menu)
         '''
+        allerrors = {}
+        allwarnings = {}
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-        seqList = self.testSeqRefineMode()
+        seqList = self.testSeqRefineMode(True)
         Id = GetGPXtreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Sequential results')
@@ -6269,21 +6293,21 @@ is being refined.
         Controls['ShowCell'] = True
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
         # check for deleted or unused histograms in refine list
-        phaseRIdList,histdict = self.GetPhaseInfofromTree(Used=True)
-        usedHistograms = []
-        for k in histdict:
-            usedHistograms += histdict[k]
-        usedHistograms = list(set(usedHistograms))
-        newseqList = [i for i in seqList if i in usedHistograms]
-        if len(newseqList) != len(seqList):
-            G2G.G2MessageBox(self,
-                str(len(seqList)-len(newseqList))+
-                ' histograms that are not used have been removed from the sequential list.',
-                'Histograms removed')
-            seqList = Controls['Seq Data'] = newseqList
-        allerrors = {}
-        allwarnings = {}
+        if not groupDict:
+            phaseRIdList,histdict = self.GetPhaseInfofromTree(Used=True)
+            usedHistograms = []
+            for k in histdict:
+                usedHistograms += histdict[k]
+            usedHistograms = list(set(usedHistograms))
+            newseqList = [i for i in seqList if i in usedHistograms]
+            if len(newseqList) != len(seqList):
+                G2G.G2MessageBox(self,
+                    str(len(seqList)-len(newseqList))+
+                    ' histograms that are not used have been removed from the sequential list.',
+                    'Histograms removed')
+                seqList = Controls['Seq Data'] = newseqList
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         #
         # Check if a phase lattice parameter refinement flag is set, if so transfer it to the Dij terms
@@ -6320,9 +6344,18 @@ Do you want to transfer the cell refinement flag to the Dij terms?
         # save Tree to file and from here forward, work from the .gpx file not from the data tree
         self.OnFileSave(event)
         Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(self.GSASprojectfile)
-        for h in seqList: # check constraints are OK for each histogram to be processed
-            errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
-                                                          h,Histograms,Phases)
+        
+        
+        for i,hg in enumerate(seqList): # check constraints are OK for each histogram to be processed
+            # hg will be a histogram or a key to group of histograms in groupDict
+            if hg in groupDict:
+                grEquivTbl,grHIDlist = G2stIO.groupEquivTbl(hg,groupDict,Histograms,warn=True)
+                errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
+                                                None,Histograms,Phases,
+                                                grHistList=groupDict[hg],grEquivTbl=grEquivTbl)
+            else:
+                errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
+                                                hg,Histograms,Phases)
             if warnmsg or errmsg:
                 print ('\nConstraint warnings/errors for histogram "{}":'.format(h))
             if warnmsg:
@@ -8466,7 +8499,7 @@ def UpdateControls(G2frame,data):
     for key in ('parmMinDict','parmMaxDict','parmFrozen'):
         if key not in Controls: Controls[key] = {}
     parmFrozen = Controls['parmFrozen']
-    if G2frame.testSeqRefineMode():
+    if bool(G2frame.testSeqRefineMode(True)):
         frozenList = set()
         for h in parmFrozen:
             if h == 'FrozenList': continue
@@ -9267,7 +9300,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 
     G2frame.GetStatusBar().SetStatusText('',1)
     SetDataMenuBar(G2frame)
-    G2frame.SetTitleByGPX()
+    G2frame.SetTitleByGPX()  # probably not needed as this is set when a project is read (G2miscGUI.ProjFileOpen)
     G2frame.PickId = item
     G2frame.PickIdText = None
     parentID = G2frame.root
@@ -9774,7 +9807,7 @@ def SetDataMenuBar(G2frame,menu=None):
     # lists of menu items that need to be changed:
     #   ExportPDF, MakePDF, ExportMTZ, ExportPeakList, ExportHKL
     #   Refine, ExportSeq, ExportNonSeq
-    G2frame.testSeqRefineMode() # sets items in Refine, ExportSeq, ExportNonSeq
+    G2frame.testSeqRefineMode(False) # sets items in Refine, ExportSeq, ExportNonSeq
     # now extend the menu item status in 1st menu to the duplicates of that menu
     # item in other menus
     for obj in (G2frame.ExportPDF, G2frame.MakePDF,

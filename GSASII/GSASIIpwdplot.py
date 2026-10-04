@@ -2025,7 +2025,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         newPlot = True
         G2frame.Cmin = 0.0
         G2frame.Cmax = 1.0
-    # redo plot binding each time the Plot is updated since values
+    # redo plot bindings each time the Plot is updated, since values
     # may have been changed after 1st call
     for b in G2frame.PlotBindings:
         try:

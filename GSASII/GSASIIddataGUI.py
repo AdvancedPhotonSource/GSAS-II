@@ -961,7 +961,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             useBox.Add(lebail,0,WACV)
         bottomSizer.Add(useBox)
         G2G.HorizontalLine(bottomSizer,DData)
-        if G2frame.testSeqRefineMode() and not UseList[G2frame.hist]['LeBail']:
+        if bool(G2frame.testSeqRefineMode(True)) and not UseList[G2frame.hist]['LeBail']:
             bottomSizer.Add(wx.StaticText(DData,label='     Sequential Refinement Options'))
             parmChoice = [' ','X','XU','U','F','FX','FXU','FU']
             if generalData['Type'] == 'magnetic':

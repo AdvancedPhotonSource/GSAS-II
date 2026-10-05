@@ -11,7 +11,7 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
     '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.xrdml','.xml'),
+            extensionlist=('.xrdml','.xml', '.XRDML'),
             strictExtension=True,
             formatName = 'Panalytical xrdml (xml)',
             longFormatName = 'Panalytical powder data as *.xrdml'
@@ -75,7 +75,9 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
         dataPoints = scan.find(tag+'dataPoints')
         self.comments.append('Gonio. radius=%.2f'%(radius))
         self.Sample['Gonio. radius'] = radius
-        if sample.find(tag+'id').text:
+        
+
+        if sample and sample.find(tag+'id').text:
             self.comments.append('Sample name='+sample.find(tag+'id').text)
         try:
             self.comments.append('Date/TimeStart='+header.find(tag+'startTimeStamp').text)

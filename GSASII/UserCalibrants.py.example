@@ -1,0 +1,6 @@
+""" User-supplied powder calibrants. See the contents of file 
+ImageCalibrants.py for how this file is coded. 
+"""
+Calibrants={
+    'MgO':([0,],['F m -3 m',],[(4.2115,4.2115,4.2115,90,90,90),],0,(.75,10,10),()),
+}

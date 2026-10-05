@@ -535,6 +535,7 @@ def ShowVersions():
     version = '?'
     versionDict['errors'] = ''
     warn = False
+    toonew = False
     for s,m in pkgList:
         msg = ''
         if s == 'Python':
@@ -563,13 +564,13 @@ def ShowVersions():
                     msg += "Version is known to be buggy"
                     warn = True
                     break
-        if s in versionDict['tooNewUntested'] and not warn:
+        if s in versionDict['tooNewUntested']:
             match = compareVersions(pkgver,versionDict['tooNewUntested'][s])
             if match >= 0:
                 msg += "\n              "
                 msg += "New untested version; please keep us posted"
-                warn = True
-        if s in versionDict['tooNewWarn'] and not warn:
+                toonew = True
+        if s in versionDict['tooNewWarn'] and not toonew:
             match = compareVersions(pkgver,versionDict['tooNewWarn'][s])
             if match >= 0:
                 msg += "Tests incomplete w/suspected bugs; Please report problems"
@@ -687,6 +688,14 @@ environment as well as the latest GSAS-II version.
 
 For information on GSAS-II package requirements see
 https://gsas-ii.readthedocs.io/en/latest/packages.html''')
+        print(70*'=','\n')
+    elif toonew:
+        print(70*'=')
+        print('''You are running GSAS-II in a Python environment with untested 
+package(s), as noted above. Please report problems. 
+If you see any, you are suggested to install an additional
+copy of GSAS-II from one of the gsas2full installers (see
+https://GSASII.github.io/).''')
         print(70*'=','\n')
     print(GSASIIpath.getG2VersionInfo())
 
@@ -1389,6 +1398,15 @@ If you continue from this point, it is quite likely that all intensity computati
                         Constraints['_Explain'].update(i)
                     else:
                         Constraints['Phase'].append(i)
+            if rd.ConstraintOffsets:  # make a dict with offset values to apply to values
+                Constraints['_OffsetKeys'] = Constraints.get('_OffsetKeys',[])
+                Constraints['_OffsetVals'] = Constraints.get('_OffsetVals',[])
+                for d in rd.ConstraintOffsets:
+                    var = d['var']
+                    AtRanId = rd.Phase['Atoms'][d['atomnum']][-1]
+                    prm = G2obj.G2VarObj([rd.Phase['ranId'],None,var,AtRanId])
+                    Constraints['_OffsetKeys'].append(prm)
+                    Constraints['_OffsetVals'].append(d['value'])
             # make ISODISTORT magnetic phase constraints here
             Phases = self.GetPhaseData()
             prevPhases = list(Phases.keys())
@@ -1513,7 +1531,6 @@ If you continue from this point, it is quite likely that all intensity computati
                 Constraints['HAP'] += G2lat.GenHAPConstraints(Vratio,oRanId,nRanId,hRanId)
         wx.EndBusyCursor()
         self.EnableRefineCommand()
-
         return # success
 
     def _Add_ImportMenu_Image(self,parent):
@@ -3135,17 +3152,17 @@ If you continue from this point, it is quite likely that all intensity computati
 
     def _init_ctrls(self, parent):
         try:
-            size = GSASIIpath.GetConfigValue('Main_Size')
-            if type(size) is tuple:
+            mainsize = GSASIIpath.GetConfigValue('Main_Size')
+            if type(mainsize) is tuple:
                 pass
-            elif type(size) is str:
-                size = eval(size)
+            elif type(mainsize) is str:
+                mainsize = eval(mainsize)
             else:
                 raise Exception
         except:
-            size = wx.Size(700,450)
+            mainsize = wx.Size(700,450)
         wx.Frame.__init__(self, name='GSASII', parent=parent,
-            size=size,style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II main window')
+            size=mainsize,style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II main window')
         fontIncr = GSASIIpath.GetConfigValue('FontSize_incr')
         if fontIncr is not None and fontIncr != 0:
             f = wx.Font(self.GetFont())
@@ -3181,9 +3198,8 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        sash = min(max(100,GSASIIpath.GetConfigValue('Split_Loc',250)),500)
-        # if GSASIIpath.GetConfigValue('debug'):
-        #     print('SplitterWindow sash=',sash,GSASIIpath.GetConfigValue('Split_Loc'))
+        sash = int(min(mainsize[0]/2,
+               max(250,GSASIIpath.GetConfigValue('Split_Loc',300))))
         self.mainPanel.SplitVertically(self.treePanel, self.dataWindow.outer, sash)
         self.Status.SetStatusWidths([sash,-1])   # make these match?
 
@@ -4814,7 +4830,8 @@ If you continue from this point, it is quite likely that all intensity computati
                      'Plot_Pos':tuple(self.plotFrame.GetPosition()),
                      'Plot_Size':tuple(self.plotFrame.GetSize())}
             GSASIIpath.AddConfigValue(FrameInfo)
-            GSASIIpath.AddConfigValue({'Split_Loc':self.mainPanel.GetSashPosition()})
+            if sys.platform != "darwin": # on Mac GetSashPosition seems off
+                GSASIIpath.AddConfigValue({'Split_Loc':2*self.mainPanel.GetSashPosition()})
             config = G2G.GetConfigValsDocs()
             G2G.SaveConfigVars(config)
         except:
@@ -5819,6 +5836,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
             else:
                 G2G.G2MessageBox(self,
                     'Zero cycle "refinement" computation completed',lbl)
+                self.reloadFromGPX(rtext,Rvals)
                 ans = None
             if ans == wx.ID_OK:  # refinement has been accepted save, log & display
                 self.reloadFromGPX(rtext,Rvals)

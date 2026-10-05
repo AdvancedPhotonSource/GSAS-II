@@ -25,9 +25,12 @@ from . import GSASIIlattice as G2lat
 from . import GSASIIElem as G2elem
 from . import GSASIIctrlGUI as G2G
 
-import GSASII.Bilbao.BCS_API as BCS
+try:
+    import GSASII.Bilbao.BCS_API as BCS
+except ImportError:
+    BCS = None
 
-bilbaoURL = "http://cryst.ehu.es"
+#bilbaoURL = "http://cryst.ehu.es"
 #bilbaoSite = f'{bilbaoURL}/cgi-bin/cryst/programs/'
 # routines used here:
 #timeout=150  # time to wait for Bilbao to respond; 2.5 minutes
@@ -42,6 +45,7 @@ def BCS_init(threadCallback=None):
 
     :Returns: True if initialization fails due to the lack of a key
     '''
+    if BCS is None: return True
     if threadCallback == '':
         # setup default threading for BCS Post commands
         def BCS_sleep():
@@ -763,13 +767,15 @@ def BilbaoLowSymSea1(formDict,row,pagelist=None):
         - True/False if the lattice type matches, 
         - a label with the space group number and the index (sg@ind),
         - the space group number and a lattice type (cell & centering)
+
+    This routine may not yet be working
     '''
     print("BilbaoLowSymSea1",formDict,row,list(pagelist.keys()))
     postdict = {i:formDict[i] for i in formDict if not i.startswith('_')}
     postdict['lattice'] = row[0]
     if GSASIIpath.GetConfigValue('debug'): print(f"processing row #{row[0]} cell type {row[1]}")
     page1 = BCS.BCS_submit(postdict)
-    breakpoint()
+    #breakpoint()
 #    page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
 #                                     usecookie=savedcookies,timeout=timeout)
 #    if postpostURL(page1) or not page1: return None,None,None,None
@@ -801,8 +807,12 @@ def BilbaoLowSymSea1(formDict,row,pagelist=None):
 def BilbaoLowSymSea2(num,valsdict,row,savedcookies,pagelist=None):
     '''For a selected cell & supergroup from :func:`BilbaoLowSymSea1`, 
     see if the coordinates are consistent with the supergroup
+
+    This routine needs to be reimplemented.
     '''
     print("BilbaoLowSymSea2",num,valsdict,row,savedcookies,len(pagelist))
+    raise Exception('BilbaoLowSymSea2 needs to be reimplemented')
+
     postdict = {}
     postdict.update(valsdict)
     postdict['super_numind'] = row[1]
@@ -910,13 +920,13 @@ def createStdSetting(cifFile,rd):
     encountered that has different symmetry operators from what GSAS-II 
     generates.
     '''
-    try:
-        import requests # delay this until now, since rarely needed
-    except:
-        # this import seems to fail with the Anaconda pythonw on
-        # macs; it should not!
-        print('Warning: failed to import requests. Python config error')
-        return None
+    # try:
+    #     import requests # delay this until now, since rarely needed
+    # except:
+    #     # this import seems to fail with the Anaconda pythonw on
+    #     # macs; it should not!
+    #     print('Warning: failed to import requests. Python config error')
+    #     return None
 
     if BCS_init(): return
     if not os.path.exists(cifFile):

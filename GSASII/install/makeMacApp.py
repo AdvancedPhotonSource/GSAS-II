@@ -35,7 +35,7 @@ Under normal circumstances, the locations for all of these paths
 can be determined from the location of the makeMacApp.py file.
 Note that when GSAS-II is installed from git using gitstrap.py,
 the git repository is placed at <loc>/GSAS-II and the GSAS-II
-Python scripts are placed in the <loc>/GSAS-II/GSASII child directory. 
+Python scripts are placed in the <loc>/GSAS-II/GSASII child directory.
 GSAS-II is started from the <loc>/GSAS-II/GSAS-II.py script created here
 and the current script (makeMacApp.py) will be found in
 <loc>/GSAS-II/GSASII/install/.
@@ -77,6 +77,8 @@ If that does not exist, then the location of the current Python executable
 
 from __future__ import division, print_function
 import sys, os, os.path, subprocess
+import plistlib
+
 def Usage():
     print(f"\nUsage:\n\tpython {os.path.abspath(sys.argv[0])} [install_path] [<GSAS-II_script>] [Python_loc]\n")
     sys.exit()
@@ -141,6 +143,32 @@ if __name__ == '__main__' and sys.platform == "darwin":
         subprocess.call(["rm","-rf",appName])
     subprocess.call(["mkdir","-p",appName])
     subprocess.call(["tar","xzvf",tarLoc,'-C',appName])
+
+    # Register .gpx files so Finder opens them with GSAS-II
+    plist_path = os.path.join(appName, 'Contents', 'Info.plist')
+    with open(plist_path, 'rb') as fp:
+        d = plistlib.load(fp)
+
+    d['CFBundleDocumentTypes'] = [{
+        'CFBundleTypeExtensions': ['gpx'],
+        'CFBundleTypeName': 'GSAS-II project',
+        'CFBundleTypeRole': 'Editor',
+        'LSHandlerRank': 'Owner',
+    }]
+
+    # Optional UTI declaration for .gpx
+    d['UTExportedTypeDeclarations'] = [{
+        'UTTypeIdentifier': 'gov.anl.gsasii.gpx',
+        'UTTypeDescription': 'GSAS-II project',
+        'UTTypeConformsTo': ['public.data'],
+        'UTTypeTagSpecification': {
+            'public.filename-extension': ['gpx'],
+        },
+    }]
+
+    with open(plist_path, 'wb') as fp:
+        plistlib.dump(d, fp)
+
     # create a script named GSAS-II.py to be run by the AppleScript
     if os.path.exists(g2Name): # cleanup
         print(f"\nRemoving {g2Name!r}")

@@ -2795,6 +2795,9 @@ def UpdateStressStrain(G2frame,data):
                         File.write("'"+key+"':"+str(data[key])+',')
                 File.write('\n\t'+"'d-zero':[\n")
                 for data2 in data['d-zero']:
+                    #patch
+                    data2['fixDset'] = data2.get('fixDset',False)
+                    #end patch
                     File.write('\t\t{')
                     for key in keys2:
                         File.write("'"+key+"':"+str(data2[key])+',')

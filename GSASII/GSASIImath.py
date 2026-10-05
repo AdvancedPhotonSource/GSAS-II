@@ -49,6 +49,7 @@ vnorm = lambda v: v/nl.norm(v)
 try:  # fails on doc build
     twopi = 2.0*np.pi
     twopisq = 2.0*np.pi**2
+    atepisq = 8.0*np.pi**2
     _double_min = np.finfo(float).min
     _double_max = np.finfo(float).max
 except TypeError:
@@ -1365,7 +1366,7 @@ def QsymAxis(Q,symAxis):
     :returns: list Q: new quaternion
     '''
     if symAxis is None:
-        return Q
+        symAxis = [0,0,.1]
     a,v = Q2AV(Q)
     v = vnorm(v)
     symaxis = vnorm(np.array(symAxis))
@@ -1429,12 +1430,10 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         Cart = np.zeros(3)
         XYZ = [np.array(RBObj['Orig'][0]),]
         return XYZ,Cart
-    # if symmetry axis is defined, place symmetry axis along quaternion
-    RBRes['symAxis'] = RBRes.get('symAxis',None)
+    # place symmetry axis (default = z) along quaternion
+    RBRes['symAxis'] = RBRes.get('symAxis',[0,0,1.])
     Q = QsymAxis(RBObj['Orient'][0],RBRes['symAxis'])
-    XYZ = np.zeros_like(Cart)
-    for i,xyz in enumerate(Cart):
-        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))+RBObj['Orig'][0]
+    XYZ = np.inner(Bmat,prodQVQ(Q,Cart)).T+RBObj['Orig'][0]
     return XYZ,Cart
 
 def GetSpnRBData(SpnRB,atId):
@@ -4003,11 +4002,15 @@ def OmitMap(data,reflDict,pgbar=None):
     return mapData
 
 def FourierMap(data,reflDict):
-    '''default doc string
+    '''Compute 3D Fourier map. Expands reflist hkl to cover full sphere & expand/zero fill to
+    box matching dimensions of desired map. Shifts hkl to put origin at corner.
+    Uses fft.fftn to make map & shifts it back accordingly.
+    Twinned data not handled properly
 
-    :param type name: description
+    :param dict data: phase data
+    :param dict reflDict: 3D hkl structure factors
 
-    :returns: type name: description
+    :returns: None; map is put in phase data
 
     '''
     generalData = data['General']
@@ -4072,11 +4075,14 @@ def FourierMap(data,reflDict):
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
 
 def Fourier4DMap(data,reflDict):
-    '''default doc string
+    '''Compute 4D Fourier map. Expands reflist hklm to cover full sphere & expand/zero fill to
+    box matching dimensions of desired 4D map. Shifts hklm to put origin at corner.
+    Uses fft.fftn to make map & shifts it back accordingly.
 
-    :param type name: description
+    :param dict data: phase data
+    :param dict reflDict: 4D hklm structure factors
 
-    :returns: type name: description
+    :returns: None; map is put in phase data
 
     '''
     generalData = data['General']
@@ -4877,7 +4883,10 @@ def DoWilsonStat(refList,Super,normEle,Inst):
     A = np.vstack([SQbins,np.ones_like(SQbins)]).T
     result = nl.lstsq(A,np.log(E2bins),rcond=None)
     twoB,lnscale = result[0]    #twoB = -2B
+    U = -twoB/atepisq
     scale = np.exp(lnscale)
+    print(' Wilson thermal parameter U = %.3f, scale = %.4f'%(U,scale))
+    print(' (Divide by unit cell Z to get true scale estimate)')
     E2calc = lnscale+twoB*SQbins
     normE = np.sqrt(np.where(Esq>0.,Esq,0.)/scale)*np.exp(-0.5*twoB*SQ2)
     return [np.mean(normE),np.mean(normE**2),np.mean(np.abs(-1.+normE**2))],[SQbins,np.log(E2bins),E2calc]

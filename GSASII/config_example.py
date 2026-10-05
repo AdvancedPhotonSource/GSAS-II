@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#config.py - Variables used to set optional configuration options
+#config_example.py - Variables used to set optional configuration options
 '''
 This file contains optional configuration options for GSAS-II. The 
 values for the variables named here will be set in file ~/.GSASII/config.ini
@@ -78,8 +78,6 @@ As another example, to use ~/.G2tutorials do this::
     Tutorial_location = '~/.G2tutorials'
 
 Note that os.path.expanduser is run on Tutorial_location before it is used.
-Also note that GSASIIpath is imported inside config.py; other imports should be
-avoided.
 '''
 
 Save_paths=False
@@ -147,9 +145,13 @@ Plot_Pos = (200,200)
 these widows. If position is outside screen then it will be repositioned to default.
 This is used internally by GSAS-II and would not normally be changed by a user. 
 '''
-Split_Loc = 250
-'''Location of the splitter bar between the data tree and the data window. 
-Can be dragged by user. Is saved automatically with the window size and position
+Split_Loc = 300
+'''Location of the splitter bar between the data tree and the data window
+in pixels. The splitter bar can be dragged by user. This position is saved 
+automatically with the window size/position, except on Mac, where the 
+retrieved position seems incorrect.
+The initial position will not be set below 250 or larger than half the 
+window size.
 '''
 
 Tick_length = 8.0

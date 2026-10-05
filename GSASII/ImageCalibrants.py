@@ -53,7 +53,8 @@ and there define the material(s) you want::
 
 New key values will be added to the list of options.
 If a key is duplicated, the information in  ``UserCalibrants.py`` will
-override the entry in this (the ``ImageCalibrants.py`` file).
+override the entry in this (the ``ImageCalibrants.py`` file). Use the listings
+below as a guide for how to define new calibrants.
 
 """
 
@@ -70,6 +71,8 @@ Calibrants={
 'Si    SRM640f':([0,],['F d 3 m'],[(5.431144,5.431144,5.431144,90,90,90),],0,(1.,10,10.),(3,10,13,20,23,26,33,35,40,43)),
 'CeO2  SRM674b':([0,],[''],[(5.411651,5.411651,5.411651,90,90,90),],0,(1.0,2,1.)),
 'Al2O3 SRM676a':([3,],['R -3 c'],[(4.759091,4.759091,12.991779,90,90,120),],0,(1.0,5,5.)),
+'MgO  @ 298K':([0,],['F m -3 m',],[(4.2115,4.2115,4.2115,90,90,90),],0,(.75,10,10),()),
+'MgO even hkl only':([2,],['',],[(2.10575,2.10575,2.10575,90,90,90),],0,(.75,10,10),()),
 'Ni   @ 298K':([0,],[''],[(3.52475,3.52475,3.52475,90,90,90),],0,(1.0,10,10.)),
 'Ni   @ 80K':([0,],[''],[(3.5190,3.5190,3.5190,90,90,90),],0,(1.0,10,10.)),
 'Ni   @ 100K':([0,],[''],[(3.51637,3.51637,3.51637,90,90,90),],0,(1.0,10,10.)),
@@ -82,9 +85,26 @@ Calibrants={
 'LaB6 & CeO2':([2,0],['','',],[(4.1569162,4.1569162,4.1569162,90,90,90),(5.411651,5.411651,5.411651,90,90,90)],0,(1.0,2,1.)),
 }
 
-# this should not be duplicated in the UserCalibrants.py file:
-try:
-    import UserCalibrants as userFile
-    Calibrants.update(userFile.Calibrants)
-except:
-    pass
+# The following will load file UserCalibrants.py from the main GSAS-II code 
+# directory (where this file is found) or from ~/.GSASII (%HOMEPATH%\.GSASII
+# on Windows) but not any other location in the Python path. 
+#
+# The code below should not be duplicated in the UserCalibrants.py file
+import importlib.util
+import os
+from . import GSASIIpath
+
+for directory in (os.path.dirname(__file__), GSASIIpath.LocalG2Dir()):
+    if directory is None:
+        continue
+    filename = os.path.join(directory, 'UserCalibrants.py')
+    if not os.path.isfile(filename):
+        continue
+    try:
+        moduleSpec = importlib.util.spec_from_file_location('UserCalibrants', filename)
+        userFile = importlib.util.module_from_spec(moduleSpec)
+        moduleSpec.loader.exec_module(userFile)
+        Calibrants.update(userFile.Calibrants)
+        print(f"Updated Calibrants from {filename}")
+    except Exception as msg:
+        print(f"Failed to update Calibrants from {filename}.\nError: {msg}")

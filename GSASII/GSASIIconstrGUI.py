@@ -376,6 +376,9 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
         constrDict += data[key]
     if newcons:
         constrDict = constrDict + newcons
+
+    d = {str(k):v for k,v in zip(data.get('_OffsetKeys',[]),data.get('_OffsetVals',[]))}
+    G2mv.ProcessOffsets(d)
     constrDict, fixedList, ignored = G2mv.ProcessConstraints(constrDict, seqhst=seqhst, seqmode=seqmode)
     parmDict = {}
     # generate symmetry constraints to check for conflicts
@@ -1158,6 +1161,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 Sizer.Add((-1,-1))
             return Sizer1
         constSizer = wx.FlexGridSizer(0,8,0,0)
+        offsetDict = {str(k):v for k,v in zip(data.get('_OffsetKeys',[]),data.get('_OffsetVals',[]))}
         maxlen = 50 # characters before wrapping a constraint
         for Id,item in enumerate(data[name]):
             refineflag = False
@@ -1200,7 +1204,11 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         #     helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
                         var,explain,note,warnmsg = term[1].fmtVarByMode(seqmode,note,warnmsg)
                         varMean = G2obj.fmtVarDescr(var)
-                        helptext += f'\n  {m:.5g} * {var}  ({varMean}'
+                        if var in offsetDict:  # needed?
+                            varS = f'({var}-{offsetDict[var]:.4g})'
+                        else:
+                            varS = var
+                        helptext += f'\n  {m:.5g} * {varS}  ({varMean}'
                         #if '?' in var: badVar = True
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
@@ -1211,9 +1219,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                                 eqString[-1] += ' - '
                                 m = abs(m)
                         if m == 1:
-                            eqString[-1] += '{:} '.format(var)
+                            eqString[-1] += f'{varS} '
                         else:
-                            eqString[-1] += '{:.3g}*{:} '.format(m,var)
+                            eqString[-1] += f'{m:.3g}*{varS} '
                     # Add extra notes about this constraint (such as from ISODISTORT)
                     if '_Explain' in data:
                         hlptxt = None
@@ -4635,13 +4643,15 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     subSizer1.Add((-1,-1))
     for i in range(cols1): subSizer1.Add((-1,5)) # spacer
 
+    sliderRange = 10.
     for indVar in constrDict:
         indVarName = indVar.replace('::','::nv-')
         subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,indVar),0,WACV)
         modeName = modeDict.get(indVar,'N/A')
+        if 'occ' in modeName: sliderRange = 1.
         if modeDict: 
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,modeName),0,WACV)
-        sl = G2G.G2SliderWidget(panel1,parmDict,indVarName,'',-10.,10.,50,
+        sl = G2G.G2SliderWidget(panel1,parmDict,indVarName,'',-sliderRange,sliderRange,50,
                                     onChange=showChange,
                                     size=(40,-1),slsize=(120,-1))
         subSizer1.Add(sl,0,WACV)        

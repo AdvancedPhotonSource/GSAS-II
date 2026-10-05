@@ -70,6 +70,11 @@ droppedSym = []
 '''A list of symmetry generated equivalences that have been converted to 
 constraint equations in :func:`CheckEquivalences`
 '''
+offsetDict = {}
+'''A dict with offsets to be subtracted from variables prior to their use in 
+constraints. Currently used only in ISODISTORT occupancy modes.
+These values are set in :func:`ProcessOffsets`.
+'''
 #------------------------------------------------------------------------------------
 # Global vars set in :func:`GenerateConstraints`. Used for intermediate processing of
 # constraints.
@@ -133,6 +138,9 @@ def InitVars():
     global constrParms
     for k in constrParms:
         constrParms[k] = []
+    global offsetDict
+    offsetDict = {}
+    offsetDict = None  # patch 8/26 BHT: confirm that ProcessOffsets are being processed
 
 def VarKeys(constr):
     """Finds the keys in a constraint that represent parameters
@@ -272,6 +280,14 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             errmsg += '\n\nSee the Warnings for details on unrefined parameters.\n'
         return errmsg
 
+    # patch 8/26 BHT: confirm that ProcessOffsets are being processed prior to this
+    global offsetDict
+    if offsetDict is None:
+        if GSASIIpath.GetConfigValue('debug'): 
+            print('Warning: GenerateConstraints called prior to ProcessOffsets. Please report this to Brian.')
+            G2obj.HowDidIgetHere()
+        offsetDict = {} # reset, simulating ProcessOffsets is being called
+    # end patch
     global dependentParmList,arrayList,invarrayList,indParmList,consNum
     # lists of parameters used for error reporting
     global undefinedVars # parameters that are used in equivalences but are not defined
@@ -873,6 +889,14 @@ def ProcessConstraints(constList,seqmode='use-all',seqhst=None):
       * ignored (int) counts the number of invalid constraint items
         (should always be zero!)
     """
+    # patch 8/26 BHT: confirm that ProcessOffsets are being processed prior to this
+    global offsetDict
+    if offsetDict is None:
+        if GSASIIpath.GetConfigValue('debug'): 
+            print('Warning: ProcessConstraints called prior to ProcessOffsets. Please report this to Brian.')
+            G2obj.HowDidIgetHere()
+        offsetDict = {} # reset, simulating ProcessOffsets is being called
+    # end patch
     constrDict = []
     fixedList = []
     ignored = 0
@@ -961,6 +985,19 @@ def ProcessConstraints(constList,seqmode='use-all',seqhst=None):
         else:
             ignored += 1
     return constrDict,fixedList,ignored
+
+def ProcessOffsets(inpOffsetDict):
+    '''Create a dict with offsets to be subtracted from variables prior to 
+    their use in constraints.
+    Currently offsets are used only for ISODISTORT occupancy modes.
+    '''
+
+    global offsetDict
+    offsetDict = {}
+    for key in inpOffsetDict:
+        offsetDict[str(key)] = float(inpOffsetDict[key])
+    #print('ProcessOffsets') # TODO: debug, remove
+    #for i in offsetDict: print(i,offsetDict[i],type(i)) # TODO: debug, remove
 
 def StoreHold(var,holdType=None):
     '''Takes a variable name and prepares it to be removed from the 
@@ -1565,7 +1602,7 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     for varlist,mapvars,multarr,invmultarr,symFlag in zip(
         dependentParmList,indParmList,arrayList,invarrayList,symGenList):
         for i,mv in enumerate(mapvars):
-            if multarr is None:
+            if multarr is None:  # equivalences
 #                s1 = '  ' + str(mv) + ' is equivalent to parameter(s): '
                 if len(varlist) == 1:
                     s1 = '   ' + str(mv) + ' is equivalent to '
@@ -1586,14 +1623,19 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                 else:
                     userOut += s1 + '\n'
                 continue
+            # constraint equations/new var's
             ln = ''
             # if mv in varyList: 
             #     lineOut = '  (V)* {} = '.format(mv)
             # else:
             #     lineOut = '  {} = '.format(mv)
-            j = 0 
-            lineOut = '  {} = '.format(mv)
+            j = 0
+            lineOut = f'  {mv} = '
+            if mv in offsetDict:   # probably not needed
+                lineOut += f'{offsetDict[mv]:.4g} + '
             for (m,v) in zip(multarr[i,:],varlist):
+                if v in offsetDict:
+                    v = f'({v}-{offsetDict[v]:.4g})'
                 if m == 0: continue
                 if m < 0:
                     lineOut += ' - '
@@ -1605,9 +1647,9 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                     ln += lineOut
                     lineOut = '\n  '
                 if m == 1:
-                    lineOut += '{}'.format(v)
+                    lineOut += f'{v}'
                 else:
-                    lineOut += '({:.4g} * {})'.format(m,v)
+                    lineOut += f'({m:.4g} * {v})'
             if mv in varyList: 
                 lineOut += '\t *VARIED*'
             ln += lineOut
@@ -1656,6 +1698,8 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
         for i,mv in enumerate(varlist):
             constrVal = 0    # offset to constraint from constant terms
             lineOut = '  {} = '.format(mv)
+            if mv in offsetDict:
+                lineOut += f'{offsetDict[mv]:.4g} + '
             j = 0 # number of terms shown
             for m,v in zip(invmultarr[i,:],mapvars):
                 if np.isclose(m,0): continue
@@ -1678,14 +1722,16 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                 if len(lineOut) > linelen:
                     s += lineOut
                     lineOut = '\n  '
+                if v in offsetDict:  # needed?
+                    v = f'({v}-{offsetDict[v]:.4g})'
                 if m == 1:
-                    lineOut += '{}'.format(v)
+                    lineOut += f'{v}'
                 else:
-                    lineOut += '({:.4g} * {})'.format(m,v)
+                    lineOut += f'({m:.4g} * {v})'
             if constrVal < 0:
-                lineOut += ' - {:.4g}'.format(-constrVal)
+                lineOut += f' - {-constrVal:.4g}'
             elif constrVal > 0:
-                lineOut += ' + {:.4g}'.format(constrVal)
+                lineOut += f' + {constrVal:.4g}'
             elif j == 0:
                 lineOut += '0'  # no terms, no constants: var fixed at zero
             if varied: lineOut += '\t *VARIED*'
@@ -1765,7 +1811,7 @@ def GetSymEquiv(seqmode,seqhistnum):
                 s1 = ''
                 s2 = ' = ' + str(mv)
                 j = 0
-                helptext = 'Variable {:} '.format(mv) + " ("+ G2obj.fmtVarDescr(mv) + ")"
+                helptext = f'Variable {mv}  ({G2obj.fmtVarDescr(mv)})'
                 if len(varlist) == 1:
                     cnstr.append([invmultarr[0][0],G2obj.G2VarObj(varlist[0])])
                     # format the way Bob prefers
@@ -1780,9 +1826,9 @@ def GetSymEquiv(seqmode,seqhistnum):
                     var1 = str(varlist[0])
                     helptext += "\n\nis equivalent to "
                     if m == 1:
-                        helptext += '\n  {:} '.format(var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                        helptext += f'\n  {var1}  ({G2obj.fmtVarDescr(var1)})'
                     else:
-                        helptext += '\n  {:3g} * {:} '.format(m,var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                        helptext += f'\n  {m:3g} * {var1}  ({G2obj.fmtVarDescr(var1)})'
                 else:
                     helptext += "\n\nis equivalent to the following:"
                     for v,m in zip(varlist,invmultarr):
@@ -1794,9 +1840,9 @@ def GetSymEquiv(seqmode,seqhistnum):
                         s1 += str(v)
                         if m != 1:
                             s1 += " / " + str(m[0])
-                            helptext += '\n  {:3g} * {:} '.format(m,v) + " ("+ G2obj.fmtVarDescr(v) + ")"
+                            helptext += f'\n  {m:3g} * {v}  ({G2obj.fmtVarDescr(v)})'
                         else:
-                            helptext += '\n  {:} '.format(v) + " ("+ G2obj.fmtVarDescr(v) + ")"
+                            helptext += f'\n  {v}  ({G2obj.fmtVarDescr(v)})'
                 err,msg,note = getConstrError(cnstr+[None,None,'e'],seqmode,seqhistnum)
                 symerr.append([msg,note])
                 symout.append(s1+s2)
@@ -1926,16 +1972,19 @@ def Map2Dict(parmDict,varyList):
     '''
     # remove fixed parameters from the varyList
     for item in holdParmList:
-        if varyList is not None and item in varyList: varyList.remove(item)
-            
+        if varyList is not None and item in varyList: varyList.remove(item)    
     # process the independent parameters:
     # * remove dependent ones from varylist
     # * for equivalences apply the independent parameters onto dependent variables
+    # apply offsets to parameters
+    for key in offsetDict:
+        if key in parmDict: parmDict[key] -= offsetDict[key]
+        #print(key,parmDict[key],'offset')  # TODO: debug, remove
     global dependentParmList,arrayList,invarrayList,indParmList
     for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList):
         for item in varlist: # TODO: is this still needed?
             if varyList is not None and item in varyList: varyList.remove(item)
-        if multarr is None:
+        if multarr is None:   # processing equivalences
             #for v,val in zip(  # shows values to be set
             #    varlist,
             #    np.dot(invmultarr,np.array([parmDict[var] for var in mapvars]))
@@ -1951,6 +2000,10 @@ def Map2Dict(parmDict,varyList):
         # add/replace in parameter dict
         parmDict.update([i for i in z if type(i[0]) is not float and ':' in i[0]])
 #        parmDict.update([i for i in zip(mapvars,np.dot(multarr,A)) if ':' in i[0]])
+    # backout previous offsets to parameters
+    for key in offsetDict:
+        if key in parmDict: parmDict[key] += offsetDict[key]
+        #print(key,parmDict[key],'reset')  # TODO: debug, remove
     global saveVaryList
     if varyList is not None:
         saveVaryList = copy.copy(varyList)
@@ -1991,6 +2044,9 @@ def Dict2Map(parmDict):
       will be updated based on constraints and equivalences.
     '''
     global dependentParmList,arrayList,invarrayList,indParmList
+    for key in offsetDict:
+        if key in parmDict: parmDict[key] -= offsetDict[key]
+        #print(key,parmDict[key],'offset')  # TODO: debug, remove
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
         if invmultarr is None:  # is this needed?
             if GSASIIpath.GetConfigValue('debug'): 
@@ -1999,7 +2055,10 @@ def Dict2Map(parmDict):
         valslist = np.array([float(parmDict.get(var,var)) for var in mapvars])
         #for v,val in zip(varlist,np.dot(invmultarr,np.array(valslist))): print(v,val) # shows what is being set
         parmDict.update(zip(varlist,np.dot(invmultarr,valslist)))
-        
+    for key in offsetDict:
+        if key in parmDict: parmDict[key] += offsetDict[key]
+        #print(key,parmDict[key],'reset')  # TODO: debug, remove
+
 #======================================================================
 # internal routines follow (these routines are unlikely to be called
 # from outside the module)

@@ -2527,8 +2527,8 @@ class G2Project(G2ObjectWrapper):
 
         Examples::
 
-            gpx.add_NewVarConstr(('0::AFrac:0','0::AFrac:1'),[0.5,0.5],'avg',True)
-            gpx.add_NewVarConstr(('0::AFrac:0','0::AFrac:1'),[1,-1],'diff',False,False)
+            gpx.add_NewVarConstr(('0::Afrac:0','0::Afrac:1'),[0.5,0.5],'avg',True)
+            gpx.add_NewVarConstr(('0::Afrac:0','0::Afrac:1'),[1,-1],'diff',False,False)
 
         The example above is a way to treat two variables that are closely correlated.
         The first variable, labeled as avg, allows the two variables to refine in tandem

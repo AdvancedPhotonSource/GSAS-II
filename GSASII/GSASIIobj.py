@@ -756,6 +756,8 @@ def CompileVarDesc():
         'Temperature': 'T value for measurement, K',
         'FreePrm([123])': 'User defined measurement parameter \\1',
         'Gonio. radius': 'Distance from sample to detector, mm',
+        '2-theta': 'Fixed 2theta value for TOF histograms, deg',
+        'fltPath': 'Source to detector distance for TOF histograms, m',
         }.items():
         # Needs documentation: HAP: LeBail, newLeBail
         # hist: Azimuth, Chi, Omega, Phi, Bank, nDebye, nPeaks

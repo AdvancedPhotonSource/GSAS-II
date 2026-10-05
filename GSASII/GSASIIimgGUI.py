@@ -126,6 +126,24 @@ def GetImageZ(G2frame,data,newRange=False):
     return np.array(np.array(np.rint(sumImg),dtype=int),dtype=np.int32)  # double-cast removes warning. Why?
 
 def UpdateImageData(G2frame,data):
+    '''Shows "master" image tree entry, which has information that 
+    normally should not be needed or changed
+    '''
+    def OnPixelCopy(event):
+        'Copies pixel size from current image to selected images'
+        Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
+        Names.pop(Names.index(G2frame.GPXtree.GetItemText(G2frame.Image)))
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose images to change pixel size',
+            'Choose image(s)',Names)
+        if dlg.ShowModal() == wx.ID_OK:
+            ilist = dlg.GetSelections()
+        for i in ilist:
+            Img = Names[i]
+            ImgId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, Img)
+            imgData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                G2frame,ImgId,'Image Controls'))
+            imgData['pixelSize'] = copy.copy(data['pixelSize'])
+            print(f"Image {Img} size is now {imgData['pixelSize']}")
 
     def OnPixVal(invalid,value,tc):
         G2plt.PlotExposedImage(G2frame,newPlot=True,event=tc.event)
@@ -163,7 +181,7 @@ def UpdateImageData(G2frame,data):
     mainSizer =  wx.BoxSizer(wx.VERTICAL)
     G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Image size: %d by %d'%(data['size'][0],data['size'][1])),0)
-    pixSize = wx.FlexGridSizer(0,4,5,5)
+    pixSize = wx.BoxSizer(wx.HORIZONTAL)
     pixLabels = [u' Pixel X-dimension (\xb5m)',u' Pixel Y-dimension (\xb5m)']
     data['pixelSize'] = list(data['pixelSize']) #some old gpx have tuple for this!
     for i,[pixLabel,pix] in enumerate(zip(pixLabels,data['pixelSize'])):
@@ -171,6 +189,10 @@ def UpdateImageData(G2frame,data):
         pixVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['pixelSize'],i,nDig=(10,3),
             typeHint=float,OnLeave=OnPixVal)
         pixSize.Add(pixVal,0,WACV)
+    pixSize.Add((5,-1))
+    pixCopy = wx.Button(G2frame.dataWindow,label='Copy?')
+    pixCopy.Bind(wx.EVT_BUTTON,OnPixelCopy)
+    pixSize.Add(pixCopy,0,WACV)
     mainSizer.Add(pixSize,0)
     distSizer = wx.BoxSizer(wx.HORIZONTAL)
     distSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Set detector distance: '),0,WACV)
@@ -178,6 +200,7 @@ def UpdateImageData(G2frame,data):
         data['setdist'] = data['distance']
     distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'setdist',nDig=(10,4),
         typeHint=float),0,WACV)
+    distSizer.Add((5,-1))
     distSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Polarization: '),0,WACV)
     if 'PolaVal' not in data:       #patch
         data['PolaVal'] = [0.99,False]
@@ -245,7 +268,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 #end patch
 
 # Menu items
-
     def OnCalibrate(event):
         if not data['calibrant']:
             G2G.G2MessageBox(G2frame,'No calibrant material specified.\n'+

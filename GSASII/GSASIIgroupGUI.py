@@ -287,6 +287,9 @@ def UpdateGroup(G2frame,selectedGrp,plot=True):
                             try:
                                 arr,indx = indexArrayRef(dataSource,dst,prmArray[src][i][j])
                                 arr[indx] = indexArrayVal(dataSource,src,prmArray[src][i][j])
+                                # if changing the number of background terms, the array length needs to change too
+                                if 'setintfunc' in prmArray[src][i]:
+                                    prmArray[src][i]['setintfunc'](dst)
                             except Exception as msg: # could hit an error if an array element is not defined
                                 pass
 
@@ -326,6 +329,9 @@ def UpdateGroup(G2frame,selectedGrp,plot=True):
                             try:
                                 arr,indx = indexArrayRef(dataSource,dst,prmArray[src][i][j])
                                 arr[indx] = indexArrayVal(dataSource,src,prmArray[src][i][j])
+                                # if changing the number of background terms, the array length needs to change too
+                                if 'setintfunc' in prmArray[src][i]:
+                                    prmArray[src][i]['setintfunc'](dst)
                             except Exception as msg: # could hit an error if an array element is not defined
                                 pass
                                 
@@ -556,7 +562,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
             if hist == '_dataSource': continue
             i += 1
             if i == 1 and len(valList) > 2 and not deltaMode and CopyCtrl:
-                # copy button; place after 0th column 
+                # right arrow copy button; place after 0th column
                 but = wx.Button(Panel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
                 but.valDict = {'arrays': valList, 'hists': histList,
                                   'dataSource':dataSource,
@@ -1006,7 +1012,7 @@ def getBkgVals(G2frame,Histograms):
                 }
             if indx == 2:
                 indexDict[hist][lbl]['fmt'] = '.0f'
-                def OnChangeBkgTerms(Histograms=Histograms,hist=hist):
+                def OnChangeBkgTerms(hist=hist,Histograms=Histograms):
                     'set the number of terms to match the new number'
                     nterms = Histograms[hist]['Background'][0][2]
                     Histograms[hist]['Background'][0][3:] = (

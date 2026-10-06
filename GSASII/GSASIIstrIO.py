@@ -872,40 +872,38 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     pickle.dump([['Rigid bodies',RigidBodies]],fp,1)
     pickle.dump([['parmFrozen',parmFrozen]],fp,1)
     fp.close()
-    # create an entry that looks like a PWDR tree item
-    for key in Histograms:
-        if key.startswith('PWDR '):
-            break
-    else:
-        raise Exception('No PWDR entry in Histogram dict!')
-    histname = key
-    hist = copy.deepcopy(Histograms[key])
-    xfer_dict = {'Index Peak List': [[], []],
-                   'Comments': [],
-                   'Unit Cells List': [],
-                   'Peak List': {'peaks': [], 'sigDict': {}},
-                   }
-    histData = hist['Data']
-    del hist['Data']
-    for key in ('Limits','Background','Instrument Parameters',
-                    'Sample Parameters','Reflection Lists'):
-        xfer_dict[key] = hist[key]
-        if key == 'Background':  # remove fixed background from file
-            xfer_dict['Background'][1] = {k:hist['Background'][1][k]
-                      for k in hist['Background'][1]
-                      if not k.startswith('_fixed')}
-        del hist[key]
-    # xform into a gpx-type entry
-    data = []
-    data.append([histname,[hist,histData,histname]])
-    for key in ['Comments','Limits','Background','Instrument Parameters',
-             'Sample Parameters','Peak List','Index Peak List',
-             'Unit Cells List','Reflection Lists']:
-        data.append([key,xfer_dict[key]])
-    # append histogram to histogram info
+    histList = [h for h in Histograms if h.startswith('PWDR ')]
+    if len(histList) == 0:
+        raise Exception('SaveUpdatedHistogramsAndPhases: No PWDR entry in Histogram dict!')
+    # create an entry that looks like a PWDR tree item for each histogram
     GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
     fp = open(GPXhist,'ab')
-    pickle.dump(data,fp,1)
+    for histname in histList:
+        hist = copy.deepcopy(Histograms[histname])
+        xfer_dict = {'Index Peak List': [[], []],
+                       'Comments': [],
+                       'Unit Cells List': [],
+                       'Peak List': {'peaks': [], 'sigDict': {}},
+                       }
+        histData = hist['Data']
+        del hist['Data']
+        for key in ('Limits','Background','Instrument Parameters',
+                        'Sample Parameters','Reflection Lists'):
+            xfer_dict[key] = hist[key]
+            if key == 'Background':  # remove fixed background from file
+                xfer_dict['Background'][1] = {k:hist['Background'][1][k]
+                          for k in hist['Background'][1]
+                          if not k.startswith('_fixed')}
+            del hist[key]
+        # xform into a gpx-type entry
+        data = []
+        data.append([histname,[hist,histData,histname]])
+        for key in ['Comments','Limits','Background','Instrument Parameters',
+                 'Sample Parameters','Peak List','Index Peak List',
+                 'Unit Cells List','Reflection Lists']:
+            data.append([key,xfer_dict[key]])
+        # append histogram to histogram info
+        pickle.dump(data,fp,1)
     fp.close()
     return
 
@@ -2016,8 +2014,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         phaseVary.append(pfx+item)
 
             if Print:
-                pFile.write('\n Phase name: %s\n'%General['Name'])
-                pFile.write(135*'='+'\n')
+                pFile.write(f"\n Phase name: {General['Name']}\n{135*'-'}\n")
                 PrintFFtable(FFtable)
                 PrintEFtable(EFtable)
                 PrintORBtable(ORBtable)
@@ -2061,9 +2058,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
 
         elif PawleyRef:
             if Print:
-                pFile.write('\n Phase name: %s\n'%General['Name'])
-                pFile.write(135*'='+'\n')
-                pFile.write('\n')
+                pFile.write(f"\n Phase name: {General['Name']}\n{135*'-'}\n\n")
                 if len(SSGtext):    #if superstructure
                     for line in SSGtext: pFile.write(line+'\n')
                     if len(SSGtable):
@@ -2600,8 +2595,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     #### SetPhaseData starts here
     if pFile: pFile.write('\n Phases:\n')
     for phase in Phases:
-        if pFile: pFile.write(' Result for phase: %s\n'%phase)
-        if pFile: pFile.write(135*'='+'\n')
+        if pFile: pFile.write(f' Result for phase: {phase}\n{135*"-"}\n')
         Phase = Phases[phase]
         General = Phase['General']
         SGData = General['SGData']
@@ -3191,8 +3185,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                                 hapVary.append(pfx+bab)
 
                 if Print:
-                    pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
-                    pFile.write(135*'='+'\n')
+                    pFile.write(f'\n Phase: "{phase}" in histogram: "{histogram}"\n{135*"-"}\n')
                     if hapDict.get(pfx+'LeBail'):
                         pFile.write(' Perform LeBail extraction\n')
                     elif 'E' not in inst['Type'][0]:
@@ -3357,8 +3350,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                 if len(Twins) > 1:    #force sum to unity
                     hapDict[pfx+'TwinFr:0'] = 1.-sumTwFr
                 if Print:
-                    pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
-                    pFile.write(135*'='+'\n')
+                    pFile.write(f'\n Phase: "{phase}" in histogram: "{histogram}"\n{135*"-"}\n')
                     pFile.write(' Scale factor     : %10.4g Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
                     if extType != 'None':
                         pFile.write(' Extinction  Type: %15s approx: %10s\n'%(extType,extApprox))
@@ -3709,8 +3701,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                 hfx = ':%s:'%(hId)
                 if pfx+'Nref' not in Histogram['Residuals']:    #skip not used phase in histogram
                     continue
-                pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
-                pFile.write(135*'='+'\n')
+                pFile.write(f'\n Phase: "{phase}" in histogram: "{histogram}"\n{135*"-"}\n')
                 Inst = Histogram['Instrument Parameters'][0]
                 if 'PWDR' in histogram:
                     pFile.write(' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections\n'%
@@ -4025,8 +4016,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
 
 
             if Print:
-                pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
-                pFile.write(135*'='+'\n')
+                pFile.write(f'\n Histogram: {histogram} histogram Id: {hId}\n{135*"-"}\n')
                 Units = {'C':' deg','T':' msec','B':' deg','E':'keV','A':' deg'}
                 units = Units[controlDict[pfx+'histType'][2]]
                 Limits = controlDict[pfx+'Limits']
@@ -4257,11 +4247,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             parmDict[pfx+'Scale'] = max(1.e-12,parmDict[pfx+'Scale'])                        #put floor on phase fraction scale
             sampSig = SetSampleParms(pfx,Sample,parmDict,sigDict)
 
-            if Print and not seq:
-                pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
-                pFile.write(135*'='+'\n')
             if Print:
-                pFile.write(' PWDR histogram weight factor = '+'%.3f\n'%(Histogram['wtFactor']))
+                pFile.write(f'\n Histogram: {histogram} histogram Id: {hId}\n{135*"-"}\n')
+                pFile.write(f" PWDR histogram weight factor = {Histogram['wtFactor']:.3f}\n")
                 pFile.write(' Final refinement wR = %.2f%% on %d observations in this histogram\n'%
                 (Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs']))
                 pFile.write(' Other residuals: R = %.2f%%, R-bkg = %.2f%%, wR-bkg = %.2f%% wRmin = %.2f%%\n'%

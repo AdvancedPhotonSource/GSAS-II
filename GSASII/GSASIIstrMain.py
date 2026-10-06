@@ -269,7 +269,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
     return derivCalcs
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,histDict1,varyList,
-    calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None):
+    calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None,ifPrint=True):
     '''Core optimization routines, shared between SeqRefine and Refine
 
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
@@ -279,9 +279,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,h
     # end patch
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
-    ifPrint = True
-    if ifSeq:
-        ifPrint = False
+
     Rvals = {}
     chisq0 = None
     Lastshft = None
@@ -894,6 +892,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
 #    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     msgs = {}
+    pflag = True
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
     Controls = G2stIO.GetControls(GPXfile)
     preFrozenCount = 0
@@ -946,7 +945,6 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     G2stIO.SetupSeqSavePhases(GPXfile)
     msgs['steepestNum'] = 0
     msgs['maxshift/sigma'] = []
-    ifPrint = False
     lastHstLst = None  # used to xfer Le Bail intensities from a previous seq fit to the current
     for ihst,hg in enumerate(histNames):
         # loop vars used here: 
@@ -954,6 +952,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         #    hlist: list of histogram names (one or several)
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2mv.InitVars()
+        pf1st = (pflag and ihst==0)  # put phase info into .lst only on 1st histo/group (better would be to do this when a new phase is added, but...)
         if groupDict:
             #for key in groupDict.keys():
             word = f'{hg} group'
@@ -967,7 +966,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                     skip = True
             if skip: continue
             (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave
-             ) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,grHistList=groupDict[hg])
+             ) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=pf1st,pFile=printFile,grHistList=groupDict[hg])
         else:
             hlist = [hg]
             if hg not in Histograms:
@@ -976,7 +975,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 continue
             word = f'{hg}'
             (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave
-             ) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqHistName=hg)
+             ) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=pf1st,pFile=printFile,seqHistName=hg)
         G2fil.G2Print(f'\nRefining with {word}')
         if dlg:
             dlg.SetTitle(f'Residual for {word} (#{ihst})')
@@ -1124,7 +1123,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             firstVaryList = newVaryList
 
         ifSeq = True
-        printFile.write(f'\n Refinement results for {word}\n{135*"-"}\n')
+        printFile.write(f'\n{135*"="}\nRefinement results for {word}\n{135*"="}\n')
         lastHstLst = hlist
         # remove frozen vars
         parmFrozenList = []
@@ -1147,7 +1146,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         try:
             IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,histDict1,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
-                refPlotUpdate=refPlotUpdate)
+                refPlotUpdate=refPlotUpdate,ifPrint=pflag)
             try:
                 shft = '%.4f'% Rvals['Max shft/sig']
             except:
@@ -1180,9 +1179,9 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             SeqResult[hg]['RBsuDict'] = G2stMth.computeRBsu(parmDict,Phases,rigidbodyDict,
                             covMatrix,varyList,sig)
             G2stIO.SetISOmodes(parmDict,sigDict,Phases,None)
-            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,
+            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,pflag,
                                          pFile=printFile,covMatrix=covMatrix,varyList=varyList)
-            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile,seq=True)
+            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,pflag,printFile,seq=True)
             # check for variables outside their allowed range, reset and freeze them
             frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
             msg = None
@@ -1245,7 +1244,11 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             t2 = time.time()
             G2fil.G2Print("Fit step time {:.2f} sec.".format(t2-t1))
             t1 = t2
-    SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
+    if groupDict:
+        entries = sorted(set(SeqResult.get('histNames',[])+histNames))
+        SeqResult['histNames'] = [i for i in entries if i in SeqResult]
+    else:
+        SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
     try:
         G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     except Exception as msg:

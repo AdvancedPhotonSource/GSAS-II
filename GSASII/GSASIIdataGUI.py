@@ -8259,7 +8259,35 @@ def UpdateControls(G2frame,data):
         selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
         dataSizer.Add(selSeqData,0,WACV)
         seqSizer.Add(dataSizer)
-        if SeqData:
+
+        groupDict = data.get('Groups',{}).get('groupDict',{})
+        dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping: '),0,WACV)
+        if groupDict:
+            groupCount = [len(groupDict[k]) for k in groupDict]
+            if min(groupCount) == max(groupCount):
+                msg = f'Have {len(groupDict)} group(s) with {min(groupCount)} histograms in each'
+            else:
+                msg = (f'Have {len(groupDict)} group(s) with {min(groupCount)}'
+                           f' to {min(groupCount)} histograms in each')
+            notGrouped = data.get('Groups',{}).get('notGrouped',0)
+            if notGrouped:
+                msg += f". {notGrouped} not in a group"
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=msg),0,WACV)
+            dataSizer.Add((5,-1))
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Redefine groupings')
+        else:
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
+        btn.Bind(wx.EVT_BUTTON,SearchGroups)
+        dataSizer.Add(btn)
+        if groupDict:
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear groupings')
+            dataSizer.Add((5,-1))
+            dataSizer.Add(btn)
+            btn.Bind(wx.EVT_BUTTON,ClearGroups)
+        seqSizer.Add(dataSizer)
+
+        if SeqData or groupDict:
             selSizer = wx.BoxSizer(wx.HORIZONTAL)
             reverseSel = wx.CheckBox(G2frame.dataWindow,-1,label=' Reverse order?')
             reverseSel.Bind(wx.EVT_CHECKBOX,OnReverse)
@@ -8454,42 +8482,6 @@ def UpdateControls(G2frame,data):
     mainSizer.Add(SeqSizer())
     mainSizer.Add((5,15),0)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping'),0,WACV)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    mainSizer.Add(subSizer,0,wx.EXPAND)    
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    groupDict = data.get('Groups',{}).get('groupDict',{})
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    if groupDict:
-        groupCount = [len(groupDict[k]) for k in groupDict]
-        if min(groupCount) == max(groupCount):
-            msg = f'Have {len(groupDict)} group(s) with {min(groupCount)} histograms in each'
-        else:
-            msg = (f'Have {len(groupDict)} group(s) with {min(groupCount)}'
-                       f' to {min(groupCount)} histograms in each')
-        notGrouped = data.get('Groups',{}).get('notGrouped',0)
-        if notGrouped:
-            msg += f". {notGrouped} not in a group"
-        subSizer.Add(wx.StaticText(G2frame.dataWindow,label=msg),0,WACV)
-        subSizer.Add((5,-1))
-        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Redefine groupings')
-    else:
-        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
-    btn.Bind(wx.EVT_BUTTON,SearchGroups)
-    subSizer.Add(btn)
-    if groupDict:
-        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear groupings')
-        subSizer.Add((5,-1))
-        subSizer.Add(btn)
-        btn.Bind(wx.EVT_BUTTON,ClearGroups)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    mainSizer.Add(subSizer,0,wx.EXPAND)
-    mainSizer.Add((-1,8))
-    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
     # subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Global Settings'),0,WACV)
     # subSizer.Add((-1,-1),1,wx.EXPAND)
     # mainSizer.Add(subSizer,0,wx.EXPAND)

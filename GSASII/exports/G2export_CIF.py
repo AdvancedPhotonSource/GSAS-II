@@ -4059,7 +4059,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         #===============================================================================
         seqmode = False
         seqHistList = []
-        if self.G2frame.testSeqRefineMode():
+        if bool(self.G2frame.testSeqRefineMode(True)):
             if self.seqData is None:
                 raise Exception('Use Export/Sequential project for sequential refinements')
             if len(self.Phases) > 1:
@@ -4080,7 +4080,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 return
             missing = []
             oldref = 0
-            for h in self.G2frame.testSeqRefineMode():
+            for h in self.G2frame.testSeqRefineMode(True):  # TODO needs work for Grouped Seq (groupDict)
                 if h not in seqHistList:
                     missing.append(h)
             for h in seqHistList:

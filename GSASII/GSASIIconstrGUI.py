@@ -632,6 +632,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 l2 = max(l2,len(i2))
             fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
             atchoices = [fmt.format(*i1) for i1 in choices] # reformat list as str with columns
+            if groupDict and '*' in str(FrstVarb) and constType == 'equivalence': 
+                legend += '\nOK to select no additional variables'
             dlg = G2G.G2MultiChoiceDialog(
                 G2frame,legend,
                 'Constrain '+str(FrstVarb)+' with...',atchoices,
@@ -641,7 +643,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             Selections = dlg.GetSelections()[:]
             dlg.Destroy()
             if res != wx.ID_OK: return []
-            if len(Selections) == 0:
+            if len(Selections) == 0 and not groupDict:
                 dlg = wx.MessageDialog(
                     G2frame,
                     'No variables were selected to include with '+str(FrstVarb),
@@ -1453,7 +1455,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         lbl= "Define/edit constraints on refined parameters"
         topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
-        if G2frame.testSeqRefineMode():
+        if bool(G2frame.testSeqRefineMode(True)):
             topSizer.Add(G2G.HelpButton(parent,helpIndex='Constraints-SeqRef'))
         else:
             topSizer.Add(G2G.HelpButton(parent,helpIndex='Constraints'))
@@ -1491,7 +1493,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             butSizer.Add((-1,-1),1,wx.EXPAND,1)
             
             Siz.Add(butSizer,0,wx.EXPAND)
-            if G2frame.testSeqRefineMode():
+            if bool(G2frame.testSeqRefineMode(True)):
                 butSizer = wx.BoxSizer(wx.HORIZONTAL)
                 butSizer.Add(wx.StaticText(panel,wx.ID_ANY,'  Sequential Ref. Settings.  Wildcard use: '),0,WACV)
                 btn = G2G.EnumSelector(panel, data, '_seqmode',
@@ -1499,11 +1501,14 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         ['auto-wildcard',   'wildcards-only',       'use-all'],
                         lambda x: wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True))
                 butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
-                butSizer.Add(wx.StaticText(panel,wx.ID_ANY,'  Selected histogram: '),0,WACV)
-                btn = G2G.EnumSelector(panel, data, '_seqhist',
+                Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+                groupDict = Controls.get('Groups',{}).get('groupDict',{})
+                if not groupDict:
+                    butSizer.Add(wx.StaticText(panel,wx.ID_ANY,'  Selected histogram: '),0,WACV)
+                    btn = G2G.EnumSelector(panel, data, '_seqhist',
                         list(seqHistList),list(range(len(seqHistList))),
                         lambda x: wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True))
-                butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
+                    butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
                 Siz.Add(butSizer,0)
             G2G.HorizontalLine(Siz,panel)
 #            Siz.Add((5,5),0)
@@ -1730,7 +1735,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                          '_seqmode':'auto-wildcard', '_seqhist':0})       #empty dict - fill it
     if 'Global' not in data:                                            #patch
         data['Global'] = []
-    seqHistList = G2frame.testSeqRefineMode()
+    seqHistList = G2frame.testSeqRefineMode(True)  # TODO: what about grouped Seq (groupDict)?
     # patch: added ~version 5030 -- new mode for wild-card use in seq refs
     # note that default for older sequential fits is 'wildcards-only' but in new GPX is 'auto-wildcard'
     if seqHistList:
@@ -1752,9 +1757,12 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     #===================================================
     seqmode = 'use-all'
     seqhistnum = None
+    groupDict = None
     if seqHistList:  # Selections used with sequential refinements
         seqmode = data.get('_seqmode','wildcards-only')
         seqhistnum = min(data.get('_seqhist',0),len(seqHistList)-1)
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)
 #removed this check as it prevents examination of ISODISTORT constraints without data
@@ -1795,6 +1803,11 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                             ' has been run.\nWe suggest you refine a scale factor.')
         return
 
+    # determine if this is a grouped sequential fit
+    groupDict = None
+    if bool(G2frame.testSeqRefineMode(True)):
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
     # create a list of the phase variables
     symHolds = []
     (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,ORBtables,BLtable,MFtable,maxSSwave) = \
@@ -1820,7 +1833,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             phaseAtTypes[item] = ''
              
     # create a list of the hist*phase variables
-    if seqHistList: # for sequential refinement, only process selected histgram in list
+    if seqHistList and not groupDict: # for sequential refinement, only process selected histgram in list
         histDict = {seqHistList[seqhistnum]:Histograms[seqHistList[seqhistnum]]}
     else:
         histDict = Histograms
@@ -1964,7 +1977,7 @@ def CheckScalePhaseFractions(G2frame,hist,histograms,phases,Constraints):
     for histogram hist, if so, offer the user a chance to create a constraint
     on the sum of phase fractions
     '''
-    if G2frame.testSeqRefineMode():  # more work needed due to seqmode
+    if bool(G2frame.testSeqRefineMode(True)):  # more work needed due to seqmode
         return False
 #        histStr = '*'
     else: 

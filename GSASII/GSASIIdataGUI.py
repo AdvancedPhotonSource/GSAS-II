@@ -68,6 +68,7 @@ from . import defaultIparms as dI
 from . import GSASIIfpaGUI as G2fpa
 from . import GSASIIseqGUI as G2seq
 from . import GSASIIddataGUI as G2ddG
+from . import GSASIIgroupGUI as G2gr
 
 try:
     wx.NewIdRef
@@ -964,18 +965,32 @@ class GSASII(wx.Frame):
             print(f'Note: {len(msgs)} importer(s) could not be installed. See the'+
                    '\n  "Import->Show importer error(s)" menu command for more information')
 
-    def testSeqRefineMode(self):
-        '''Returns the list of histograms included in a sequential refinement or
-        an empty list if a standard (non-sequential) refinement.
-        Also sets Menu item status depending on mode
+    def testSeqRefineMode(self, quick=False):
+        '''Returns the list of histograms included in a sequential 
+        refinement or for a grouped sequential fit, a dict 
+        where each value is a list of histograms.
+        
+        For a standard (non-sequential) refinement, an empty list 
+        is returned.
+        
+        :param bool quick: Sets the Refine Menu item to Refine or Seq Refine 
+          when quick=False (default setting)
+        :returns: an empty list for a standard refinement, a list of 
+          histograms for a normal sequential fit or a dict for a grouped 
+          sequential fit.
         '''
         cId = GetGPXtreeItemId(self,self.root, 'Controls')
+        groupDict = None
+        seqSetting = None
         if cId:
             controls = self.GPXtree.GetItemPyData(cId)
             seqSetting = controls.get('Seq Data',[])
-        else:
-            seqSetting = None
+            groupDict = controls.get('Groups',{}).get('groupDict',{})
+        if groupDict:
+            #seqSetting = [tuple(groupDict[g]) for g in seqSetting]
+            seqSetting = groupDict
 
+        if quick: return seqSetting
         for item in self.Refine:
             if 'Le Bail' in item.GetItemLabel() or 'partials' in item.GetItemLabel() :
                 item.Enable(not seqSetting)
@@ -996,7 +1011,7 @@ class GSASII(wx.Frame):
     def PreviewFile(self,filename):
         'utility to confirm we have the right file'
         fp = open(filename,'r')
-        rdmsg = u'File '+ filename +u' begins:\n\n'
+        rdmsg = f'File {filename} begins:\n\n'
         try:
             rdmsg += fp.read(80)
             rdmsg += '\n\nDo you want to read this file?'
@@ -1004,7 +1019,7 @@ class GSASII(wx.Frame):
             rdmsg = None
         fp.close()
         if rdmsg is None or not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
-            rdmsg = u'File '+ filename +u' is a binary file. Do you want to read this file?'
+            rdmsg = f'File {filename} is a binary file. Do you want to read this file?'
         # it would be better to use something that
         # would resize better, but this will do for now
         dlg = wx.MessageDialog(self, rdmsg,'Is this the file you want?',wx.YES_NO|wx.ICON_QUESTION)
@@ -1265,9 +1280,9 @@ class GSASII(wx.Frame):
             else:
                 if singlereader:
                     msg += '\n'+rd.warnings
-                    print(u'The '+ rd.formatName+u' reader was not able to read file '+filename+msg)
+                    print(f'The {rd.formatName} reader was not able to read file {filename}{msg}')
                     try:
-                        print(u'\n\nError message(s):\n\t'+errorReport)
+                        print(f'\n\nError message(s):\n\t{errorReport}')
                     except:
                         pass
                     self.ErrorDialog('Read Error','The '+ rd.formatName+
@@ -1367,7 +1382,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     print('ChooseOrigin failed. Check your atom types')
             PhaseName = rd.Phase['General']['Name'][:]
             newPhaseList.append(PhaseName)
-            print(u'Read phase {} from file {}'.format(PhaseName,self.lastimport))
+            print(f'Read phase {PhaseName} from file {self.lastimport}')
             sub = FindPhaseItem(self)
             psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
             self.GPXtree.SetItemPyData(psub,rd.Phase)
@@ -1624,7 +1639,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 for Bank in rd.Banks:
                     valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),}
                     HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-                    print (u'Read structure factor table '+HistName+u' from file '+self.lastimport)
+                    print (f'Read structure factor table {HistName} from file {self.lastimport}')
                     Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
                     if not Bank['RefDict'].get('FF'):
                         Bank['RefDict']['FF'] = {}
@@ -1637,7 +1652,7 @@ If you continue from this point, it is quite likely that all intensity computati
             else:
                 valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),}
                 HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-                print (u'Read structure factor table '+HistName+u' from file '+self.lastimport)
+                print (f'Read structure factor table {HistName} from file {self.lastimport}')
                 if not rd.RefDict.get('FF'):
                     rd.RefDict['FF'] = {}
                 Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
@@ -1660,6 +1675,7 @@ If you continue from this point, it is quite likely that all intensity computati
         header = 'Select phase(s) to add the new\nsingle crystal dataset(s) to:'
         for Name in newHistList:
             header += '\n  '+str(Name)
+        if len(header) > 200: header = header[:200]+'...'
         result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
@@ -1779,7 +1795,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     continue
                 Iparm[S[:12]] = S[12:-1]
         except IOError:
-            print(u'Error reading file: {}'.format(instfile))
+            print(f'Error reading file: {instfile}')
         if fp:
             fp.close()
 
@@ -1796,9 +1812,9 @@ If you continue from this point, it is quite likely that all intensity computati
                 choices.append('Bank '+str(i))
             bank = 1 + G2G.BlockSelector(
                 choices, self,
-                title=u'Select an instrument parameter bank for '+
-                os.path.split(rd.powderentry[0])[1]+u' BANK '+str(bank)+
-                u'\nOr use Cancel to select from the default parameter sets',
+                title='Select an instrument parameter bank for '+
+                os.path.split(rd.powderentry[0])[1]+f' BANK {bank}'+
+                '\nOr use Cancel to select from the default parameter sets',
                 header='Block Selector')
         if bank is None: return {}
         # pull out requested bank # bank from the data, and change the bank to 1
@@ -1935,8 +1951,8 @@ If you continue from this point, it is quite likely that all intensity computati
                     rd.instmsg = instParmList   #an error message
                     return GetDefaultParms(self,rd)
             else:
-                self.ErrorDialog('Open Error',u'Error opening instrument parameter file '
-                    +u'{} requested by file {}'.format(instfile,filename))
+                self.ErrorDialog('Open Error','Error opening instrument parameter file '
+                    +f'{instfile} requested by file {filename}')
         #-- No other choice: ask the User for an instrument file -----------------------
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
@@ -1956,7 +1972,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     extOrd = [1,0]
                 extList = ['GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins;*.PRM|','GSAS-II iparm file (*.instprm)|*.instprm|']
                 dlg = wx.FileDialog(self,
-                    u'Choose inst. param file for "'+rd.idstring+u'" (or Cancel for default)',
+                    f'Choose inst. param file for "{rd.idstring}" (or Cancel for default)',
                     pth, '',extList[extOrd[0]]+extList[extOrd[1]]+'All files (*.*)|*.*', wx.FD_OPEN)
                 if os.path.exists(lastIparmfile):
                     dlg.SetFilename(os.path.split(lastIparmfile)[-1])
@@ -1981,11 +1997,11 @@ If you continue from this point, it is quite likely that all intensity computati
                 if Iparm:
                     #print 'debug: success with',instfile
                     rd.instfile = instfile
-                    rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+                    rd.instmsg = f'{instfile} bank {rd.instbank}'
                     return G2fil.SetPowderInstParms(Iparm,rd)
                 else:
                     self.ErrorDialog('Read Error',
-                                     u'Error opening/reading file {}'.format(instfile))
+                                     f'Error opening/reading file {instfile}')
 
     def EnableRefineCommand(self):
         '''Check that phases are connected to histograms - if so then
@@ -2180,7 +2196,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     exec(corr)
                     print('done')
                 except Exception as err:
-                    print(u'error: {}'.format(err))
+                    print(f'error: {err}')
                     print('with commands -------------------')
                     print(corr)
                     print('---------------------------------')
@@ -2245,7 +2261,7 @@ If you continue from this point, it is quite likely that all intensity computati
         header = 'Select phase(s) to link\nto the newly-read data:'
         for Name in newHistList:
             header += '\n  '+str(Name)
-
+        if len(header) > 200: header = header[:200]+'...'
         result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
@@ -2456,8 +2472,8 @@ If you continue from this point, it is quite likely that all intensity computati
             {})
         self.GPXtree.Expand(Id)
         self.GPXtree.SelectItem(Id)
-        print(u'Added simulation powder data {}'.format(HistName)+
-              ' with parameters from {}'.format(rd.instmsg))
+        print(f'Added simulation powder data {HistName}'+
+              f' with parameters from {rd.instmsg}')
 
         # make a list of phase names
         phaseRIdList,defPhases = self.GetPhaseInfofromTree()
@@ -2597,7 +2613,7 @@ If you continue from this point, it is quite likely that all intensity computati
             {})
         self.GPXtree.Expand(Id)
         self.GPXtree.SelectItem(Id)
-        print(u'Added simulation powder data {}'.format(HistName))
+        print(f'Added simulation powder data {HistName}')
         return Id
 
     def OnPreferences(self,event):
@@ -3325,7 +3341,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.testRBObjSizers = {}   #rigid body sizer datafile contents
         self.RMCchoice = 'RMCProfile'
         self.ifSetLimitsMode = 0
-
+        self.PlotBindings = []  # stores plot bindings so they can be revised
 
     def __init__(self, parent):
         self.ExportLookup = {}
@@ -4247,15 +4263,20 @@ If you continue from this point, it is quite likely that all intensity computati
         item, cookie = self.GPXtree.GetFirstChild(self.root)
         used = False
         seqUse = False
+        seqList = self.testSeqRefineMode(True)
         while item:
             name = self.GPXtree.GetItemText(item)
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
             if name in ['Notebook','Controls','Covariance','Constraints',
-                'Restraints','Phases','Rigid bodies','Hist/Phase']:
+                            'Restraints','Phases','Rigid bodies','Hist/Phase',
+                            'Groups/Powder']:
                 continue
             if 'Sequential' in name:
                 continue
-            if name in self.testSeqRefineMode():
+            if type(seqList) is dict and [True for i in seqList.values() if name in i]:
+                seqUse = True
+                continue
+            elif name in seqList:
                 seqUse = True
                 continue
             if 'PWDR' in name[:4]:
@@ -4279,12 +4300,12 @@ If you continue from this point, it is quite likely that all intensity computati
             try:
                 TextList.remove('PWDR'+pdfName[4:])
             except ValueError:
-                print (u'PWDR'+pdfName[4:]+u' for '+pdfName+u' not found')
+                print (f'PWDR{pdfName[4:]} for {pdfName} not found')
         if len(TextList) == 0:
             if used:
-                msg = 'All histograms are associated with at least one phase. You must unset a histogram "use" flag in all phase(s) where it is referenced before it can be deleted'
+                msg = 'All histograms are associated with at least one phase. You must remove a histogram from all phase(s) where it is referenced before it can be deleted'
             elif seqUse:
-                msg = 'All histograms are in used in the sequential list. You must remove it from the list (in Controls) before it can be deleted'
+                msg = 'All histograms are in used in the sequential list. You must remove a histogram from the list (in Controls) before it can be deleted'
             else:
                 msg = 'No data items found in tree to delete'
             G2G.G2MessageBox(self,msg,'Nothing to delete')
@@ -4456,10 +4477,10 @@ If you continue from this point, it is quite likely that all intensity computati
             self.dataWindow.ClearData()
         if self.dataWindow and askSave:
             dlg = wx.MessageDialog(self,
-                    'Do you want to save and replace the current project?\n'
+                    'Do you want to save before replacing the current project?\n'
                     '(Use No to read without saving or Cancel to continue '
-                    'with current project)',
-                'Save & Overwrite?',
+                    'with the current project)',
+                'Save before Overwrite?',
                 wx.YES|wx.NO|wx.CANCEL)
             try:
                 result = dlg.ShowModal()
@@ -4557,13 +4578,14 @@ If you continue from this point, it is quite likely that all intensity computati
             print (traceback.format_exc())
 
 
-    def StartProject(self):
+    def StartProject(self,selectItem=True):
         '''Opens a GSAS-II project file & selects the 1st available data set to
         display (PWDR, HKLF, REFD or SASD)
         '''
 
         Id = 0
         phaseId = None
+        GroupId = None
         seqId = None
         G2IO.ProjFileOpen(self)
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
@@ -4580,10 +4602,12 @@ If you continue from this point, it is quite likely that all intensity computati
                         Id = GetGPXtreeItemId(self,item,'Image Controls')
                     else:
                         Id = item
-            elif name.startswith("Sequential") and self.testSeqRefineMode():
+            elif name.startswith("Sequential") and bool(self.testSeqRefineMode(True)):
                 seqId = item
             elif name == "Phases":
                 phaseId = item
+            elif name.startswith("Groups"):
+                GroupId = item
             elif name == 'Controls':
                 data = self.GPXtree.GetItemPyData(item)
                 if data:
@@ -4591,19 +4615,27 @@ If you continue from this point, it is quite likely that all intensity computati
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         if phaseId: # always show all phases
             self.GPXtree.Expand(phaseId)
-        if seqId: # open on sequential if present
+        if GroupId:
+            self.GPXtree.Expand(GroupId)
+        # select an item
+        if seqId and selectItem: # open on sequential if present
             self.EnablePlot = True
             SelectDataTreeItem(self,seqId)
             self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
-        elif Id: # otherwise open on 1st histogram
+        elif GroupId and selectItem:
+            self.EnablePlot = True
+            self.GPXtree.Expand(GroupId)
+            SelectDataTreeItem(self,GroupId)
+            self.GPXtree.SelectItem(GroupId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+        elif Id and selectItem: # otherwise open on 1st histogram
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
-        elif phaseId and self.GPXtree.GetChildrenCount(phaseId) > 0: # otherwise, 1st phase
+        elif phaseId and selectItem and self.GPXtree.GetChildrenCount(phaseId) > 0: # otherwise, 1st phase
             Id = phaseId
             # open 1st phase
-            Id, unused = self.GPXtree.GetFirstChild(phaseId)
+            Id,_ = self.GPXtree.GetFirstChild(phaseId)
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id) # as before for OSX
         self.CheckNotebook()
@@ -4631,8 +4663,8 @@ If you continue from this point, it is quite likely that all intensity computati
         the project.
         '''
         dlg = wx.MessageDialog(self,
-                    'Do you want to save the current project and start with an empty one?\n(Use No to clear without saving or Cancel to continue with current project)',
-                    'Save & Clear?',
+                    'Do you want to save the current project before starting with an empty one?\n(Use No to clear without saving or Cancel to continue with current project)',
+                    'Save before Clear?',
                     wx.YES | wx.NO | wx.CANCEL)
         try:
             result = dlg.ShowModal()
@@ -4700,10 +4732,10 @@ If you continue from this point, it is quite likely that all intensity computati
         '''
         projName = os.path.split(self.GSASprojectfile)[1]
         if not projName: projName = "<unnamed project>"
-        if self.testSeqRefineMode():
-            s = u' (sequential refinement)'
+        if bool(self.testSeqRefineMode(False)):
+            s = ' (sequential refinement)'
         else:
-            s = u''
+            s = ''
         self.SetTitle("GSAS-II project: "+projName + s)
         self.plotFrame.SetTitle("GSAS-II plots: "+projName)
 
@@ -5444,8 +5476,7 @@ If you continue from this point, it is quite likely that all intensity computati
                             hId = histoList.index(hist)
                             Histograms[hist]['hId'] = hId
                         else: # would happen if a referenced histogram were renamed or deleted
-                            print(u'For phase "'+phase+
-                                  u'" unresolved reference to histogram "'+hist+u'"')
+                            print(f'For phase "{phase}" unresolved reference to histogram "{hist}"')
         if badnum > 1: print('  ...hist not in histIdList error occured {} times'.format(badnum))
         G2obj.IndexAllIds(Histograms=Histograms,Phases=phaseData)
         return Histograms,Phases
@@ -5663,9 +5694,11 @@ If you continue from this point, it is quite likely that all intensity computati
         G2mv.Map2Dict(parmValDict,G2mv.saveVaryList)
         rigidbodyDict = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Rigid bodies'))
 
-        if self.testSeqRefineMode():
+        if bool(self.testSeqRefineMode(True)):
             seqDict = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Sequential results'))
-            histNames = [h for h in self.testSeqRefineMode() if h in seqDict]
+            # not sure why this used the current sequential list
+            #histNames = [h for h in self.testSeqRefineMode(True) if h in seqDict]
+            histNames = [h for h in seqDict if h in Histograms]
             if len(histNames) == 0:
                 print('no histograms')
                 return
@@ -5679,15 +5712,15 @@ If you continue from this point, it is quite likely that all intensity computati
         dlg = G2exG.ExpressionDialog(self,parmValDict,
                     header="Evaluate an expression of GSAS-II parameters",
                     VarLabel = "Expression",
-                    fit=False,wildCard=self.testSeqRefineMode())
+                    fit=False,wildCard=bool(self.testSeqRefineMode(True)))
         exprobj = dlg.Show(True)
         if not exprobj: return
 
-        if not self.testSeqRefineMode():
+        if not bool(self.testSeqRefineMode(True)):
             histNames = [0]
         for h in histNames:
             prfx = ''
-            if self.testSeqRefineMode():
+            if bool(self.testSeqRefineMode(True)):
                 parmValDict = seqDict[h]['parmDict']
                 covMatrix = seqDict[h]['covMatrix']
                 CvaryList = seqDict[h]['varyList']
@@ -5739,7 +5772,7 @@ If you continue from this point, it is quite likely that all intensity computati
         '''
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         self._cleanPartials(Controls)  # phase partials invalid after a refinement
-        if self.testSeqRefineMode():
+        if bool(self.testSeqRefineMode(True)):
             self.OnSeqRefine(event)
             return
 
@@ -5784,7 +5817,17 @@ No: least-squares fitting starts with previously fit structure factors.'''
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
-        if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
+        # if we are currently on a PWDR tree item or a child of one, engage "liveplot" mode
+        liveplot = False
+        if self.PickId:
+            for item in self.PickId,self.GPXtree.GetItemParent(self.PickId):
+                if self.GPXtree.GetItemText(item).startswith('PWDR'):
+                    liveplot = True
+                    break
+        if liveplot:
+            if GSASIIpath.GetConfigValue('debug'): print('liveplot is on')
+            # true when a pattern is selected for plotting, which includes
+            # when a group is selected.
             refPlotUpdate = G2pwpl.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
             refPlotUpdate = None
@@ -5895,10 +5938,11 @@ is being refined.
             rChi2initial = 'GOF: {:.3f}'.format(covData['Rvals']['GOF']**2)
         except:
             rChi2initial = '?'
-
+ 
+        seqList = self.testSeqRefineMode(True)
         if GSASIIpath.GetConfigValue('G2RefinementWindow'):
-            if (self.testSeqRefineMode()):
-                l = len(self.testSeqRefineMode())
+            if bool(seqList):
+                l = len(seqList)
             else:
                 l = 0
             dlg = G2G.G2RefinementProgress(parent=self,trialMode=False,
@@ -5912,13 +5956,13 @@ is being refined.
         else:
             refPlotUpdate = None
 
-        seqList = self.testSeqRefineMode()
+        seqList = self.testSeqRefineMode(True)
         try:
             OK,Rvals = G2stMn.DoLeBail(self.GSASprojectfile,dlg,cycles=1,refPlotUpdate=refPlotUpdate,seqList=seqList)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
-        if OK and seqList:
+        if OK and bool(seqList):
             print('continuing with sequential fit')
         elif OK:
             text = ''
@@ -5999,7 +6043,7 @@ is being refined.
         Sets Controls['PhasePartials'] to a file name to trigger save of
         info in :meth:`GSASIIstrMath.getPowderProfile` and then clear that.
         '''
-        if self.testSeqRefineMode():  # should not happen, as should not be enabled
+        if bool(self.testSeqRefineMode(True)):  # should not happen, as should not be enabled
             G2G.G2MessageBox(self,
                 'Phase partials cannot be computed for sequential fits',
                 'Sequential not allowed')
@@ -6237,8 +6281,10 @@ is being refined.
         '''Perform a sequential refinement.
         Called from self.OnRefine (Which is called from the Calculate/Refine menu)
         '''
+        allerrors = {}
+        allwarnings = {}
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-        seqList = self.testSeqRefineMode()
+        seqList = self.testSeqRefineMode(True)
         Id = GetGPXtreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Sequential results')
@@ -6247,21 +6293,21 @@ is being refined.
         Controls['ShowCell'] = True
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
         # check for deleted or unused histograms in refine list
-        phaseRIdList,histdict = self.GetPhaseInfofromTree(Used=True)
-        usedHistograms = []
-        for k in histdict:
-            usedHistograms += histdict[k]
-        usedHistograms = list(set(usedHistograms))
-        newseqList = [i for i in seqList if i in usedHistograms]
-        if len(newseqList) != len(seqList):
-            G2G.G2MessageBox(self,
-                str(len(seqList)-len(newseqList))+
-                ' histograms that are not used have been removed from the sequential list.',
-                'Histograms removed')
-            seqList = Controls['Seq Data'] = newseqList
-        allerrors = {}
-        allwarnings = {}
+        if not groupDict:
+            phaseRIdList,histdict = self.GetPhaseInfofromTree(Used=True)
+            usedHistograms = []
+            for k in histdict:
+                usedHistograms += histdict[k]
+            usedHistograms = list(set(usedHistograms))
+            newseqList = [i for i in seqList if i in usedHistograms]
+            if len(newseqList) != len(seqList):
+                G2G.G2MessageBox(self,
+                    str(len(seqList)-len(newseqList))+
+                    ' histograms that are not used have been removed from the sequential list.',
+                    'Histograms removed')
+                seqList = Controls['Seq Data'] = newseqList
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         #
         # Check if a phase lattice parameter refinement flag is set, if so transfer it to the Dij terms
@@ -6298,9 +6344,18 @@ Do you want to transfer the cell refinement flag to the Dij terms?
         # save Tree to file and from here forward, work from the .gpx file not from the data tree
         self.OnFileSave(event)
         Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(self.GSASprojectfile)
-        for h in seqList: # check constraints are OK for each histogram to be processed
-            errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
-                                                          h,Histograms,Phases)
+        
+        
+        for i,hg in enumerate(seqList): # check constraints are OK for each histogram to be processed
+            # hg will be a histogram or a key to group of histograms in groupDict
+            if hg in groupDict:
+                grEquivTbl,grHIDlist = G2stIO.groupEquivTbl(hg,groupDict,Histograms,warn=True)
+                errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
+                                                None,Histograms,Phases,
+                                                grHistList=groupDict[hg],grEquivTbl=grEquivTbl)
+            else:
+                errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
+                                                hg,Histograms,Phases)
             if warnmsg or errmsg:
                 print ('\nConstraint warnings/errors for histogram "{}":'.format(h))
             if warnmsg:
@@ -7821,6 +7876,29 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             # don't know which menu was selected, but should be General on first phase use
             SetDataMenuBar(G2frame,self.DataGeneral)
         self.DataGeneral = _makemenu
+
+        # Groups
+        G2G.Define_wxId('wxID_GRPALL','wxID_GRPSEL')
+        G2G.Define_wxId('wxID_GRPNONE','wxID_GRPLOG','wxID_GRPLIN')
+        #G2G.Define_wxId('wxID_HIDESAME')
+        def _makemenu():     # routine to create menu when first used
+            self.GroupMenu = wx.MenuBar()
+            self.PrefillDataMenu(self.GroupMenu)
+            self.GroupCmd = wx.Menu(title='')
+            self.GroupMenu.Append(menu=self.GroupCmd, title='Grp Cmds')
+            self.GroupCmd.Append(G2G.wxID_GRPALL,'Copy all','Copy all parameters by group')
+            self.GroupCmd.Append(G2G.wxID_GRPSEL,'Copy selected','Copy elected parameters by group')
+
+            self.GroupCmd.Append(G2G.wxID_GRPNONE,'No shift coloring',
+                    'Entry boxes are not colored', wx.ITEM_RADIO)
+            self.GroupCmd.Append(G2G.wxID_GRPLOG,'Log shift colors',
+                    'Entry boxes are colored with log steps', wx.ITEM_RADIO)
+            self.GroupCmd.Append(G2G.wxID_GRPLIN,'Linear shift colors',
+                    'Entry boxes are colored with linear steps', wx.ITEM_RADIO)
+#            self.GroupCmd.Append(G2G.wxID_HIDESAME,'Hide identical rows','Omit rows that are the same and are not refinable from table')
+            self.PostfillDataMenu()
+            SetDataMenuBar(G2frame,self.GroupMenu)
+        self.GroupMenu = _makemenu
     # end of GSAS-II menu definitions
 
 def readFromFile(reader):
@@ -8181,7 +8259,35 @@ def UpdateControls(G2frame,data):
         selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
         dataSizer.Add(selSeqData,0,WACV)
         seqSizer.Add(dataSizer)
-        if SeqData:
+
+        groupDict = data.get('Groups',{}).get('groupDict',{})
+        dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping: '),0,WACV)
+        if groupDict:
+            groupCount = [len(groupDict[k]) for k in groupDict]
+            if min(groupCount) == max(groupCount):
+                msg = f'Have {len(groupDict)} group(s) with {min(groupCount)} histograms in each'
+            else:
+                msg = (f'Have {len(groupDict)} group(s) with {min(groupCount)}'
+                           f' to {min(groupCount)} histograms in each')
+            notGrouped = data.get('Groups',{}).get('notGrouped',0)
+            if notGrouped:
+                msg += f". {notGrouped} not in a group"
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=msg),0,WACV)
+            dataSizer.Add((5,-1))
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Redefine groupings')
+        else:
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
+        btn.Bind(wx.EVT_BUTTON,SearchGroups)
+        dataSizer.Add(btn)
+        if groupDict:
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear groupings')
+            dataSizer.Add((5,-1))
+            dataSizer.Add(btn)
+            btn.Bind(wx.EVT_BUTTON,ClearGroups)
+        seqSizer.Add(dataSizer)
+
+        if SeqData or groupDict:
             selSizer = wx.BoxSizer(wx.HORIZONTAL)
             reverseSel = wx.CheckBox(G2frame.dataWindow,-1,label=' Reverse order?')
             reverseSel.Bind(wx.EVT_CHECKBOX,OnReverse)
@@ -8281,26 +8387,63 @@ def UpdateControls(G2frame,data):
                 ShklSizer.Add(usrrej,0,WACV)
         return LSSizer,ShklSizer
 
-    def AuthSizer():
-        def OnAuthor(event):
-            event.Skip()
-            data['Author'] = auth.GetValue()
-
-        Author = data['Author']
-        authSizer = wx.BoxSizer(wx.HORIZONTAL)
-        authSizer.Add(wx.StaticText(G2frame.dataWindow,label=' CIF Author (last, first):'),0,WACV)
-        auth = wx.TextCtrl(G2frame.dataWindow,-1,value=Author,style=wx.TE_PROCESS_ENTER)
-        auth.Bind(wx.EVT_TEXT_ENTER,OnAuthor)
-        auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
-        authSizer.Add(auth,0,WACV)
-        return authSizer
+    # def AuthSizer():
+    #     def OnAuthor(event):
+    #         event.Skip()
+    #         data['Author'] = auth.GetValue()
+    #
+    #     Author = data['Author']
+    #     authSizer = wx.BoxSizer(wx.HORIZONTAL)
+    #     authSizer.Add(wx.StaticText(G2frame.dataWindow,label=' CIF Author (last, first):'),0,WACV)
+    #     auth = wx.TextCtrl(G2frame.dataWindow,-1,value=Author,style=wx.TE_PROCESS_ENTER)
+    #     auth.Bind(wx.EVT_TEXT_ENTER,OnAuthor)
+    #     auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
+    #     authSizer.Add(auth,0,WACV)
+    #     return authSizer
 
     def ClearFrozen(event):
         'Removes all frozen parameters by clearing the entire dict'
         Controls['parmFrozen'] = {}
         wx.CallAfter(UpdateControls,G2frame,data)
 
-    # start of UpdateControls
+    def SearchGroups(event):
+        '''Create a dict to group similar histograms. Similarity
+        is judged by a common string that matches a template
+        supplied by the user
+        '''
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        for hist in Histograms:
+            if hist.startswith('PWDR '):
+                break
+        else:
+            G2G.G2MessageBox(G2frame,'No used PWDR histograms found to group. Histograms must be assigned phase(s).',
+                                     'Cannot group')
+            return
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        data['Groups'] = G2gr.SearchGroups(G2frame,Histograms,hist)
+#        wx.CallAfter(UpdateControls,G2frame,data)
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        G2frame.clearProject() # clear out data tree
+        G2frame.StartProject(False)
+        #self.EnablePlot = True
+        Id = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+        SelectDataTreeItem(G2frame,Id)
+        G2frame.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+
+    def ClearGroups(event):
+        del data['Groups']
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        G2frame.clearProject() # clear out data tree
+        G2frame.StartProject(False)
+        #self.EnablePlot = True
+        Id = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+        SelectDataTreeItem(G2frame,Id)
+        G2frame.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+        
+    #======= start of UpdateControls ===========================================
     if 'SVD' in data['deriv type']:
         G2frame.GetStatusBar().SetStatusText('Hessian SVD not recommended for initial refinements; use analytic Hessian or Jacobian',1)
     else:
@@ -8339,19 +8482,16 @@ def UpdateControls(G2frame,data):
     mainSizer.Add(SeqSizer())
     mainSizer.Add((5,15),0)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Global Settings'),0,WACV)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    mainSizer.Add(subSizer,0,wx.EXPAND)
-    mainSizer.Add(AuthSizer())
-    mainSizer.Add((5,5),0)
+    # subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Global Settings'),0,WACV)
+    # subSizer.Add((-1,-1),1,wx.EXPAND)
+    # mainSizer.Add(subSizer,0,wx.EXPAND)
+    # mainSizer.Add(AuthSizer())
     Controls = data
     # count frozen variables (in appropriate place)
     for key in ('parmMinDict','parmMaxDict','parmFrozen'):
         if key not in Controls: Controls[key] = {}
     parmFrozen = Controls['parmFrozen']
-    if G2frame.testSeqRefineMode():
+    if bool(G2frame.testSeqRefineMode(True)):
         frozenList = set()
         for h in parmFrozen:
             if h == 'FrozenList': continue
@@ -8603,7 +8743,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         else:
             print( 'nothing to merge for %s reflections'%(mergeRef.shape[0]))
         HKLFlist = []
-        newName = Name+u' '+Laue
+        newName = f'{Name} {Laue}'
         if G2frame.GPXtree.GetCount():
             item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
             while item:
@@ -8900,13 +9040,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
         num = len(data[1][0])
         if 'TOF' in data[0].get('simType','CW'):
             step = (np.log(Tmax) - np.log(Tmin))/(num-1.)
-            t = u'\u00b5s'
-            lbl =  u'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} resolution ({:d} points)'
+            t = '\u00b5s'
+            lbl =  'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} resolution ({:d} points)'
         else:
             step = (Tmax - Tmin)/(num-1)
-            t = u'2\u03b8' # 2theta
-            lbl =  u'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} steps ({:d} points)'
-        lbl += u'\n(Edit range resets observed intensities).'
+            t = '2\u03b8' # 2theta
+            lbl =  'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} steps ({:d} points)'
+        lbl += '\n(Edit range resets observed intensities).'
         lbl = lbl.format(Tmin,Tmax,t,step,num)
         simSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lbl),0,WACV)
         but = wx.Button(G2frame.dataWindow,wx.ID_ANY,"Edit range")
@@ -8938,15 +9078,15 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 name = data[0].get(pfx.split(':')[0]+'::Name','?')
                 if 'SS' in value:
                     mainSizer.Add((5,5),)
-                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' For incommensurate phase '+name+u':'))
+                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' For incommensurate phase '+name+':'))
                     for m,(Rf2,Rf,Nobs) in enumerate(zip(data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])):
                         mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
-                            u' m = +/- %d: RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '%(m,Rf2,Rf,Nobs)))
+                            ' m = +/- %d: RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '%(m,Rf2,Rf,Nobs)))
                 else:
                     mainSizer.Add((5,5),)
-                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' For phase '+name+u':'))
+                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' For phase '+name+':'))
                     mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
-                        u' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
+                        ' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
                         (data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])))
 
     # Draw edit box for Magnification factors/positions
@@ -9152,7 +9292,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 
     G2frame.GetStatusBar().SetStatusText('',1)
     SetDataMenuBar(G2frame)
-    G2frame.SetTitleByGPX()
+    G2frame.SetTitleByGPX()  # probably not needed as this is set when a project is read (G2miscGUI.ProjFileOpen)
     G2frame.PickId = item
     G2frame.PickIdText = None
     parentID = G2frame.root
@@ -9389,6 +9529,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             #import imp
             #imp.reload(G2ddG)
             G2ddG.MakeHistPhaseWin(G2frame)
+        elif G2frame.GPXtree.GetItemText(item).startswith('Groups/'):
+            # groupDict is defined (or item would not be in tree). 
+            # At least for now, this does nothing, so advance to first group entry
+            item, cookie = G2frame.GPXtree.GetFirstChild(item)
+            wx.CallAfter(G2frame.GPXtree.SelectItem,item)
         elif GSASIIpath.GetConfigValue('debug'):
             print('Unknown tree item',G2frame.GPXtree.GetItemText(item))
     ############################################################################
@@ -9590,6 +9735,16 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
         G2frame.dataWindow.HideShow.Enable(True)
+    elif G2frame.GPXtree.GetItemText(parentID).startswith('Groups/'):
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     print('Debug: reloading',G2gr)
+        #     from importlib import reload
+        #     reload(G2pwpl)
+        #     reload(G2gr)
+        G2gr.UpdateGroup(G2frame,item)
+    elif GSASIIpath.GetConfigValue('debug'):
+            print(f'Unknown subtree item {G2frame.GPXtree.GetItemText(item)!r}',
+                  f'\n\tparent: {G2frame.GPXtree.GetItemText(parentID)!r}')
 
     if G2frame.PickId:
         G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
@@ -9644,7 +9799,7 @@ def SetDataMenuBar(G2frame,menu=None):
     # lists of menu items that need to be changed:
     #   ExportPDF, MakePDF, ExportMTZ, ExportPeakList, ExportHKL
     #   Refine, ExportSeq, ExportNonSeq
-    G2frame.testSeqRefineMode() # sets items in Refine, ExportSeq, ExportNonSeq
+    G2frame.testSeqRefineMode(False) # sets items in Refine, ExportSeq, ExportNonSeq
     # now extend the menu item status in 1st menu to the duplicates of that menu
     # item in other menus
     for obj in (G2frame.ExportPDF, G2frame.MakePDF,

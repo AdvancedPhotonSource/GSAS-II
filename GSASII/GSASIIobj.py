@@ -1043,6 +1043,9 @@ class G2VarObj(object):
         'Allow G2VarObj to be a dict key by implementing hashing'
         return hash(self.varname())
 
+    def hId(self):
+        return _lookup(HistRanIdLookup,self.histogram)
+
     def varname(self,hist=None):
         '''Formats the GSAS-II variable name as a "traditional" GSAS-II variable
         string (p:h:<var>:a) or (p:h:<var>)

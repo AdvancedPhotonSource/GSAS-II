@@ -3325,7 +3325,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.testRBObjSizers = {}   #rigid body sizer datafile contents
         self.RMCchoice = 'RMCProfile'
         self.ifSetLimitsMode = 0
-
+        self.multiDistSave = []
 
     def __init__(self, parent):
         self.ExportLookup = {}

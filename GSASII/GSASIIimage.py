@@ -352,29 +352,29 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
         Rx = nl.norm(xyz,axis=0)                            #radial distance including out of plane distortions
         return Rx
    
-#     def GetDetectorE(parms): #correct for ellipses, nans for hyperbola!
-# Not used - keep as possible check for ellipses
+    def GetDetectorE(parms): #correct for ellipses, nans for hyperbola!
     
-#         azm = npatan2d(y-detY,x-detX)       #azm about beam-detector intersection
-#         stth = npsind(tth)
-#         cosb = npcosd(parms['tilt'])
-#         tanb = nptand(parms['tilt'])
-#         tbm = nptand((tth-parms['tilt'])/2.)
-#         tbp = nptand((tth+parms['tilt'])/2.)
-#         fplus = Dist*tanb*stth/(cosb+stth)        #x0y0 to focus for ellipse & hyperbola(F2)
-#         fminus = Dist*tanb*stth/(cosb-stth)                        #wrong sign for ellipse
-#         zdis = (fplus-fminus)/2.          #ellipse/hyperbola center from beam center
-#         vplus = Dist*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)       #correct for ellipse
-#         vminus = Dist*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)      #wrong sign for ellipse
-#         dvfsq = (vplus+vminus)**2-(fplus+fminus)**2
-#         R0 = np.sqrt(dvfsq)/2.      #+minor axis - must test on vsq-fsq; ellipse --> hyperbola
-#         R1 = (vplus+vminus)/2.        #major axis - correct
-#         rsqplus = R0**2+R1**2
-#         rsqminus = R0**2-R1**2
-#         R = rsqminus*npcosd(2.*azm-2.*phi)+rsqplus
-#         Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(azm-phi)**2)
-#         P = 2.*R0**2*zdis*npcosd(azm-phi)
-#         return (P+Q)/R          #correct for ellipse
+        phi = parms['phi']-90.               #get rotation of major axis from tilt axis
+        azm = npatan2d(y-detY,x-detX)       #azm about beam-detector intersection
+        stth = npsind(tth)
+        cosb = npcosd(parms['tilt'])
+        tanb = nptand(parms['tilt'])
+        tbm = nptand((tth-parms['tilt'])/2.)
+        tbp = nptand((tth+parms['tilt'])/2.)
+        fplus = Dist*tanb*stth/(cosb+stth)        #x0y0 to focus for ellipse & hyperbola(F2)
+        fminus = Dist*tanb*stth/(cosb-stth)                        #wrong sign for ellipse
+        zdis = (fplus-fminus)/2.          #ellipse/hyperbola center from beam center
+        vplus = Dist*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)       #correct for ellipse
+        vminus = Dist*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)      #wrong sign for ellipse
+        dvfsq = (vplus+vminus)**2-(fplus+fminus)**2
+        R0 = np.sqrt(dvfsq)/2.      #+minor axis - must test on vsq-fsq; ellipse --> hyperbola
+        R1 = (vplus+vminus)/2.        #major axis - correct
+        rsqplus = R0**2+R1**2
+        rsqminus = R0**2-R1**2
+        R = rsqminus*npcosd(2.*azm-2.*phi)+rsqplus
+        Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(azm-phi)**2)
+        P = 2.*R0**2*zdis*npcosd(azm-phi)
+        return (P+Q)/R          #correct for ellipse
             
     x,y,dsp = xyd   #relative to detector 0,0
     if progressDlg:
@@ -414,7 +414,10 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
     dxy = peneCorr(dtth,parms['dep'],dist)
     Dist = dist+dxy                 #dist corrected for penetration
     Robs = np.sqrt((x-detX)**2+(y-detY)**2)
-    Rhc = GetDetectorR(parms)
+    if keyArray is None:
+        Rhc = GetDetectorR(parms)
+    else:
+        Rhc = GetDetectorE(parms)
     Rcalc = Rhc
     M = (Robs-Rcalc)*25.        #25 wt scaling factor to make "chi**2" more reasonable
     if progressDlg: # keep track of GOF
@@ -1061,6 +1064,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
+    xyLim =  [data['size'][0]/scalex,data['size'][1]/scaley]
     pixLimit = data['pixLimit']
     cutoff = data['cutoff']
     data['rings'] = []
@@ -1095,7 +1099,8 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     varyList = [item for item in data['varyList'] if data['varyList'][item]]
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'setdist':data.get('setdist',data['distance']),'tilt':data['tilt'],'phi':data['rotation'],
-        'wave':data['wavelength'],'dep':data['DetDepth'],'sag':data['sag'],'xyLim':data['xyLim']}
+        'wave':data['wavelength'],'dep':data['DetDepth'],
+        'sag':data.get('sag',0.0),'xyLim':data.get('xyLim',xyLim)}
     Found = False
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)

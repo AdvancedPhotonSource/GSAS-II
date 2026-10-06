@@ -553,7 +553,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 Data['rotation'] = np.mod(parmDict['phi'],360.0)
                 Data['tilt'] = parmDict['tilt']
                 Data['DetDepth'] = parmDict['dep']
-                Data['sag'] = parmDict['sag']
+                Data['sag'] = 0.0
+                Data['det2theta'] = 0.0
                 #Data['chisq'] = chisq
                 N = len(Data['ellipses'])
                 Data['ellipses'] = []           #clear away individual ellipse fits

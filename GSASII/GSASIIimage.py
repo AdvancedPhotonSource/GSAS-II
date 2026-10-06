@@ -247,6 +247,8 @@ def FitEllipse(xy):
     return cent,phi,radii
 
 def FitHyperbola(xy):
+    ''' Used in stress/strain fit'
+    '''
     
     def hypcof(xo,yo,phi,a,b):
         a2 = a**2
@@ -307,13 +309,24 @@ def FitHyperbola(xy):
 ellipseCalcCount = 0
 ellipseCalcRMS = None
 def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
-    '''Compute the deviations from the ellipse point locations
+    '''Compute the radial deviations from the ellipse/hyperbolic point locations
+        Used in FitDetector - ImageRecalibrate & ImageCalibrate
     '''
     
-    def GetDetectorR(Robs,Rec):
-        '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
-        & image controls dictionary (data) - new version
+    def GetDetectorR(parms):
+        '''Get ring radius from x,y d-spacing (dsp)
+        & image controls dictionary (data) - new version.
+        Radius is distance from beam center to theoretical x,y point based
+        on obs x,y azimuth, d-spacing & detector parameters
+        Works for ellipses & hyperbolas
         '''
+        def makeData(parms):
+            
+            data = {'tilt':parms['tilt'],'rotation':parms['phi'],'wavelength':parms['wave'],
+                    'distance':parms['dist'],'center':[parms['det-X'],parms['det-Y']],'xyLim':parms['xyLim'],
+                    'DetDepth':parms['dep'],'det2theta':0.0,'azmthOff':0.0,'sag':parms['sag']}
+            return data
+                    
         def LinePlaneCollision(pN, pP, rD):
         
             rP = np.zeros(3)
@@ -323,34 +336,45 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
             si = -ndotp / ndotu 
             Psi = w + si * rD + pP
             return Psi
-
-        dist = d/npcosd(parms['tilt'])    #to sample-beam intersection point on detector plane
-        phi = parms['phi']
-        T = makeMat(parms['tilt'],0)                    #rotate about X
-        R = makeMat(phi,2)                              #rotate about Z
-        MN = np.inner(R,np.inner(R,T))
-        tth = 2.0*npasind(parms['wave']/(2.*dsp))
+        
+        azm = np.squeeze(GetTthAzmG(x,y,makeData(parms))[1])    #Bragg cone azm from detector x,y & parms includes pene & sag
+        sdist = Dist/npcosd(parms['tilt'])    #to sample-beam intersection point on detector plane
+        phi = parms['phi']                      #tilt axis rotation
+        T = makeMat(parms['tilt'],0)            #rotate about X
+        R = makeMat(phi,2)                      #rotate about Z
+        MN = np.inner(R,np.inner(R,T))          #combined rotation matrix
         vect = np.array([npsind(tth)*npcosd(azm),npsind(tth)*npsind(azm),npcosd(tth)])  #unit vector rings from sample to detector
-        dxyzN = np.inner(np.array([0.,0.,1.0]),MN)      #tilt detector normal
-        dxyzO = np.array([0.,0.,1.])[:,nxs]*dist[nxs,:]        #translate detector to beam intersection
-        xyz = LinePlaneCollision(dxyzN,dxyzO,vect)      #ray intersections wrt sample
-        xyz = xyz-dxyzO                               #translate back to origin (sample)
-        xyz = np.inner(xyz.T,MN.T).T
-        Rx = nl.norm(xyz,axis=0)
-        DRec = Robs-Rec
-        DRx = Robs-Rx
-        Rs = np.stack((dsp,azm,Robs,Rec,Rx,DRec,DRx)).T
+        dxyzN = np.inner(np.array([0.,0.,1.0]),MN)          #tilt detector normal
+        dxyzO = np.array([0.,0.,1.])[:,nxs]*sdist[nxs,:]    #translate detector to beam intersection
+        xyz = LinePlaneCollision(dxyzN,dxyzO,vect)          #ray intersections wrt sample
+        xyz = xyz-dxyzO                                     #translate back to origin (sample)
+        xyz = np.inner(xyz.T,MN.T).T                        #transform back
+        Rx = nl.norm(xyz,axis=0)                            #radial distance including out of plane distortions
         return Rx
    
-    def ellipseR(): #correct for ellipses, nans for hyperbola!
-        R0 = np.sqrt(dvfsq)/2.      #+minor axis - must test on vsq-fsq; ellipse --> hyperbola
-        R1 = (vplus+vminus)/2.        #major axis - correct
-        rsqplus = R0**2+R1**2
-        rsqminus = R0**2-R1**2
-        R = rsqminus*npcosd(2.*azm-2.*phi)+rsqplus
-        Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(azm-phi)**2)
-        P = 2.*R0**2*zdis*npcosd(azm-phi)
-        return (P+Q)/R          #correct for ellipse
+#     def GetDetectorE(parms): #correct for ellipses, nans for hyperbola!
+# Not used - keep as possible check for ellipses
+    
+#         azm = npatan2d(y-detY,x-detX)       #azm about beam-detector intersection
+#         stth = npsind(tth)
+#         cosb = npcosd(parms['tilt'])
+#         tanb = nptand(parms['tilt'])
+#         tbm = nptand((tth-parms['tilt'])/2.)
+#         tbp = nptand((tth+parms['tilt'])/2.)
+#         fplus = Dist*tanb*stth/(cosb+stth)        #x0y0 to focus for ellipse & hyperbola(F2)
+#         fminus = Dist*tanb*stth/(cosb-stth)                        #wrong sign for ellipse
+#         zdis = (fplus-fminus)/2.          #ellipse/hyperbola center from beam center
+#         vplus = Dist*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)       #correct for ellipse
+#         vminus = Dist*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)      #wrong sign for ellipse
+#         dvfsq = (vplus+vminus)**2-(fplus+fminus)**2
+#         R0 = np.sqrt(dvfsq)/2.      #+minor axis - must test on vsq-fsq; ellipse --> hyperbola
+#         R1 = (vplus+vminus)/2.        #major axis - correct
+#         rsqplus = R0**2+R1**2
+#         rsqminus = R0**2-R1**2
+#         R = rsqminus*npcosd(2.*azm-2.*phi)+rsqplus
+#         Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(azm-phi)**2)
+#         P = 2.*R0**2*zdis*npcosd(azm-phi)
+#         return (P+Q)/R          #correct for ellipse
             
     x,y,dsp = xyd   #relative to detector 0,0
     if progressDlg:
@@ -369,19 +393,14 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
     if keyArray is not None and 'deltaDist' in parmDict:
         deltaMode = True
     varyDict = dict(zip(varyList,B))
-    parms = {}
-    for parm in parmDict:
-        if parm in varyList:
-            parms[parm] = varyDict[parm]
-        else:
-            parms[parm] = parmDict[parm]
-    phi = parms['phi']-90.               #get rotation of major axis from tilt axis
+    parms = parmDict
+    parms.update(varyDict)
     if keyArray is None:
-        dsag = sagCorr(x,y,parms['sag'],parmDict['xyLim'])
+        dsag = sagCorr(x,y,parms['sag'],parms['xyLim'])
         detX = np.array(len(x)*[parms['det-X']])
         detY = np.array(len(x)*[parms['det-Y']])
         dist = np.array(len(x)*[parms['dist']])+dsag
-        dtth = GetTthP(x,y,parmDict)        #sample-detector ray wrt detector plane != 2-theta if tilted
+        dtth = GetTthP(x,y,parms)        #sample-detector ray wrt detector plane != 2-theta if tilted
     else:
         detX = np.array([parms[f'det-X{k}'] for k in keyArray])
         detY = np.array([parms[f'det-Y{k}'] for k in keyArray])
@@ -389,32 +408,14 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
             dist = np.array([parms[f'dist{k}'] for k in keyArray]) - parms['deltaDist']
         else:
             dist = np.array([parms[f'dist{k}'] for k in keyArray])
-        dtth = GetTthP(x,y,parmDict,dist,detX,detY)        #sample-detector ray wrt detector plane != 2-theta if tilted
+        dtth = GetTthP(x,y,parms,dist,detX,detY)        #sample-detector ray wrt detector plane != 2-theta if tilted
 
-    X = x-detX      #shift pixels from detector 0,0 to beam intersection 0,0
-    Y = y-detY
     tth = 2.0*npasind(parms['wave']/(2.*dsp))
-    azm = npatan2d(Y,X)%360.     #azimuth wrt detector/xray intersection
     dxy = peneCorr(dtth,parms['dep'],dist)
-    stth = npsind(tth)
-    cosb = npcosd(parms['tilt'])
-    tanb = nptand(parms['tilt'])
-    tbm = nptand((tth-parms['tilt'])/2.)
-    tbp = nptand((tth+parms['tilt'])/2.)
-    d = dist+dxy
-    fplus = d*tanb*stth/(cosb+stth)        #x0y0 to focus for ellipse & hyperbola(F2)
-    fminus = d*tanb*stth/(cosb-stth)                        #wrong sign for ellipse
-    zdis = (fplus-fminus)/2.          #ellipse/hyperbola center from beam center
-    vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)       #correct for ellipse
-    vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)      #wrong sign for ellipse
-    if np.all(vplus+vminus < 0.):
-        return 0.
+    Dist = dist+dxy                 #dist corrected for penetration
     Robs = np.sqrt((x-detX)**2+(y-detY)**2)
-    dvfsq = (vplus+vminus)**2-(fplus+fminus)**2
-    Rec = ellipseR()    #good
-    Rhc = GetDetectorR(Robs,Rec)    #bad
-#    Rcalc = Rhc
-    Rcalc = np.where(dvfsq > 0., Rec,Rhc)
+    Rhc = GetDetectorR(parms)
+    Rcalc = Rhc
     M = (Robs-Rcalc)*25.        #25 wt scaling factor to make "chi**2" more reasonable
     if progressDlg: # keep track of GOF
         rms = np.sqrt((M**2).sum()/(25.*len(M)))
@@ -457,7 +458,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f','%12.4f']
     Fmt = dict(zip(names,fmt))
     p0 = [parmDict[key] for key in varyList]
-    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
+    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8,epsfcn=1.e-6)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])
@@ -1094,20 +1095,20 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     varyList = [item for item in data['varyList'] if data['varyList'][item]]
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'setdist':data.get('setdist',data['distance']),'tilt':data['tilt'],'phi':data['rotation'],
-        'wave':data['wavelength'],'dep':data['DetDepth'],'sag':data['sag']}
+        'wave':data['wavelength'],'dep':data['DetDepth'],'sag':data['sag'],'xyLim':data['xyLim']}
     Found = False
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)
     if frame:
         tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,[frame,])-255)))
-    usehyp = False
+    usehyp = True
     hyperbola = False
     for iH,H in enumerate(HKL):
         if debug:   print (H)
         dsp = H[3]
         ellipse = GetEllipse(dsp,data)
         if ellipse[2][0] < 0.: #hyperbola
-            if debug2: printell('skip hyperbola',ellipse)
+            print('hyperbola at dsp=%.4f',dsp)
             Ring = None
             hyperbola = True
             if usehyp:
@@ -1138,7 +1139,6 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     rings = np.concatenate((data['rings']),axis=0)
     if getRingsOnly:
         return rings,HKL
-    parmDict['xyLim'] = [data['size'][0]/scalex,data['size'][1]/scaley]
     [chisq,vals,sigList,covar] = FitDetector(rings,varyList,parmDict,True,True)
     data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']
@@ -1174,7 +1174,7 @@ def ImageCalibrate(G2frame,data):
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
-    xyLim = [data['size'][0]/scalex,data['size'][1]/scaley]
+    xyLim = data['xyLim']
     pixLimit = data['pixLimit']
     cutoff = data['cutoff']
     varyDict = data['varyList']
@@ -1401,7 +1401,6 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    data['xyLim'] = [data['size'][0]/scalex,data['size'][1]/scaley]
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asarray(tax*scalex,dtype=np.float32).flatten()
     tay = np.asarray(tay*scaley,dtype=np.float32).flatten()

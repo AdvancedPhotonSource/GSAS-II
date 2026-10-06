@@ -234,28 +234,21 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     data tree entry
     '''
 #patch
-    if 'Flat Bkg' not in data:
-        data['Flat Bkg'] = 0.0
-    if 'Gain map' not in data:
-        data['Gain map'] = ' '
-    if 'GonioAngles' not in data:
-        data['GonioAngles'] = [0.,0.,0.]
-    if 'DetDepth' not in data:
-        data['DetDepth'] = 0.
-    if 'SampleAbs' not in data:
-        data['SampleShape'] = 'Cylinder'
-        data['SampleAbs'] = [0.0,False]
+    data['Flat Bkg'] = data.get('Flat Bkg',0.0)
+    data['Gain map'] = data.get('Gain map',' ')
+    data['GonioAngles'] = data.get('GonioAngles',[0.,0.,0.])
+    data['DetDepth'] = data.get('DetDepth',0.)
+    data['SampleShape'] = 'Cylinder'
+    data['SampleAbs'] = [0.0,False]
     if 'binType' not in data:
         if 'PWDR' in data['type']:
             data['binType'] = '2-theta'
         elif 'SASD' in data['type']:
             data['binType'] = 'log(q)'
-    if 'varyList' not in data:
-        data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False,'sag':False}
+    data['varyList'] = data.get('varyList',{'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False,'sag':False})
     if data['DetDepth'] > 0.5:
         data['DetDepth'] /= data['distance']
-    if 'setdist' not in data:
-        data['setdist'] = data['distance']
+    data['setdist'] = data.get('setdist',data['distance'])
     if 'linescan' not in data:
         data['linescan'] = [False,0.0]      #includes azimuth to draw line scan
     if 'det2theta' not in data:
@@ -265,6 +258,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     data['sag'] = data.get('sag',0.0)
     if 'sag' not in data['varyList']:
         data['varyList'].update({'sag':False})
+    if 'xylim' not in data:
+        pixelSize = data['pixelSize']
+        scalex = 1000./pixelSize[0]
+        scaley = 1000./pixelSize[1]
+        data['xyLim'] = [data['size'][0]/scalex,data['size'][1]/scaley]
 #end patch
 
 # Menu items

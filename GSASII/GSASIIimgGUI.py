@@ -457,6 +457,19 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             return
         items = dlg.GetSelections()
         dlg.Destroy()
+        if len(items) < 3:
+            G2G.G2MessageBox(G2frame,'You must include at least 3 images.',
+                                 'More images needed')
+            return
+        saveDict = {}
+        for item in items:
+            name = Names[item]
+            imgId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+            Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                G2frame,imgId,'Image Controls'))
+            saveDict[name] = copy.deepcopy(Data)
+        if not hasattr(G2frame,'multiDistSave'): G2frame.multiDistSave = []
+        G2frame.multiDistSave.append(saveDict)        
         try:
             wx.BeginBusyCursor()
             pgbar = wx.ProgressDialog('MultiDistance Fit','Start: find ring positions',100,
@@ -636,7 +649,20 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         G2plt.PlotExposedImage(G2frame,event=None)
         wx.CallAfter(G2frame.GPXtree.SelectItem,Id)
 
-
+    def OnMultiDistUndo(event):
+        '''Restores the last settings saved before a multi-distance 
+        calibration was performed'''
+        if len(G2frame.multiDistSave) == 0:
+            print('Undo buffer empty, this should not happen')
+            return
+        undoDict = G2frame.multiDistSave.pop()
+        for name in undoDict:
+            imgId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+            Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                G2frame,imgId,'Image Controls'))
+            Data.update(undoDict[name])
+        wx.CallAfter(UpdateImageControls,G2frame,data,masks)
+        
     def OnClearCalib(event):
         data['ring'] = []
         data['rings'] = []
@@ -1831,6 +1857,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     G2frame.Bind(wx.EVT_MENU, OnMultiDistRecalib, id=G2G.wxID_IMDISTRECALIB)
     G2frame.Bind(wx.EVT_MENU, OnClearCalib, id=G2G.wxID_IMCLEARCALIB)
     G2frame.Bind(wx.EVT_MENU, OnMultiGainMap, id=G2G.wxID_IMMULTGAINMAP)
+    G2frame.Bind(wx.EVT_MENU, OnMultiDistUndo, id=G2G.wxID_IMDISTUNDO)
+    # Enable Multi-dist undo 
+    if not hasattr(G2frame,'multiDistSave'): G2frame.multiDistSave = []
+    G2frame.dataWindow.multiDistUndo.Enable(len(G2frame.multiDistSave) > 0)
 #    if data.get('calibrant'):
 #        mode = True
 #    else:

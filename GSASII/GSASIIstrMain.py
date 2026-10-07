@@ -1018,7 +1018,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         parmDict.update(histDict)
         # update with parms from last histogram
         if Controls['Copy2Next']:
-            # update parmDict with only the entries that are already present
+            # update parmDict with NewparmDict, but only with entries that are already present
             #for parm in NewparmDict:
             #    if parm in parmDict:
             #        parmDict[parm] = NewparmDict[parm]
@@ -1210,35 +1210,40 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             # make dict of varied parameters in current histogram, renamed to
             # next histogram, for use in next refinement.
             if Controls['Copy2Next'] and ihst < len(histNames)-1:
-                nexthg = Histograms[histNames[ihst+1]]  # next histogram/group in list
+                nexthg = histNames[ihst+1]  # next histogram/group in list
                 if groupDict:
-                    nexthIdlist = [str(Histo[h]['hId']) for h in nexthg]
+                    hIdlist = [str(Histograms[h]['hId']) for h in groupDict[hg]]
+                    nexthIdlist = [str(Histograms[h]['hId']) for h in groupDict[nexthg]]
                 else:
+                    hIdlist = [str(Histo[hg]['hId']),]
                     nexthIdlist = [str(Histo[nexthg]['hId']),]
+                replDict = dict(zip(hIdlist,nexthIdlist))
                 for parm in set(list(varyList)+list(varyListStart)):
                     # copy over atom positions (when refined) not delta values
                     if items[2].startswith('dA'): parm = parm.replace(':dA',':A')
                     nextparm = parm
-                    # for Histogram & HAP, rename to next
                     items = parm.split(':')
-                    if len(items) < 3:
-                        continue
-                    for hId in nexthIdlist:
-                        if hId == items[1]: 
-                            items[1] = hId
-                            nextparm = ':'.join(items)
-                            break
+                    if len(items) >= 3:
+                    # replace histograms in current histogram with ones in next
+                        items[1] = replDict.get(items[1],items[1])
+                        nextparm = ':'.join(items)
                     NewparmDict[nextparm] = parmDict[parm]
 
         except G2obj.G2RefineCancel as Msg:
             if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
             G2fil.G2Print (' ***** Refinement stopped *****')
+            if GSASIIpath.GetConfigValue('debug'):
+                import traceback
+                print(traceback.format_exc())
             return False,Msg.msg
         except (G2obj.G2Exception,Exception) as Msg:  # cell metric error, others?
             if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
             G2fil.G2Print (' ***** Refinement error *****')
+            if GSASIIpath.GetConfigValue('debug'):
+                import traceback
+                print(traceback.format_exc())
             return False,Msg.msg
         if GSASIIpath.GetConfigValue('Show_timing'):
             t2 = time.time()
@@ -1658,10 +1663,7 @@ def BestPlane(PlaneData):
 
 def do_refine(*args):
     '''Called to run a refinement when this module is run directly rather than
-    imported. I don't know that this is ever used by anyone and at present 
-    this only works for non-sequential fits.
-    
-    Better option is to use GSASIIscriptable.
+    imported.
     '''
     starttime = time.time()
     #arg = sys.argv
@@ -1670,23 +1672,33 @@ def do_refine(*args):
     elif len(sys.argv) > 1:
         files = sys.argv[1:]
     else:
-        G2fil.G2Print ('ERROR GSASIIstrMain.do_refine error - missing filename')
-        G2fil.G2Print ('Use "python GSASIIstrMain.py f1.gpx [f2.gpx f3.gpx...]" to run')
-        G2fil.G2Print ('or call GSASIIstrMain.do_refine directly')
+        G2fil.G2Print ('ERROR GSASIIstrMain.do_refine: missing .gpx file to use')
         sys.exit()
     for GPXfile in files:
         if not ospath.exists(GPXfile):
-            G2fil.G2Print ('ERROR - '+GPXfile+" doesn't exist! Skipping.")
+            G2fil.G2Print (f"ERROR - {GPXfile} doesn't exist! Skipping.")
             continue
-        # TODO: test below
         # figure out if this is a sequential refinement and call SeqRefine(GPXfile,None)
-        #Controls = G2stIO.GetControls(GPXfile)
-        #if Controls.get('Seq Data',[]):
+        Controls = G2stIO.GetControls(GPXfile)
+        if Controls.get('Seq Data',[]) or Controls.get('Groups',[]):
+            SeqRefine(GPXfile,None)
+        else:
             Refine(GPXfile,None)
-        #else:
-        #    SeqRefine(GPXfile,None)
         G2fil.G2Print("Done with {}.\nExecution time {:.2f} sec.".format(GPXfile,time.time()-starttime))
 
 if __name__ == '__main__':
+    '''used to refine with a .gpx file, bypassing the GUI. To do this, if GSAS-II
+    is not installed inside Python, one must deal with the python path. The easiest 
+    way to do this is to create a file with commands like this::
+
+        import runpy
+        import sys
+        sys.argv[1:] = ['/Users/toby/Scratch/GroupPWDR/2Px4G_copy2test.gpx']
+        runpy.run_module("GSASII.GSASIIstrMain", run_name="__main__")
+
+    put that file inside the parent directory to GSASII and run it from there. 
+
+    Consider using GSASIIscriptable rather than this.
+    '''
     GSASIIpath.InvokeDebugOpts()
     do_refine()

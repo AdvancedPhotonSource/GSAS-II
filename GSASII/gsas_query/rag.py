@@ -61,7 +61,8 @@ def _retrieve(question: str) -> tuple[str, list[dict], dict[str, dict], list[str
         return "", [], {}, []
 
     ef = get_embedding_function()
-    embedding = ef([question])[0]
+    embed_query = getattr(ef, "embed_query", None)
+    embedding = embed_query(question) if embed_query else ef([question])[0]
     fetch_k = min(FETCH_K, collection.count())
     results = collection.query(
         query_embeddings=[embedding],
@@ -218,7 +219,7 @@ def _choose_ollama_model() -> str:
     if not models:
         raise RuntimeError(
             "No Ollama models are installed. Run e.g. "
-            "`ollama pull llama3.1:8b` or `ollama pull qwen2.5:3b`."
+            "`ollama pull llama3.1:8b` or `ollama pull llama3.2:3b`."
         )
 
     if preferred:
@@ -229,7 +230,7 @@ def _choose_ollama_model() -> str:
             f"Available models: {', '.join(models)}"
         )
 
-    for candidate in ("llama3.1:8b", "llama3", "qwen2.5:3b"):
+    for candidate in ("llama3.1:8b", "llama3", "llama3.2:3b"):
         if candidate in models:
             return candidate
 

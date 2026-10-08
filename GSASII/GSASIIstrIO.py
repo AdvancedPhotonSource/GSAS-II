@@ -155,7 +155,7 @@ def groupEquivTbl(key,groupDict,Histograms,warn=False):
         hId = Histograms[h]['hId']
         grHIDlist.append(hId)
         #print(f'equiv to {hId} {h}')
-        for key1 in groupDict.keys():
+        for key1 in groupDict:
             if key == key1: continue
             if len(groupDict[key]) != len(groupDict[key1]): continue
             h1 = groupDict[key1][i]

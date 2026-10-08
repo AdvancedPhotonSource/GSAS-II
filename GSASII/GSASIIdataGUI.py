@@ -6284,7 +6284,6 @@ is being refined.
         allerrors = {}
         allwarnings = {}
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-        seqList = self.testSeqRefineMode(True)
         Id = GetGPXtreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Sequential results')
@@ -6294,8 +6293,10 @@ is being refined.
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
         groupDict = Controls.get('Groups',{}).get('groupDict',{})
+        groupSeqSel = Controls['Groups'].get('groupSeqSel',list(groupDict.keys()))
         # check for deleted or unused histograms in refine list
         if not groupDict:
+            seqList = Controls.get('Seq Data',[])
             phaseRIdList,histdict = self.GetPhaseInfofromTree(Used=True)
             usedHistograms = []
             for k in histdict:
@@ -6308,6 +6309,9 @@ is being refined.
                     ' histograms that are not used have been removed from the sequential list.',
                     'Histograms removed')
                 seqList = Controls['Seq Data'] = newseqList
+        else:
+            seqList = groupSeqSel
+
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         #
         # Check if a phase lattice parameter refinement flag is set, if so transfer it to the Dij terms
@@ -6392,12 +6396,18 @@ Do you want to transfer the cell refinement flag to the Dij terms?
             if result == wx.ID_NO: return
         self.GPXtree.SaveExposedItems()
         # find 1st histogram to be refined
-        if 'Seq Data' in Controls:
+        if groupDict:
+            histNames = groupSeqSel
+        elif 'Seq Data' in Controls:
             histNames = Controls['Seq Data']
         else: # patch from before Controls['Seq Data'] was implemented
             histNames = G2stIO.GetHistogramNames(self.GSASprojectfile,['PWDR',])
         if Controls.get('Reverse Seq'):
             histNames.reverse()
+        if histNames[0] in groupDict:
+            firstHist = groupDict[histNames[0]]
+        else: 
+            firstHist = histNames[0]
         if Controls.get('newLeBail',False):
             dlgtxt = '''Do Le Bail refinement of intensities first?
 
@@ -6412,14 +6422,14 @@ Do you want to transfer the cell refinement flag to the Dij terms?
             if result == wx.ID_YES:
                 res = self.OnLeBail(event)
                 if res: return
-        # select it
+        # select 1st histogram in tree
         if GSASIIpath.GetConfigValue('G2RefinementWindow'):
             trialMode = 'analytic Hessian' in Controls['deriv type']
             dlgp = G2G.G2RefinementProgress(parent=self,trialMode=trialMode,
                                               seqLen=len(histNames))
         else:
             dlgp = G2G.RefinementProgress('Residual for histogram 0','Powder profile Rwp =',parent=self)
-        self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])
+        self.PatternId = GetGPXtreeItemId(self,self.root,firstHist)
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
             refPlotUpdate = G2pwpl.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
@@ -8230,6 +8240,33 @@ def UpdateControls(G2frame,data):
 
             wx.CallAfter(UpdateControls,G2frame,data)
 
+
+        def OnSelectGroups(event):
+            choices = list(groupDict.keys())
+            if len(choices) == 0:
+                G2G.G2MessageBox(G2frame,'No groups found for a sequential fit.','No Groups')
+                return
+            while True:
+                sel = []
+                if 'Seq Data' in data:
+                    sel = [choices.index(item) for item in groupSeqSel if item in groupDict]
+                dlg = G2G.G2MultiChoiceDialog(G2frame,
+                    'Select groups to include. You must have at least one group selected, or use "Clear groupings"',
+                    'Sequential refinement selection',choices)
+                dlg.SetSelections(sel)
+                names = []
+                if dlg.ShowModal() == wx.ID_OK:
+                    for sel in dlg.GetSelections():
+                        names.append(choices[sel])
+                    dlg.Destroy()
+                else:
+                    dlg.Destroy()
+                    return
+                if len(names) == 0: continue  # nothing selected, try again
+                data['Groups']['groupSeqSel'] = names
+                wx.CallAfter(UpdateControls,G2frame,data)
+                break
+
         def OnReverse(event):
             data['Reverse Seq'] = reverseSel.GetValue()
 
@@ -8249,21 +8286,15 @@ def UpdateControls(G2frame,data):
         seqSizer = wx.BoxSizer(wx.VERTICAL)
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
         SeqData = data.get('Seq Data',[])
-        if not SeqData:
-            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select datasets to switch to sequential refinement: '),0,WACV)
-            selSeqData = wx.Button(G2frame.dataWindow,label='Select datasets')
-        else:
-            lbl = 'Sequential Refinement with '+str(len(SeqData))+' dataset(s) selected'
-            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
-            selSeqData = wx.Button(G2frame.dataWindow,label=' Reselect datasets')
-        selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
-        dataSizer.Add(selSeqData,0,WACV)
-        seqSizer.Add(dataSizer)
+        data['Groups'] = data.get('Groups',{})
+        groupDict = data['Groups']['groupDict'] = data['Groups'].get('groupDict',{})
+        groupSeqSel = data['Groups']['groupSeqSel'] = data['Groups'].get('groupSeqSel',[])
+        if len(groupSeqSel) == 0:  # can't have groups w/o a sequential fit
+            groupSeqSel = data['Groups']['groupSeqSel'] = list(groupDict.keys())
 
-        groupDict = data.get('Groups',{}).get('groupDict',{})
-        dataSizer = wx.BoxSizer(wx.HORIZONTAL)
-        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping: '),0,WACV)
         if groupDict:
+            dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping: '),0,WACV)
             groupCount = [len(groupDict[k]) for k in groupDict]
             if min(groupCount) == max(groupCount):
                 msg = f'Have {len(groupDict)} group(s) with {min(groupCount)} histograms in each'
@@ -8276,16 +8307,43 @@ def UpdateControls(G2frame,data):
             dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=msg),0,WACV)
             dataSizer.Add((5,-1))
             btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Redefine groupings')
-        else:
-            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
-        btn.Bind(wx.EVT_BUTTON,SearchGroups)
-        dataSizer.Add(btn)
-        if groupDict:
-            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear groupings')
+            btn.Bind(wx.EVT_BUTTON,SearchGroups)
             dataSizer.Add((5,-1))
             dataSizer.Add(btn)
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear groupings')
             btn.Bind(wx.EVT_BUTTON,ClearGroups)
-        seqSizer.Add(dataSizer)
+            dataSizer.Add((5,-1))
+            dataSizer.Add(btn)
+            seqSizer.Add(dataSizer)
+            dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lbl = f'Sequential Refinement with {len(groupSeqSel)} groups(s) selected'
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Select groups in seq. fit')
+            btn.Bind(wx.EVT_BUTTON,OnSelectGroups)
+            dataSizer.Add((5,-1))
+            dataSizer.Add(btn)
+            seqSizer.Add(dataSizer)
+        elif SeqData:
+            dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lbl = f'Sequential Refinement with {len(SeqData)} dataset(s) selected'
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
+            selSeqData = wx.Button(G2frame.dataWindow,label=' Reselect datasets')
+            selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
+            dataSizer.Add(selSeqData)
+            seqSizer.Add(dataSizer)
+        else:
+            dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select datasets to switch to sequential refinement: '),0,WACV)
+            selSeqData = wx.Button(G2frame.dataWindow,label='Select datasets')
+            selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
+            dataSizer.Add(selSeqData,0,WACV)
+            seqSizer.Add(dataSizer)
+            dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping: '),0,WACV)
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
+            btn.Bind(wx.EVT_BUTTON,SearchGroups)
+            dataSizer.Add(btn)
+            seqSizer.Add(dataSizer)
 
         if SeqData or groupDict:
             selSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8297,7 +8355,7 @@ def UpdateControls(G2frame,data):
             copySel.Bind(wx.EVT_CHECKBOX,OnCopySel)
             copySel.SetValue(data['Copy2Next'])
             selSizer.Add(copySel,0,WACV)
-            clrSeq = wx.Button(G2frame.dataWindow,label='Clear previous seq. results')
+            clrSeq = wx.Button(G2frame.dataWindow,label='Clear previous seq. results table')
             clrSeq.Bind(wx.EVT_BUTTON,OnClrSeq)
             selSizer.Add(clrSeq,0,WACV)
             seqSizer.Add(selSizer,0)

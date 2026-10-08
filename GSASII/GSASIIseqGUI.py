@@ -62,7 +62,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         '''Make a dictionary of the sample parameters that are not the same over the
         refinement series. Controls here is local
         '''
-        if 'IMG' in histNames[0]:
+        Controls = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
+        if histNames[0] in groupDict:
+            sampleParmDict = {'Temperature':[],'Pressure':[],'Time':[],
+                'FreePrm1':[],'FreePrm2':[],'FreePrm3':[]}
+        elif 'IMG' in histNames[0]:
             sampleParmDict = {'Sample load':[],}
         elif 'PDF' in histNames[0]:
             sampleParmDict = {'Temperature':[]}
@@ -70,25 +76,35 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             sampleParmDict = {'Temperature':[],'Pressure':[],'Time':[],
                 'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],'Omega':[],
                 'Chi':[],'Phi':[],'Azimuth':[],}
-        Controls = G2frame.GPXtree.GetItemPyData(
-            G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         sampleParm = {}
-        for name in histNames:
-            if 'IMG' in name or 'PDF' in name:
-                if name not in data:
-                    continue
-                for item in sampleParmDict:
-                    sampleParmDict[item].append(data[name]['parmDict'].get(item,0))
-            else:
-                if 'PDF' in name:
-                    name = 'PWDR' + name[4:]
-                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
-                if Id:
-                    sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
-                else:  # item missing from tree! stick in NaN's!
-                    sampleData = {}
-                for item in sampleParmDict:
-                    sampleParmDict[item].append(sampleData.get(item,np.nan))
+        for ng in histNames:
+            vals = {item:[] for item in sampleParmDict}
+            for name in groupDict.get(ng,[ng]):
+                if 'IMG' in name or 'PDF' in name:
+                    if name not in data:
+                        continue
+                    for item in sampleParmDict:
+                        vals[item].append(data[name]['parmDict'].get(item,0))
+                else:
+                    if 'PDF' in name:
+                        name = 'PWDR' + name[4:]
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                    if Id:
+                        sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
+                    else:  # item missing from tree! stick in NaN's!
+                        sampleData = {}
+                    for item in sampleParmDict:
+                        vals[item].append(sampleData.get(item,np.nan))
+            # for a group, are all the values the same?
+            for item in vals:
+                try:
+                    same = np.allclose(vals[item],vals[item][0])
+                except:
+                    same = False
+                val = np.nan
+                if same: val = vals[item][0]
+                sampleParmDict[item].append(val)
+        # now compare values across all the entries in the table
         for item in sampleParmDict:
             if sampleParmDict[item]:
                 frstValue = sampleParmDict[item][0]
@@ -632,14 +648,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 SeqFile.close()
         finally:
             dlg.Destroy()
-
-    def striphist(var,insChar=''):
-        'strip a histogram number from a var name'
-        sv = var.split(':')
-        if len(sv) <= 1: return var
-        if sv[1]:
-            sv[1] = insChar
-        return ':'.join(sv)
 
     def plotSpCharFix(lbl):
         'Change selected unicode characters to their matplotlib equivalent'
@@ -1303,6 +1311,30 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
         return
 
+    def mapHistVar(var,hist):
+        '''Replace a histogram number in a var name with the first in the series
+        or a * if not a grouped fit
+        '''
+        sv = var.split(':')
+        if len(sv) <= 1: return var
+        if groupDict and hist in histReplDict:
+            replVal = histReplDict[hist].get(var.split(':')[1],'?')
+        elif groupDict:
+            return var
+        else:
+            replVal = '*'
+        if sv[1]:
+            sv[1] = replVal
+        return ':'.join(sv)
+
+    def striphist(var):
+        'strip a histogram number from a var name'
+        sv = var.split(':')
+        if len(sv) <= 1: return var
+        if sv[1]:
+            sv[1] = ''
+        return ':'.join(sv)
+
 #---- UpdateSeqResults: start processing sequential results here ##########
     # lookup table for unique cell parameters by symmetry
     if not data:
@@ -1316,19 +1348,32 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         histNames = [name for name in data['histNames']]
         Controls = {}
         ifPWDR = False
+        groupDict = {}
     else:
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Controls'))
         # create a place to store Pseudo Vars & Parametric Fit functions, if not present
         if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
         if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
         histNames = [name for name in data['histNames'] if name in data]
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
+        #groupSeqSel = Controls['Groups'].get('groupSeqSel',list(groupDict.keys()))
+    # create the dict needed by mapHistVar
+    firsthId = []
+    histReplDict = {}
+    for name in groupDict:
+        histReplDict[name] = {}
+        histList = groupDict.get(name,[name])
+        hIdlist = [str(Histograms[h]['hId']) for h in histList]
+        if not firsthId: firsthId = hIdlist
+        if len(firsthId) == len(hIdlist):
+            histReplDict[name] = dict(zip(hIdlist,firsthId))
+
     if len(histNames) == 0:
         print ('No entries in sequential refinement results')
         return
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2frame.GetStatusBar().SetStatusText("Select column to export; LMB/RMB column to plot data/change label; LMB/RMB on row for PWDR/Covariance plot",1)
-    sampleParms = GetSampleParms()
 
     # get unit cell & symmetry for all phases & initial stuff for later use
     RecpCellTerms = {}
@@ -1398,26 +1443,28 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     maxPWL = 5             # number of Pawley vars to show
     missing = 0
     newCellDict = {}
+    sampleParms = GetSampleParms()
     PSvarDict = {} # contains 1st value for each parameter in parmDict
                    # needed for creating & editing pseudovars
     PSvarDict.update(sampleParms)
 
     # scan through histograms to see what are available and to make a
-    # list of all varied parameters; also create a dict that has the
+    # list of all varied parameters; also create a dict that has the atoms
     for i,name in enumerate(histNames):
         if name not in data:
             if missing < 5:
-                print(" Warning: "+name+" not found")
+                print(f' Warning: entry "{name}" not found')
             elif missing == 5:
-                print (' Warning: more are missing')
+                print(f' Warning: entry "{name}" not found...')
+                #print (' Warning: more are missing')
             missing += 1
             continue
         foundHistNames.append(name)
         for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
-            svar = striphist(var,'*') # wild-carded
+            svar = mapHistVar(var,name) # replace/remap histogram number, if present
+            print(var,'->',svar)
             if 'PWL' in svar:
-                if int(svar.split(':')[-1]) > maxPWL:
-                    continue
+                if int(svar.split(':')[-1]) > maxPWL: continue # limit # of Pawley reflections
             if svar not in combinedVaryList:
                 # add variables to list as they appear
                 combinedVaryList.append(svar)
@@ -1429,7 +1476,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         newCellDict.update(data[name].get('newCellDict',{})) # N.B. These Dij vars are missing a histogram #
         # make sure 1st reference to each parm is in PseudoVar dict
         tmp = copy.deepcopy(data[name].get('parmDict',{}))
-        tmp = {striphist(var,'*'):tmp[var] for var in tmp}  # replace histogram #s with "*"
+        tmp = {mapHistVar(var,name):tmp[var] for var in tmp}  # replace histogram #
         tmp.update(PSvarDict)
         PSvarDict = tmp
 
@@ -1452,20 +1499,25 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     combinedVaryList.sort()
     histNames = foundHistNames
     # prevVaryList = []
+    histNumList = []  # numbers to put on each row, if empty replace with numbers
+    rowLabels = []
+    if groupDict and max([len(i) for i in groupDict])>12:  # for long group names drop the letters that are the same for every label
+        cols = zip(*groupDict.keys())
+        keep_mask = [len(set(col)) > 1 for col in cols]
+        rowLabels = ["".join(ch for ch, keep in zip(s, keep_mask) if keep) for s in groupDict.keys()]
+    else:
+        for i,name in enumerate(histNames):
+            if name in Histograms:
+                histNumList.append(list(Histograms.keys()).index(name))
     posdict = {}    # defines position for each entry in table; for inner
                     # dict key is column number & value is parameter name
-    histNumList = []
     for i,name in enumerate(histNames):
-        if name in Histograms:
-            histNumList.append(list(Histograms.keys()).index(name))
-        # if prevVaryList != data[name]['varyList']: # this refinement has a different refinement list from previous
-        #     prevVaryList = data[name]['varyList']
         posdict[name] = {}
         for var in data[name]['varyList']:
-            svar = striphist(var,'*')
+            svar = mapHistVar(var,name) # wild-card or map to 1st in group
             if 'PWL' in svar:
-                if int(svar.split(':')[-1]) > maxPWL:
-                    continue
+                if int(svar.split(':')[-1]) > maxPWL: continue
+            if svar not in combinedVaryList: continue ### TODO: need to figure out what this loop is doing
             posdict[name][combinedVaryList.index(svar)] = svar
     ####--  build up the data table by columns -----------------------------------------------
     nRows = len(histNames)
@@ -1604,10 +1656,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for ih,name in enumerate(histNames):
         varsellist = [posdict[name].get(i) for i in range(len(combinedVaryList))]
         # translate variable names to how they will be used in the headings
-        vs = [striphist(v,'*') for v in data[name]['varyList']]
+        vs = [mapHistVar(v,name) for v in data[name]['varyList']]
         # determine the index for each column (or None) in the data[]['variables'] and ['sig'] lists
         sellist = [vs.index(v) if v is not None else None for v in varsellist]
-        #sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(data[name]['varyList'])]
         if not varsellist: raise Exception()
         vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
         #replace mode displacement shift with value; esd applies to both
@@ -1646,7 +1697,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         for var in data[name].get('depParmDict',{}):
             if '::dA' in var: continue
             val,sig = data[name]['depParmDict'][var]
-            svar = striphist(var,'*')
+            svar = mapHistVar(var,name)
             if svar not in depValDict:
                depValDict[svar] = {}
             depValDict[svar][name] = (val,sig)
@@ -1796,7 +1847,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(G2frame.dataDisplay,1,wx.EXPAND,1)
     G2frame.dataWindow.SetSizer(mainSizer)
-    if histNames[0].startswith('PWDR'):
+    if len(rowLabels) == len(histNames):
+        pass
+    elif histNames[0].startswith('PWDR'):
         #rowLabels = [str(i)+': '+l[5:30] for i,l in enumerate(histNames)]
         rowLabels = [l[5:] for i,l in enumerate(histNames)]
     else:

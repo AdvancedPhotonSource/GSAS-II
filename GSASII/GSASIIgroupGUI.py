@@ -34,6 +34,9 @@ divided into groups are:
    a count of the number of histograms that are not in any group
 * Controls['Groups']['template'] 
    the string used to set the grouping
+* Controls['Groups']['groupSeqSel']
+   a list of the groups to be included in the next sequential fit, will
+   be a subset of the keys for Controls['Groups']['groupDict'] 
 
 ** Parameter Data Table **
 
@@ -1284,7 +1287,7 @@ def ColorTxtbox(txtctrl,DataArray,row):
     if 'prmname' in DataArray:
         prmname = DataArray['prmname']
         if prmname in shiftInfo['shiftOsig']:
-            val = abs(shiftInfo['shiftOsig'][prmname])            
+            val = abs(shiftInfo['shiftOsig'][prmname])
             for (level,color) in reversed(list(
                 zip(levels,shiftInfo['shiftColors']))):
                 if val >= level:

@@ -153,7 +153,28 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             SetLabelString(cols[0])  #only the 1st one selected!
         elif rows and calltyp == 'left':
             name = histNames[rows[0]]       #only does 1st one selected
-            if name.startswith('PWDR'):
+            if name in groupDict:
+                if name not in groupClickCount: return # should not happen
+                groupClickCount[name] += 1
+                print('click count',groupClickCount[name])
+                if groupClickCount[name] == 1 or groupClickCount[name] > len(groupDict[name])+1:
+                    print('plot group')
+                    item = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Groups/Powder')
+                    item = G2gd.GetGPXtreeItemId(G2frame, item, name)
+                    if item:
+                        if not hasattr(G2frame,'GroupInfo'):
+                            G2frame.GroupInfo = {}
+                        G2frame.GroupInfo['groupName'] = name # also set in GSASIIgroupGUI.UpdateGroup
+                        G2pwpl.PlotPatterns(G2frame,newPlot=True,plotType='GROUP')
+                    groupClickCount[name] = 1
+                else:
+                    h = groupDict[name][groupClickCount[name]-2]
+                    print('plot hist',h)
+                    pickId = G2frame.PickId
+                    G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, h)
+                    G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+                    G2frame.PickId = pickId
+            elif name.startswith('PWDR'):
                 pickId = G2frame.PickId
                 G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
                 G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
@@ -1356,6 +1377,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
         histNames = [name for name in data['histNames'] if name in data]
         groupDict = Controls.get('Groups',{}).get('groupDict',{})
+        groupClickCount = {name:0 for name in groupDict} # counts number of times an entry has been clicked
         #groupSeqSel = Controls['Groups'].get('groupSeqSel',list(groupDict.keys()))
     # create the dict needed by mapHistVar
     firsthId = []
@@ -1462,7 +1484,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         foundHistNames.append(name)
         for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
             svar = mapHistVar(var,name) # replace/remap histogram number, if present
-            print(var,'->',svar)
             if 'PWL' in svar:
                 if int(svar.split(':')[-1]) > maxPWL: continue # limit # of Pawley reflections
             if svar not in combinedVaryList:
@@ -1874,7 +1895,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # highlight unconverged shifts
     if histNames[0][:4] not in ['SASD','IMG ','REFD',] and deltaChiCol is not None:
         for row,name in enumerate(histNames):
-            if name not in Controls.get('Seq Data',{}):
+            if name not in Controls.get('Seq Data',{}) and not groupDict:
                 G2frame.dataDisplay.SetCellTextColour(row,0,wx.Colour(255,0,0))
             deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
             try:

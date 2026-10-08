@@ -4426,15 +4426,19 @@ If you continue from this point, it is quite likely that all intensity computati
         if len(keeplist) == 0:
             GSASIIpath.SetConfigValue({'previous_GPX_files':tuple([])})
             return
-        dlg = G2G.G2SingleChoiceDialog(self,'Select previous project to open',
-            'Select project',sellist)
-        dlg.CenterOnParent()
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            dlg.Destroy()
+        if 'GSASII-REOPEN-LAST' in [i.upper() for i in os.environ]:
+            sel = 0
         else:
-            dlg.Destroy()
-            return
+            dlg = G2G.G2SingleChoiceDialog(self,
+                            'Select previous project to open',
+                            'Select project',sellist)
+            dlg.CenterOnParent()
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
         filroot,dirname = sellist[sel].split(' from ')
         f = os.path.join(dirname,filroot)
         if os.path.exists(f):
@@ -4444,8 +4448,8 @@ If you continue from this point, it is quite likely that all intensity computati
             print('file not found',f)
 
     def OnFileReread(self, event):
-        '''reread the current GPX file; no questions asked -- no save
-        for development purposes.
+        '''reread the current GPX file; no questions asked -- no save.
+        For development purposes.
         '''
         def _setStart(nameParent,name):
             '''Reload the last selected tree item by name'''

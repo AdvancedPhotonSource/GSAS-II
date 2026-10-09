@@ -1153,9 +1153,8 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     data['DetDepth'] = parmDict['dep']
     data['sag'] = parmDict['sag']
     data['chisq'] = chisq
-    N = len(data['ellipses'])
-    data['ellipses'] = []           #clear away individual ellipse fits
-    for H in HKL[:N]:
+#    data['ellipses'] = []           #clear away individual ellipse fits
+    for H in HKL:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
     G2fil.G2Print ('calibration time = %.3f'%(time.time()-time0))

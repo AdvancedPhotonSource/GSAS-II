@@ -239,7 +239,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     data['GonioAngles'] = data.get('GonioAngles',[0.,0.,0.])
     data['DetDepth'] = data.get('DetDepth',0.)
     data['SampleShape'] = 'Cylinder'
-    data['SampleAbs'] = [0.0,False]
+    data['SampleAbs'] = data.get('SampleAbs',[0.0,False])
     if 'binType' not in data:
         if 'PWDR' in data['type']:
             data['binType'] = '2-theta'

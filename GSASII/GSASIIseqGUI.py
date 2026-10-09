@@ -739,7 +739,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 data['SeqPseudoVars'][choices[selected]],
                 header="Edit the PseudoVar expression",
                 VarLabel="PseudoVar #"+str(selected+1),
-                fit=False)
+                fit=False,wildCard=(not bool(groupDict)))
             newobj = dlg.Show(True)
             if newobj:
                 calcobj = G2obj.ExpressionCalcObj(newobj)
@@ -751,7 +751,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         'Create a new pseudo var expression'
         dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,PSvarDict,
             header='Enter an expression for a PseudoVar here',
-            VarLabel = "New PseudoVar",fit=False)
+            VarLabel = "New PseudoVar",fit=False,
+            wildCard=(not bool(groupDict)))
         obj = dlg.Show(True)
         dlg.Destroy()
         if obj:
@@ -923,6 +924,76 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if None in results:
             return None
         return (results[0] - results[1]) / (2.*step)
+
+    # def EvalPSvarDerivOpt(calcobj,parmDict,sampleDict,var,ESD):
+    #     '''Evaluate an expression derivative with respect to a
+    #     GSAS-II variable name. This is an optimized version of EvalPSvarDeriv
+    #     that only changes elements in the calcobj dict
+    #
+    #     TODO: This needs to be debugged (problem in calcobj.UpdateCalc?)
+    #     '''
+    #     if not ESD:
+    #         return 0.
+    #     step = ESD/10
+    #     Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
+    #                      ['A'+str(i) for i in range(6)])
+    #                  )
+    #     results = []
+    #     phaselist = []
+    #     VparmDict = sampleDict.copy()
+    #     VparmDict.update(parmDict.copy())
+    #     VparmDict.update({item:0.0 for item in parmDict if 'dA' in item})
+    #     calcobj.SetupCalc(VparmDict)
+    #     changeDict = {}
+    #     for incr in step,-step:
+    #         # as saved, the parmDict has updated 'A[xyz]' values, but 'dA[xyz]'
+    #         # values are not zeroed: fix that!
+    #         VparmDict[var] += incr
+    #         changeDict[var] = VparmDict[var]
+    #         G2mv.Dict2Map(VparmDict) # apply constraints
+    #         # generate the atom positions and the direct & reciprocal cell values now, because they might
+    #         # needed to evaluate the pseudovar
+    #         for item in VparmDict:
+    #             if item in sampleDict:
+    #                 continue
+    #             if ':' not in item: continue
+    #             key = item.split(':')
+    #             if len(key) < 3: continue
+    #             # apply any new shifts to atom positions
+    #             if key[2].startswith('dA'):
+    #                 VparmDict[''.join(item.split('d'))] += VparmDict[item]
+    #                 VparmDict[item] = 0.0
+    #                 changeDict[item] = VparmDict[item]
+    #             # compute and update the corrected reciprocal cell terms using the Dij values
+    #             if key[2] in Ddict:
+    #                 if key[0] not in phaselist: phaselist.append(key[0])
+    #                 akey = key[0]+'::'+Ddict[key[2]]
+    #                 VparmDict[akey] += VparmDict[item]
+    #                 changeDict[akey] = VparmDict[akey]
+    #         for i in phaselist:
+    #             pId = int(i)
+    #             # apply cell symmetry
+    #             try:
+    #                 A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],VparmDict,zeroDict[pId])
+    #                 # convert to direct cell & add the unique terms to the dictionary
+    #                 for i,val in enumerate(G2lat.A2cell(A)):
+    #                     if i in uniqCellIndx[pId]:
+    #                         lbl = str(pId)+'::'+G2lat.cellUlbl[i]
+    #                         VparmDict[lbl] = val
+    #                         changeDict[lbl] = VparmDict[lbl]
+    #                 lbl = str(pId)+'::'+'Vol'
+    #                 VparmDict[lbl] = G2lat.calc_V(A)
+    #                 changeDict[lbl] = VparmDict[lbl]
+    #             except KeyError:
+    #                 pass
+    #         # dict should be fully updated, use it & calculate
+    #         #calcobj.SetupCalc(VparmDict)
+    #         calcobj.UpdateCalc(changeDict)  # apply changes
+    #         results.append(calcobj.EvalExpression())
+    #     if None in results:
+    #         return None
+    #     return (results[0] - results[1]) / (2.*step)
+
 
     def EnableParFitEqMenus():
         'Enables or disables the Parametric Fit menu items that require existing defs'
@@ -1756,6 +1827,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if msg:
                 print('Unable to interpret multiplier(s) for',name,':',msg)
                 continue
+            G2mv.ProcessOffsets({})
             G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
                                      seqHistNum=ihst,raiseException=False)
             if 'Dist' in expr:
@@ -1776,6 +1848,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 VCoV = G2mth.getVCov(varyNames,varyList,data[name]['covMatrix'])
                 esdList.append(np.sqrt(np.inner(derivs,np.inner(VCoV,derivs.T)) ))
             else:
+                # derivs = np.array(  # TODO: this needs to be debugged and used to replace EvalPSvarDeriv
+                #     [EvalPSvarDerivOpt(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
+                #      for var,ESD in zip(varyList,sigs)])
                 derivs = np.array(  # TODO: this needs to be reworked
                     [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
                      for var,ESD in zip(varyList,sigs)])
@@ -1789,13 +1864,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                             np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
                     except:
                         esdList.append(None)
-            psDict = parmDict.copy()
+            #psDict = parmDict.copy()
+            # for grouped fits, replace the var names with the 1st histogram #s
+            psDict = {mapHistVar(var,name):val for var,val in parmDict.items()}
             psDict.update(sampleDict[name])
             try:
                 UpdateParmDict(psDict)
             except:
                 print('UpdateParmDict error on histogram',name)
-            calcobj.UpdateDict(psDict)
+            calcobj.SetupCalc(psDict)
             valList.append(calcobj.EvalExpression())
 #            if calcobj.su is not None: esdList[-1] = calcobj.su
         if not esdList:

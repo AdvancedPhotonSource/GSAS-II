@@ -2025,6 +2025,21 @@ class ExpressionCalcObj(object):
 #                raise Exception,"No value for variable "+str(v)
         self.exprDict.update(self.fxnpkgdict)
 
+    # def UpdateCalc(self,updateD):
+    #     '''Updates the expression evaluation after SetupCalc is called. 
+    #     This should be much faster than calling SetupCalc again
+    #
+    #     Needs to be debugged and perhaps used to replace UpdateDict
+    #     '''
+    #     for var,val in updateD.items():
+    #         if var in self.lblLookup:
+    #             self.exprDict[self.lblLookup[var]] = val
+    #         elif var in self.exprDict:
+    #             self.exprDict[var] = val
+    #         else:
+    #             self.exprDict[var] = val
+    #             print(f'unexpected var {var} in ExpressionCalc.UpdateCalc')
+
     def UpdateVars(self,varList,valList):
         '''Update the dict for the expression with a set of values
 

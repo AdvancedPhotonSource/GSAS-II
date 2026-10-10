@@ -3200,6 +3200,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow.SetSizer(dataSizer)
         sash = int(min(mainsize[0]/2,
                max(250,GSASIIpath.GetConfigValue('Split_Loc',300))))
+        print(GSASIIpath.GetConfigValue('Split_Loc',300),sash)
         self.mainPanel.SplitVertically(self.treePanel, self.dataWindow.outer, sash)
         self.Status.SetStatusWidths([sash,-1])   # make these match?
 
@@ -4831,7 +4832,7 @@ If you continue from this point, it is quite likely that all intensity computati
                      'Plot_Size':tuple(self.plotFrame.GetSize())}
             GSASIIpath.AddConfigValue(FrameInfo)
             if sys.platform != "darwin": # on Mac GetSashPosition seems off
-                GSASIIpath.AddConfigValue({'Split_Loc':2*self.mainPanel.GetSashPosition()})
+                GSASIIpath.AddConfigValue({'Split_Loc':self.mainPanel.GetSashPosition()})
             config = G2G.GetConfigValsDocs()
             G2G.SaveConfigVars(config)
         except:

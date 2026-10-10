@@ -1482,6 +1482,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colSigs += [None]
         colLabels += ['Rwp']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+    elif 'chi^2' in data[name]['Rvals']:    #a bit of a cheat here; uses last name from above loop
+        G2frame.colList += [[data[name]['Rvals']['chi^2'] for name in histNames]]
+        G2frame.colSigs += [None]
+        colLabels += ['chi**2']
+        Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+        G2frame.colList += [[data[name]['Rvals']['Npts'] for name in histNames]]
+        G2frame.colSigs += [None]
+        colLabels += ['Npts']
+        Types += [wg.GRID_VALUE_LONG,]
+        
     if histNames[0][:4] not in ['SASD','IMG ','REFD','PDF ']:
         G2frame.colList += [[data[name]['Rvals']['GOF'] for name in histNames]]
         G2frame.colSigs += [None]

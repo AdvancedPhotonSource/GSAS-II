@@ -329,7 +329,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 #                    varyList.append('chgrpos')
 #                    sigList.append(None)
 
-                    SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
+                    SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,
+                        'Rvals':{'chi^2':Data['chisq'],'Npts':Data['Npts']},
                         'covMatrix':covar,'title':name,'parmDict':parmDict}
                 SeqResult['histNames'] = Names
                 G2frame.GPXtree.SetItemPyData(Id,SeqResult)

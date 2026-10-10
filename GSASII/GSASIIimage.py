@@ -434,8 +434,8 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     :param dict parmDict: all calibration parameters
     :param bool Print: set to True (default) to print the results
     :param bool covar: set to True to return the covariance matrix (default is False)
-    :returns: [chisq,vals,sigList] unless covar is True, then
-        [chisq,vals,sigList,coVarMatrix] is returned
+    :returns: [chisq,Npts,vals,sigList] unless covar is True, then
+        [chisq,Npts,vals,sigList,coVarMatrix] is returned
     '''
 
     def CalibPrint(ValSig,chisq,Npts):
@@ -481,9 +481,9 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         else:
             print(' Nothing refined: chi**2: %12.3g'%chisq)
     if covar:
-        return [chisq,vals,sigList,result[1]]
+        return [chisq,rings.shape[0],vals,sigList,result[1]]
     else:
-        return [chisq,vals,sigList]
+        return [chisq,rings.shape[0],vals,sigList]
 
 def FitMultiDist(rings,varyList,parmDict,keyArray,Print=True,covar=False,
                      progressDlg=None):
@@ -1144,7 +1144,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     rings = np.concatenate((data['rings']),axis=0)
     if getRingsOnly:
         return rings,HKL
-    [chisq,vals,sigList,covar] = FitDetector(rings,varyList,parmDict,True,True)
+    [chisq,Npts,vals,sigList,covar] = FitDetector(rings,varyList,parmDict,True,True)
     data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']
     data['center'] = [parmDict['det-X'],parmDict['det-Y']]
@@ -1153,6 +1153,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     data['DetDepth'] = parmDict['dep']
     data['sag'] = parmDict['sag']
     data['chisq'] = chisq
+    data['Npts'] = Npts
 #    data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL:
         ellipse = GetEllipse(H[3],data)

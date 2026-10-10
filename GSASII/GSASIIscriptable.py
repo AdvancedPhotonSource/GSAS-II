@@ -1023,9 +1023,8 @@ class G2Project(G2ObjectWrapper):
         controls_data['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
         try:
             if GSASIIpath.HowIsG2Installed().startswith('git'):
-                g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
-                commit = g2repo.head.commit
-                controls_data['LastSavedUsing'] += f" git {commit.hexsha[:8]} script"
+                commit = GSASIIpath.getG2CommitHash()
+                controls_data['LastSavedUsing'] += f" git {commit[:8]} script"
             else:
                 gv = GSASIIpath.getSavedVersionInfo()
                 if gv is not None:

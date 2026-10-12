@@ -1474,7 +1474,7 @@ def polymask(data,Poly,Spots=[]):
     img, (width,height) = canvas.print_to_buffer()
     Zimg = np.frombuffer(img, np.uint8).reshape((height,width,4))    
     Z = np.swapaxes(Zimg[:,:,0],0,1)
-    A = np.flip(Z,axis=1)
+    A = np.flip(np.flip(Z,axis=1),axis=0)       #used to be just flip on y-axis
     return A
 
 def MakeMaskMap(data,masks,iLim,jLim):

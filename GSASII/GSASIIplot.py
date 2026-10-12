@@ -2087,7 +2087,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 sel = dlg.GetSelection()
                 G2frame.ContourColor = choice[sel]
             else:
-                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
+                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','GSPaired')
             dlg.Destroy()
         elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',

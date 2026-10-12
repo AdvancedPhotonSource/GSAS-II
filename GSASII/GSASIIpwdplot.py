@@ -277,7 +277,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 sel = dlg.GetSelection()
                 G2frame.ContourColor = choice[sel]
             else:
-                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
+                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','GSPaired')
             dlg.Destroy()
             newPlot = True
         elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):

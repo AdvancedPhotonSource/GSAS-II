@@ -2795,7 +2795,7 @@ class G2Project(G2ObjectWrapper):
                 Data['DetDepthRef'] = False
             else:
                 Data['type'] = 'PWDR'
-                Data['color'] = GSASIIpath.GetConfigValue('Contour_color','Paired')
+                Data['color'] = GSASIIpath.GetConfigValue('Contour_color','GSPaired')
                 if 'tilt' not in Data:          #defaults if not preset in e.g. Bruker importer
                     Data['tilt'] = 0.0
                     Data['rotation'] = 0.0

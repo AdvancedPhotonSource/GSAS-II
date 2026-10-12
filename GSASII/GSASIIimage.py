@@ -920,7 +920,7 @@ def GetTthAzmG(x,y,data):
         dzp = peneCorr(tth0,data['DetDepth'],data['distance'])
         dxyz0[:,:,2] += dzp
     #compute sag distance here & correct dxyz0[:,:,2]
-    if data['sag']:
+    if data.get('sag',0.0):
         dsag = sagCorr(x,y,data['sag'],data['xyLim'])
         dxyz0[:,:,2] += dsag
     tthMat = makeMat(data['det2theta'],1)
@@ -1476,6 +1476,7 @@ def polymask(data,Poly,Spots=[]):
     Z = np.swapaxes(Zimg[:,:,0],0,1)
     A = np.flip(Z,axis=1)
     return A
+
 def MakeMaskMap(data,masks,iLim,jLim):
     '''Makes a mask array from masking parameters that are not determined by 
     image calibration parameters or the image intensities. Thus this uses 

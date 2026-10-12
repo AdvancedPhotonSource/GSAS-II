@@ -319,6 +319,8 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
         Radius is distance from beam center to theoretical x,y point based
         on obs x,y azimuth, d-spacing & detector parameters
         Works for ellipses & hyperbolas
+        :param dict parms: image orientation parameters
+        :returns: array Rx distance of x,y points to beam center location on detector
         '''
         def makeData(parms):
             
@@ -352,8 +354,11 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
         Rx = nl.norm(xyz,axis=0)                            #radial distance including out of plane distortions
         return Rx
    
-    def GetDetectorE(parms): #correct for ellipses, nans for hyperbola!
-    
+    def GetDetectorE(parms):
+        '''correct for ellipses, nans for hyperbola! Only used for multidist calibration
+        :param dict parms: image orientation parameters
+        :returns: array (P+Q)/R distance of x,y points to beam center location on detector
+        '''
         phi = parms['phi']-90.               #get rotation of major axis from tilt axis
         azm = npatan2d(y-detY,x-detX)       #azm about beam-detector intersection
         stth = npsind(tth)
@@ -414,9 +419,9 @@ def ellipseCalcD(B,xyd,varyList,parmDict,keyArray=None,progressDlg=None):
     dxy = peneCorr(dtth,parms['dep'],dist)
     Dist = dist+dxy                 #dist corrected for penetration
     Robs = np.sqrt((x-detX)**2+(y-detY)**2)
-    if keyArray is None:
+    if keyArray is None:    #for recalibrate or calibrate all
         Rhc = GetDetectorR(parms)
-    else:
+    else:       #only for multidist calibration
         Rhc = GetDetectorE(parms)
     Rcalc = Rhc
     M = (Robs-Rcalc)*25.        #25 wt scaling factor to make "chi**2" more reasonable
@@ -461,7 +466,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f','%12.4f']
     Fmt = dict(zip(names,fmt))
     p0 = [parmDict[key] for key in varyList]
-    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8,epsfcn=1.e-6)
+    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8,epsfcn=1.e-4)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])

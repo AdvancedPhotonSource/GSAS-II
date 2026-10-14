@@ -6874,7 +6874,7 @@ at one of the following locations:
     def OnNewPDFfitPhase(event):
         ''' Make new phase for PDFfit using ISODISTORT mode definitions as constraints
         '''
-        newPhase = G2pwd.ISO2PDFfit(data)
+        newPhase = G2rmcG.ISO2PDFfit(data)
         phaseName = newPhase['General']['Name']
         sub = G2frame.GPXtree.AppendItem(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)

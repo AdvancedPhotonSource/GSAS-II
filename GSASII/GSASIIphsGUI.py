@@ -6857,8 +6857,9 @@ at one of the following locations:
         elif data['ISODISTORT']['ISOmethod'] != 4 or radio is None:
             G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
         else:
-            G2G.G2MessageBox(G2frame,'ISODISTORT run complete; new cif file %s created.\n To use, import it as a new phase.'%rundata)
-            print(' ISODISTORT run complete; new cif file %s created. To use, import it as a new phase.'%rundata)
+            msg = f'ISODISTORT run complete; new cif file {rundata} created.\n To use, import it as a new phase.'
+            G2G.G2MessageBox(G2frame,msg=msg,title='ISODISTORT complete')
+            print(msg)
 
     def OnNewISOPhase(event):
         ''' Make CIF file with ISODISTORT

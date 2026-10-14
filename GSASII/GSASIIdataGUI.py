@@ -3200,7 +3200,6 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow.SetSizer(dataSizer)
         sash = int(min(mainsize[0]/2,
                max(250,GSASIIpath.GetConfigValue('Split_Loc',300))))
-        print(GSASIIpath.GetConfigValue('Split_Loc',300),sash)
         self.mainPanel.SplitVertically(self.treePanel, self.dataWindow.outer, sash)
         self.Status.SetStatusWidths([sash,-1])   # make these match?
 

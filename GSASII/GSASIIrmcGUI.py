@@ -11,6 +11,7 @@ import copy
 import time
 import shutil
 import subprocess
+import random as rand
 
 import wx
 import wx.grid as wg
@@ -2405,7 +2406,10 @@ def UpdatePDFfit(Phase,RMCPdict):
         for pyline in pylines:
             if 'setpar' in pyline:
                 parm = pyline.split('(')[1].split(',')[0]
-                newpy.append('pf.setpar(%s,%.5f)\n'%(parm,RMCPdict['Parms'][parm]))
+                if parm in RMCPdict['Parms']:
+                    newpy.append('pf.setpar(%s,%.5f)\n'%(parm,RMCPdict['Parms'][parm]))
+                else:
+                    newpy.append(pyline)
             else:
                 newpy.append(pyline)
         py.writelines(newpy)

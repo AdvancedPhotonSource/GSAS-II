@@ -5930,7 +5930,8 @@ is being refined.
 ''')
 
     def OnLeBail(self,event):
-        '''Do a 1 cycle LeBail refinement with no other variables; usually done upon initialization of a LeBail refinement
+        '''Do a 0 cycle LeBail refinement where no variables are fit. 
+        This is usually done upon initialization of a LeBail refinement
         either single or sequentially
         '''
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
@@ -5960,7 +5961,6 @@ is being refined.
         else:
             refPlotUpdate = None
 
-        seqList = self.testSeqRefineMode(True)
         try:
             OK,Rvals = G2stMn.DoLeBail(self.GSASprojectfile,dlg,cycles=1,refPlotUpdate=refPlotUpdate,seqList=seqList)
         finally:

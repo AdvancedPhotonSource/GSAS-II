@@ -764,9 +764,12 @@ def DoNoFit(GPXfile,key):
     return Histograms[key]['Data'][3]
 
 def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
-    '''Fit LeBail intensities without changes to any other refined parameters.
+    '''Fit LeBail intensities without changes to any parameters flagged to be refined.
     This is a stripped-down version of :func:`Refine` that does not perform
-    any refinement cycles
+    any refinement cycles.
+
+    Note that since no refinements are done, we can treat this sequential fits
+    as if simultaneous and process all histograms together.
 
     :param str GPXfile: G2 .gpx file name
     :param wx.ProgressDialog dlg: optional progress window to update.
@@ -790,7 +793,11 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     constrDict,fixedList = G2stIO.ReadConstraints(GPXfile)
     restraintDict = {}
     Histograms_All,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
-    if seqList:
+    if seqList and type(seqList) is dict: # grouped fit
+        Histograms = {}
+        for key in seqList:
+            Histograms.update({i:Histograms_All[i] for i in seqList[key]})
+    elif seqList:
         Histograms = {i:Histograms_All[i] for i in seqList}
     else:
         Histograms = Histograms_All

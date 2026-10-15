@@ -205,16 +205,37 @@ def HowIsG2Installed():
         else:
             rev = '-rev'
         if g2URL in g2repo.remote().urls:
-            return 'github'+rev
+            G2_installed_result = 'github'+rev
+            return G2_installed_result
         elif g2URL.replace('https://github.com/',
                            'git@github.com:') in g2repo.remote().urls:
-            return 'github'+rev
+            G2_installed_result = 'github'+rev
+            return G2_installed_result
         G2_installed_result = 'git'+rev
         return G2_installed_result
     except:
         pass
     G2_installed_result = 'noVCS'
     return G2_installed_result
+
+G2_commit_hash_result = None
+def getG2CommitHash():
+    '''Returns the hex sha for the current GSAS-II commit (HEAD) for a
+    git-based install. The result is cached to avoid the cost of
+    starting a git process for repeated calls, since the checked-out
+    commit will not change while GSAS-II is running.
+
+    :returns: the hexsha string for the current commit, or None if it
+      cannot be determined (e.g. not installed via git).
+    '''
+    global G2_commit_hash_result
+    if G2_commit_hash_result is not None: return G2_commit_hash_result
+    try:
+        g2repo = openGitRepo(path2GSAS2)
+        G2_commit_hash_result = g2repo.head.commit.hexsha
+    except:
+        pass
+    return G2_commit_hash_result
 
 def getSavedVersionInfo():
     '''Get version number information from a file written by install

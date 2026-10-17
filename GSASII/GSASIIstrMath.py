@@ -1523,8 +1523,8 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     ainv = np.sqrt(np.diag(g))
     GS = G/np.outer(ast,ast)
     Ginv = g/np.outer(ainv,ainv)
-    uAmat = G2lat.Gmat2AB(GS)[0]
-#    uAmat = G2lat.Gmat2AB(nl.inv(Ginv))[0] #cryst->Cart for moments (components along unit a,b,c)
+    uAmat = G2lat.Gmat2AB(GS)[0] #RVD
+#    uAmat = G2lat.Gmat2AB(nl.inv(Ginv))[0] #cryst->Cart for moments (components along unit a,b,c) JS
     Bmat = G2lat.Gmat2AB(G)[1]
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
@@ -1605,8 +1605,8 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
         sinm = np.sin(mphase)                               #ditto - match magstrfc.for
         cosm = np.cos(mphase)                               #ditto
-        HM = np.inner(Bmat,H)                             #put into cartesian space
-#        HM = np.inner(Bmat.T,H)                             #put into cartesian space
+#        HM = np.inner(Bmat,H)                             #put into cartesian space RVD
+        HM = np.inner(Bmat.T,H)                             #put into cartesian space JS
         HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Kdata = MAGS & HM = UVEC in magstrfc.for both OK
         eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
@@ -1687,7 +1687,8 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     ainv = np.sqrt(np.diag(g))
     GS = G/np.outer(ast,ast)
     Ginv = g/np.outer(ainv,ainv)
-    uAmat = G2lat.Gmat2AB(GS)[0]
+#    uAmat = G2lat.Gmat2AB(GS)[0]
+    uAmat = G2lat.Gmat2AB(nl.inv(Ginv))[0] #cryst->Cart for moments (components along unit a,b,c)
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -1714,7 +1715,7 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
     Gones = SGData['MagMom'][nxs,:,nxs]*Gones   #flip vectors according to spin flip
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    Kdata = np.inner(Gdata.T,uAmat).T     #Cartesian unit vectors
+    Kdata = np.inner(Gdata.T,uAmat.T).T     #Cartesian unit vectors
     Kmean = np.mean(np.sqrt(np.sum(Kdata**2,axis=0)),axis=0)
     Kdata /= Kmean
     Uij = np.array(G2lat.U6toUij(Uijdata))

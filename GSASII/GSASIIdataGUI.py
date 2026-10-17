@@ -7543,7 +7543,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 'wxID_ATOMSPDISAGL', 'wxID_ISODISP', 'wxID_ADDHATOM', 'wxID_UPDATEHATOM','wxID_ATOMSCLEARHIST',
                 'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY','wxID_ATOMSBNDANGLHIST','wxID_ATOMSSAVEHIST',
                 'wxID_ATOMSSETALL', 'wxID_ATOMSSETSEL','wxID_ATOMFRACSPLIT','wxID_COLLECTATOMS',
-                'wxID_ATOMSSETVP', 'wxID_ATOMSSETLST')
+                'wxID_ATOMSSETVP', 'wxID_ATOMSSETLST', 'wxID_ATOMSMAGPOLAR')
             self.AtomsMenu = wx.MenuBar()
             self.PrefillDataMenu(self.AtomsMenu)
             self.AtomsMenu.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -7587,6 +7587,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.AtomCompute.Append(G2G.wxID_ATOMSCLEARHIST,'Clear all B&&A histograms','Clear all bond & angle histograms')
             self.AtomCompute.Append(G2G.wxID_ATOMFRACSPLIT,'Apportion atom frac','2 atom type site fraction apportion')
             self.AtomCompute.Append(G2G.wxID_ATOMSDENSITY,'Density','Compute density for current phase')
+            self.AtomCompute.Append(G2G.wxID_ATOMSMAGPOLAR,'Magnetic polar coords','Compute polar magnetic moments')
             self.AtomCompute.ISOcalc = self.AtomCompute.Append(G2G.wxID_ISODISP,
                                 'Show New Var modes',
                                 'Show New Var constraints and dependent vars')

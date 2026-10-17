@@ -5831,6 +5831,54 @@ to use these entries'''
                         atype2 += '_%s'%iso
                     print('        neutron based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell'      \
                           %(Atype1,bfrac1,bfrac1*Amult,atype2,(1.-bfrac1),(1.-bfrac1)*Amult))
+                        
+    def OnMagPolar(event):
+        '''Convert magmoments to polar coordinates wrt requested vector with esds
+        '''
+        generalData = data['General']
+        if generalData['Type'] != 'magnetic':
+            print('Phase is not magnetic')
+            return
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)
+        cmx = cx+4
+        indx = getAtomSelections(Atoms,ct-1)
+        if not indx:
+            print ("select one or more rows of atoms")
+            G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+            return
+        cell = generalData['Cell'][1:7]
+        G = G2lat.fillgmat(cell)
+        ast = np.sqrt(np.diag(G))
+        GS = G/np.outer(ast,ast)
+        Amat,Bmat = G2lat.cell2AB(cell)
+        atomData = data['Atoms']
+        px = ['0','0','1']
+        pz = ['1','0','0']
+        choice = ['-4','-3','-2','-1','0','1','2','3','4']
+        dlg = G2G.MultiDataDialog(G2frame,title='Polar axes',
+            prompts=['Polar axis','Transverse axis'],
+            values=[pz,]+[px,],
+            limits=[[choice,choice,choice],[choice,choice,choice]],
+            formats=[['choice','choice','choice'],['choice','choice','choice']])
+        dlg.CenterOnParent()
+        if dlg.ShowModal() != wx.ID_OK: return
+        vecZ,vecX = dlg.GetValues()
+        vecZ = np.array([float(vecZ[0]),float(vecZ[1]),float(vecZ[2])])
+        print('polar axis=',vecZ )
+        vecZ /= nl.norm(vecZ)
+        vecX = np.array([float(vecX[0]),float(vecX[1]),float(vecX[2])])
+        if np.abs(1.-np.dot(vecZ,vecX)) < 1.e-6:
+            print('polar axis parallel to transverse axis - try again')
+            return
+        for i in indx:
+            mag = np.array(atomData[i][cmx:cmx+3])
+            Mvec = np.inner(Amat.T,mag)
+            Mvec /= nl.norm(Mvec)
+            polang = acosd(np.dot(Mvec,vecZ))
+            Mag = np.sqrt(np.inner(mag,np.inner(mag,GS)))
+            
+            print('%s |M|=%8.3f P=%8.3f'%(atomData[i][0], Mag,polang))
+       
     
     def OnValidProtein(event):
 
@@ -13392,6 +13440,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnClearDAHist, id=G2G.wxID_ATOMSCLEARHIST)
         G2frame.Bind(wx.EVT_MENU, OnFracSplit, id=G2G.wxID_ATOMFRACSPLIT)
         G2frame.Bind(wx.EVT_MENU, OnDensity, id=G2G.wxID_ATOMSDENSITY)
+        G2frame.Bind(wx.EVT_MENU, OnMagPolar, id=G2G.wxID_ATOMSMAGPOLAR)
         G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_ISODISP)
         if 'HydIds' in data['General']:
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,True)

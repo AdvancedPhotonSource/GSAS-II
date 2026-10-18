@@ -1098,7 +1098,7 @@ class G2Project(G2ObjectWrapper):
             datafile = os.path.abspath(os.path.expanduser(datafile))
         pwdrreaders = import_generic(datafile, Readers['Pwdr'],fmthint=fmthint,
                                          bank=databank, URL=URL)
-        if not multiple: pwdrreaders = pwdrreaders[0:1]
+        if not multiple: pwdrreaders = [pwdrreaders[databank]]
         histlist = []
         if URL:
             instprm = downloadFile(iparams)

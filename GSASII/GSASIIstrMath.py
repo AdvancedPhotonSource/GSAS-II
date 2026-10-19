@@ -1518,13 +1518,12 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     :returns: copy of new refList - used in calculating numerical derivatives
 
     '''
-    g = nl.inv(G)
+    g = nl.inv(G)   #get real metric tensor
     ast = np.sqrt(np.diag(G))
     ainv = np.sqrt(np.diag(g))
     GS = G/np.outer(ast,ast)
     Ginv = g/np.outer(ainv,ainv)
     uAmat = G2lat.Gmat2AB(GS)[0] #RVD
-#    uAmat = G2lat.Gmat2AB(nl.inv(Ginv))[0] #cryst->Cart for moments (components along unit a,b,c) JS
     Bmat = G2lat.Gmat2AB(G)[1]
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])

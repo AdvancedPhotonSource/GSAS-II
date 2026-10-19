@@ -45,7 +45,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
         if nhist:
             if not len(self.selections):    #no PWDR entries
                 self.selections = range(nhist)
-                fp.close()
+            fp.close()
             return True
         self.errors = 'No powder entries found'
         fp.close()

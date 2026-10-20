@@ -11,5 +11,6 @@
 
 import runpy
 import sys
-sys.argv[1:] = ['/Users/toby/Scratch/GroupPWDR/2Px4G_copy2test.gpx']
+#sys.argv[1:] = ['/Users/toby/Scratch/GroupPWDR/2Px4G_copy2test.gpx']
+sys.argv[1:] = ['/Users/toby/Scratch/PRseqTest/SRpr5.gpx']
 runpy.run_module("GSASII.GSASIIstrMain", run_name="__main__")

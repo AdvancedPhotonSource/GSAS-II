@@ -6365,12 +6365,12 @@ Do you want to transfer the cell refinement flag to the Dij terms?
                 errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
                                                 hg,Histograms,Phases)
             if warnmsg or errmsg:
-                print ('\nConstraint warnings/errors for histogram "{}":'.format(h))
+                print (f'\nConstraint warnings/errors for histogram/group "{hg}":')
             if warnmsg:
-                allwarnings[h] = warnmsg
+                allwarnings[hg] = warnmsg
                 print ('warning:',warnmsg)
             if errmsg:
-                allerrors[h] = errmsg
+                allerrors[hg] = errmsg
                 print ('Error message: ',errmsg)
         if allerrors:
             if len(allerrors) == len(seqList):
@@ -7106,6 +7106,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # PWDR / Background
         G2G.Define_wxId('wxID_BACKCOPY', 'wxID_BACKFLAGCOPY','wxID_MAKEBACKRDF',
             'wxID_RESCALEALL','wxID_BACKPEAKSMOVE','wxID_BACKSAVE','wxID_BACKLOAD')
+        G2G.Define_wxId('wxID_BACKSETLIMIT')
         def _makemenu():     # routine to create menu when first used
             self.BackMenu = wx.MenuBar()
             self.PrefillDataMenu(self.BackMenu)
@@ -7133,6 +7134,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.wxID_BackPts['Fit'] = wx.NewId()
             self.BackFixed.Append(self.wxID_BackPts['Fit'],'Fit background',
                 'Fit background function to fixed background points')
+            self.BackEdit.Append(G2G.wxID_BACKSETLIMIT,'Set plot limits...','Allows entry of plot min & max values')
             self.PostfillDataMenu()
             SetDataMenuBar(G2frame,self.BackMenu)
         self.BackMenu = _makemenu

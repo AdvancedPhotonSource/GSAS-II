@@ -1933,11 +1933,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)
     parent = G2frame.dataWindow.topPanel
-    treename = G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection())
-    if treename.lower().startswith('sequential ') and treename.lower().endswith('results'):
-        lbl = treename
-    else:
-        lbl = 'Sequential results: '+treename
+    lbl = ''
+    try:
+        treename = G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection())
+        if treename.lower().startswith('sequential ') and treename.lower().endswith('results'):
+            lbl = treename
+        else:
+            lbl = 'Sequential results: '+treename
+    except:
+        pass
     topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))

@@ -1222,8 +1222,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                     hIdlist = [str(Histograms[h]['hId']) for h in groupDict[hg]]
                     nexthIdlist = [str(Histograms[h]['hId']) for h in groupDict[nexthg]]
                 else:
-                    hIdlist = [str(Histo[hg]['hId']),]
-                    nexthIdlist = [str(Histo[nexthg]['hId']),]
+                    hIdlist = [str(Histograms[hg]['hId']),]
+                    nexthIdlist = [str(Histograms[nexthg]['hId']),]
                 replDict = dict(zip(hIdlist,nexthIdlist))
                 for parm in set(list(varyList)+list(varyListStart)):
                     # copy over atom positions (when refined) not delta values

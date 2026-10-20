@@ -1454,14 +1454,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             except:
                 pass
         def showChecked(i):
-            checked = cbox[i].GetValue()
-            if not checked:
-                # fake out validation to avoid ugly yellow 
-                dbox[i].invalid = False
-                dbox[i]._IndicateValidity()
-            else: # reset validation
-                dbox[i].ChangeValue(dbox[i].GetValue())
-            dbox[i].Enable(checked)
+            try:
+                checked = cbox[i].GetValue()
+                if not checked:
+                    # fake out validation to avoid ugly yellow 
+                    dbox[i].invalid = False
+                    dbox[i]._IndicateValidity()
+                else: # reset validation
+                    dbox[i].ChangeValue(dbox[i].GetValue())
+                dbox[i].Enable(checked)
+            except:
+                pass
         def applyLims(event):
             Page.toolbar.push_current()
             # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
@@ -1529,7 +1532,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                                 typeHint=float))
                 gsizer.Add(cbox[-1])
                 gsizer.Add(dbox[-1])
-                showChecked(-1)
         vbox.Add(gsizer)
         vbox.Add((10,10),1,wx.ALL|wx.EXPAND,1)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -1547,10 +1549,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         vbox.Add(hbox,1,wx.ALL|wx.EXPAND,1)
         dlg.SetSizer(vbox)
         vbox.Fit(dlg)
+        wx.GetApp().Yield()
+        for i in range(4):
+            showChecked(i)
         dlg.ShowModal()
         dlg.Destroy()
         applyLims(None) # apply limits
-        
+
     def onPlotFormat(event):
         '''Change the appearance of the current plot'''
         changePlotSettings(G2frame,Plot)
@@ -2079,6 +2084,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         Page.phaseList = Phases
+    if 'Background' in G2frame.GPXtree.GetItemText(G2frame.PickId):
+        G2frame.Bind(wx.EVT_MENU, onSetPlotLim, id=G2G.wxID_BACKSETLIMIT)
+
     # assemble a list of validated colors for tickmarks
     valid_colors = []
     invalid_colors = []

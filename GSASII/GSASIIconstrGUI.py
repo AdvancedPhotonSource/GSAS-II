@@ -5,7 +5,7 @@ Constraints and rigid bodies GUI routines follow.
 
 '''
 from __future__ import division, print_function
-import platform
+#import platform
 import sys
 import copy
 import os.path
@@ -29,7 +29,7 @@ from . import GSASIIctrlGUI as G2G
 from . import GSASIIfiles as G2fil
 from . import GSASIIplot as G2plt
 from . import GSASIIobj as G2obj
-from . import GSASIIspc as G2spc
+#from . import GSASIIspc as G2spc
 from . import GSASIIphsGUI as G2phG
 from . import GSASIIscriptable as G2sc
 VERY_LIGHT_GREY = wx.Colour(235,235,235)

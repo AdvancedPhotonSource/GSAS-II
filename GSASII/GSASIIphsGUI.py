@@ -5847,14 +5847,10 @@ to use these entries'''
             G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
             return
 
+        covData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
         cell = generalData['Cell'][1:7]
-        G,g = G2lat.cell2Gmat(cell)
-        ast = np.sqrt(np.diag(G))
-        ainv = np.sqrt(np.diag(g))
-        GS = G/np.outer(ast,ast)
-        gS = g/np.outer(ainv,ainv)
-        uAmat,uBmat = G2lat.Gmat2AB(GS)
-        uMat = uAmat    #uAmat is best
         atomData = data['Atoms']
         px = ['0','0','1']
         pz = ['1','0','0']
@@ -5868,30 +5864,38 @@ to use these entries'''
         if dlg.ShowModal() != wx.ID_OK: return
         vecZ,vecX = dlg.GetValues()
         vecZ = np.array([float(vecZ[0]),float(vecZ[1]),float(vecZ[2])])
-        vecZT = np.inner(uMat,vecZ)
-        vecZT /= nl.norm(vecZT)
+        vecZT = vecZ/nl.norm(vecZ)
         vecX = np.array([float(vecX[0]),float(vecX[1]),float(vecX[2])])
-        vecXT = np.inner(uMat,vecX)
-        vecXT /= nl.norm(vecXT)        
+        vecXT = vecX/nl.norm(vecX)        
         if np.abs(1.-np.dot(vecZT,vecXT)) < 1.e-6:
             print('polar axis parallel to transverse axis - try again')
             return
-        vecYT = np.cross(vecZT,vecXT)
-        vecYT /=  nl.norm(vecYT)
+        # vecYT = np.cross(vecZT,vecXT)
+        # vecYT /=  nl.norm(vecYT)
         print('Magnetic moment polar coordinates:')
         print('Reference axes: Polar axis:',vecZ,' Transverse axis:',vecX)
         for i in indx:
+            names = [name for name in varyList if 'AM' in name and str(i) in name[-1]]
+            Magcov = G2mth.getVCov(names,varyList,covMatrix)
             mag = np.array(atomData[i][cmx:cmx+3])
-            Mag = np.sqrt(np.inner(mag,np.inner(mag,gS)))            
-            Mvec = np.inner(uMat,mag)
-            Mvec /= nl.norm(Mvec)
-            pol = np.dot(Mvec,vecZT)
-            polang = acosd(pol)
-            azm = 0.0
-            if 1.-np.abs(pol) > 1.e-6:
-                Qvec = np.cross(vecZT,Mvec)
-                azm = acosd(np.dot(Qvec/nl.norm(Qvec),vecYT))                
-            print('%s |M|=%8.3f Pol=%8.3f, Azm=%8.3f'%(atomData[i][0],Mag,polang,azm))
+            Mag = G2mth.GetMag(mag,cell)
+            pol,azm = G2mth.GetMagPolar(mag,cell,vecZ,vecX)
+            if names:
+                dMdm = list(G2mth.GetMagDerv(mag,cell))
+                dMdm = np.array([d for d in dMdm if d])
+                Msig = np.sqrt(np.inner(dMdm,np.inner(Magcov,dMdm)))
+                Psig = 0.
+                Asig = 0.
+                # dpdm,dadm = list(G2mth.GetMagPolarDerv(mag,cell,vecZ,vecX))
+                # dpdm = np.array([d for d in dpdm if d])
+                # dadm = np.array([d for d in dadm if d])
+                # Psig = np.sqrt(np.inner(dpdm,np.inner(Magcov,dpdm)))
+                # Asig = np.sqrt(np.inner(dadm,np.inner(Magcov,dadm)))
+            if names:                
+                print('%s |M|= %s Pol= %s, Azm= %s'%(atomData[i][0],G2mth.ValEsd(Mag,Msig),
+                    G2mth.ValEsd(pol,Psig),G2mth.ValEsd(azm,Asig)))
+            else:
+                print('%s |M|=%8.3f Pol=%8.3f, Azm=%8.3f'%(atomData[i][0],Mag,pol,azm))
     
     def OnValidProtein(event):
 

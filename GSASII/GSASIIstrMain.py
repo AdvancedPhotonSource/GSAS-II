@@ -1475,7 +1475,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None,dmin=0.5):
                             Amat,SGData,covData,
                             multiParmDict,changedParmDict)
                 else:
-                    angSigij = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
+                    angSigij = G2mth.getAngSig(VectA[i],VectA[j],Amat.T,SGData,covData)
                 AngArray[Oatom[0]].append((i,j,angSigij))
         if dlg is not None: dlg.Update(iO,newmsg=f'Atoms done={iO} of {len(origAtoms)}')
     return AtomLabels,DistArray,AngArray

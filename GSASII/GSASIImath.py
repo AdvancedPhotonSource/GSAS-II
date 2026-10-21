@@ -3440,6 +3440,81 @@ def GetMagDerv(mag,Cell):
         mag[i] += dm
     return derv/twodm
 
+def GetMagPolar(mag,Cell,vecZ,vecX):
+    ''' Compute polar coordinates for magnetic moment WRT specified axes
+    mag & sig(mag) done via GetMag & GetMagDerv
+    
+    :param list mag: atom magnetic moment parms (must be magnetic!)
+    :param list Cell: lattice parameters
+    :param array vecZ: polar axis in real lattice coords
+    :param array vecX: azm reference axis in real lattice coords
+    
+    :returns: pol,azm polar angle derivatives wrt mag  components in deg
+    '''
+    mag = np.array(mag)
+    G,g = G2lat.cell2Gmat(Cell)
+    ast = np.sqrt(np.diag(G))
+    GS = G/np.outer(ast,ast)
+    uAmat = G2lat.Gmat2AB(GS)[0]
+    vecZT = np.inner(uAmat,vecZ)
+    vecZT /= nl.norm(vecZT)
+    vecXT = np.inner(uAmat,vecX)
+    vecXT /= nl.norm(vecXT)        
+    vecYT = np.cross(vecZT,vecXT)
+    vecYT /=  nl.norm(vecYT)
+    Mvec = np.inner(uAmat,mag)
+    Mvec /= nl.norm(Mvec)
+    pol = acosd(np.dot(Mvec,vecZT))
+    azm = 0.0
+    if 1.-np.abs(cosd(pol)) > 1.e-6:
+        Qvec = np.cross(vecZT,Mvec)
+        azm = acosd(np.dot(Qvec/nl.norm(Qvec),vecYT))    
+    return pol,azm
+
+def GetMagPolarDerv(mag,Cell,vecZ,vecX):
+    ''' 
+    mag & sig(mag) done via GetMag & GetMagDerv
+    
+    :param list mag: atom magnetic moment parms (must be magnetic!)
+    :param list Cell: lattice parameters
+    :param array vecZ: polar axis in real lattice coords
+    :param array vecX: azm reference axis in real lattice coords
+
+    :returns: pol,azm polar angle derivatives wrt mag  components in deg
+    '''
+    
+    def GetPolAzm(mag):
+        Mvec = np.inner(uAmat,mag)
+        Mvec /= nl.norm(Mvec)
+        Qvec = np.cross(vecZT,Mvec)
+        return acosd(np.dot(Mvec,vecZT)),acosd(np.dot(Qvec/nl.norm(Qvec),vecYT))
+            
+    derv = np.zeros((2,3))    #dpdm,dadm
+    dm = 0.0001
+    twodm = 2.*dm
+    mag = np.array(mag)
+    G,g = G2lat.cell2Gmat(Cell)
+    ast = np.sqrt(np.diag(G))
+    GS = G/np.outer(ast,ast)
+    uAmat = G2lat.Gmat2AB(GS)[0]
+    vecZT = np.inner(uAmat,vecZ)
+    vecZT /= nl.norm(vecZT)
+    vecXT = np.inner(uAmat,vecX)
+    vecXT /= nl.norm(vecXT)        
+    vecYT = np.cross(vecZT,vecXT)
+    vecYT /=  nl.norm(vecYT)
+    
+    Mvec = np.inner(uAmat,mag)
+    Mvec /= nl.norm(Mvec)
+    for i in [0,1,2]:
+        mag[i] += dm
+        pp,ap = GetPolAzm(mag)
+        mag[i] -= 2*dm
+        pm,am = GetPolAzm(mag)
+        derv[:,i] = np.array([pp-pm,ap-am])
+        mag[i] += dm    
+    return derv/twodm
+    
 def searchBondRestr(origAtoms,targAtoms,bond,Factor,GType,SGData,Amat,
                     defESD=0.01,dlg=None):
     '''Search for bond distance restraints.

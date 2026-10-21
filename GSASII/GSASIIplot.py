@@ -2205,7 +2205,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 sel = dlg.GetSelection()
                 G2frame.ContourColor = choice[sel]
             else:
-                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
+                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','GSPaired')
             dlg.Destroy()
         elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
@@ -3079,13 +3079,13 @@ def PlotStrain(G2frame,data,newPlot=False):
         if N:
             Plot.plot(Xo,Yo,marker='+',color=Colors[N%NC],linewidth=0)
             Plot.plot(Xc,Yc,Colors[N%NC])
-            Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5))
-            Plot.plot([0.,360.],[item['Dset'],item['Dset']],Colors[5])
+            Plot.plot([Xc[0],Xc[-1]],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5))
+            Plot.plot([Xc[0],Xc[-1]],[item['Dset'],item['Dset']],Colors[5])
         else:    
             Plot.plot(Xo,Yo,marker='+',color=Colors[N%NC],linewidth=0,label='Obs')
             Plot.plot(Xc,Yc,Colors[N%NC],label='Calc')
-            Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5),label='d-zero ave')
-            Plot.plot([0.,360.],[item['Dset'],item['Dset']],Colors[5],label='d-zero')
+            Plot.plot([Xc[0],Xc[-1]],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5),label='d-zero ave')
+            Plot.plot([Xc[0],Xc[-1]],[item['Dset'],item['Dset']],Colors[5],label='d-zero')
     Plot.legend(loc='best')
     if not newPlot:
         Page.toolbar.push_current()
@@ -4930,7 +4930,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Int = 0
                 if (0 <= xpix < sizexy[0]) and (0 <= ypix < sizexy[1]):
                     Int = G2frame.ImageZ[ypix][xpix]
-                tth,azm,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)
+                azm = G2img.GetTthAzmG(xpos,ypos,Data)[1]           #correct diffr. azm
+                tth,X,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)   #not diffr. azm from here
                 Q = 2.*math.pi/dsp
                 if G2frame.StrainKey:
                     G2frame.G2plotNB.status.SetStatusText('d-zero pick active',0)
@@ -5506,7 +5507,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if not Xpos or not Ypos or Page.toolbar.AnyActive():  #got point out of frame or zoom/pan selected
                 return
             dsp = float(G2img.GetDsp(Xpos,Ypos,Data))
-            StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':0.5,'Ivar':0.0,
+            StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':0.5,'Ivar':0.0,'fixDset':False,
                 'ImxyObs':[[],[]],'ImxyCalc':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0],'Ivar':0})
             R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ,Data)
             if not len(R):
@@ -5718,25 +5719,25 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             ellO = G2img.GetEllipse(dspO,Data)
             Azm = np.arange(LRAzim[0],LRAzim[1]+1.)-AzmthOff
             if ellI:
-                xyI = []
+                AIXY = []
                 for azm in Azm:
                     xy = G2img.GetDetectorXY(dspI,azm,Data)
                     if np.any(xy):
-                        xyI.append(xy)
-                if len(xyI):
-                    xyI = np.array(xyI)
-                    arcxI,arcyI = xyI.T
+                        AIXY.append([azm,xy[0],xy[1]])
+                if len(AIXY):
+                    AIXY = np.array(AIXY).T
+                    arcxI,arcyI = AIXY[1:]
                     Plot.plot(arcxI,arcyI,picker=3,label='Itth')
             if ellO:
-                xyO = []
+                AOXY = [] 
                 arcxO = []
                 for azm in Azm:
                     xy = G2img.GetDetectorXY(dspO,azm,Data)
                     if np.any(xy):
-                        xyO.append(xy)
-                if len(xyO):
-                    xyO = np.array(xyO)
-                    arcxO,arcyO = xyO.T
+                        AOXY.append([azm,xy[0],xy[1]]) #test
+                if len(AOXY):
+                    AOXY = np.array(AOXY).T
+                    arcxO,arcyO = AOXY[1:]
                     Plot.plot(arcxO,arcyO,picker=3,label='Otth')
             if ellO and ellI and len(arcxO):
                 Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3,label='Lazm')
@@ -5745,9 +5746,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 cake = LRAzim[0]+i*delAzm-AzmthOff
                 if Data.get('centerAzm',False):
                     cake += delAzm/2.
-                ind = np.searchsorted(Azm,cake)
-                if len(arcxO):
-                    Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
+                indi = np.searchsorted(AIXY[0],cake)
+                indo = np.searchsorted(AOXY[0],cake)
+                if len(arcxO) and AIXY[0,indi]==AOXY[0,indo]:       #azms have to match
+                    Plot.plot([AIXY[1,indi],AOXY[1,indo]],[AIXY[2,indi],AOXY[2,indo]],color='k',dashes=(5,5))
         if 'linescan' in Data and Data['linescan'][0] and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             azm = Data['linescan'][1]-Data['azmthOff']
             IOtth = Data['IOtth']
@@ -5767,7 +5769,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     xring,yring = np.array(ring).T[:2]
                     Plot.plot(xring,yring,'.',color=Colors[N%NC])
                     N += 1
-            for ellipse in Data['ellipses']:      #what about hyperbola?
+            for ellipse in Data['ellipses']:
                 try:
                     cent,phi,[width,height,tth],col = ellipse
                 except ValueError:

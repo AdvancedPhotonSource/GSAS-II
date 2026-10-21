@@ -5831,6 +5831,71 @@ to use these entries'''
                         atype2 += '_%s'%iso
                     print('        neutron based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell'      \
                           %(Atype1,bfrac1,bfrac1*Amult,atype2,(1.-bfrac1),(1.-bfrac1)*Amult))
+                        
+    def OnMagPolar(event):
+        '''Convert magmoments to polar coordinates wrt requested vector with esds
+        '''
+        generalData = data['General']
+        if generalData['Type'] != 'magnetic':
+            print('Phase is not magnetic')
+            return
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)
+        cmx = cx+4
+        indx = getAtomSelections(Atoms,ct-1)
+        if not indx:
+            print ("select one or more rows of atoms")
+            G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+            return
+
+        covData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        cell = generalData['Cell'][1:7]
+        atomData = data['Atoms']
+        px = ['0','0','1']
+        pz = ['1','0','0']
+        choice = ['-4','-3','-2','-1','0','1','2','3','4']
+        dlg = G2G.MultiDataDialog(G2frame,title='Polar axes',
+            prompts=['Polar axis','Transverse axis'],
+            values=[pz,]+[px,],
+            limits=[[choice,choice,choice],[choice,choice,choice]],
+            formats=[['choice','choice','choice'],['choice','choice','choice']])
+        dlg.CenterOnParent()
+        if dlg.ShowModal() != wx.ID_OK: return
+        vecZ,vecX = dlg.GetValues()
+        vecZ = np.array([float(vecZ[0]),float(vecZ[1]),float(vecZ[2])])
+        vecZT = vecZ/nl.norm(vecZ)
+        vecX = np.array([float(vecX[0]),float(vecX[1]),float(vecX[2])])
+        vecXT = vecX/nl.norm(vecX)        
+        if np.abs(1.-np.dot(vecZT,vecXT)) < 1.e-6:
+            print('polar axis parallel to transverse axis - try again')
+            return
+        # vecYT = np.cross(vecZT,vecXT)
+        # vecYT /=  nl.norm(vecYT)
+        print('Magnetic moment polar coordinates:')
+        print('Reference axes: Polar axis:',vecZ,' Transverse axis:',vecX)
+        for i in indx:
+            names = [name for name in varyList if 'AM' in name and str(i) in name[-1]]
+            Magcov = G2mth.getVCov(names,varyList,covMatrix)
+            mag = np.array(atomData[i][cmx:cmx+3])
+            Mag = G2mth.GetMag(mag,cell)
+            pol,azm = G2mth.GetMagPolar(mag,cell,vecZ,vecX)
+            if names:
+                dMdm = list(G2mth.GetMagDerv(mag,cell))
+                dMdm = np.array([d for d in dMdm if d])
+                Msig = np.sqrt(np.inner(dMdm,np.inner(Magcov,dMdm)))
+                Psig = 0.
+                Asig = 0.
+                # dpdm,dadm = list(G2mth.GetMagPolarDerv(mag,cell,vecZ,vecX))
+                # dpdm = np.array([d for d in dpdm if d])
+                # dadm = np.array([d for d in dadm if d])
+                # Psig = np.sqrt(np.inner(dpdm,np.inner(Magcov,dpdm)))
+                # Asig = np.sqrt(np.inner(dadm,np.inner(Magcov,dadm)))
+            if names:                
+                print('%s |M|= %s Pol= %s, Azm= %s'%(atomData[i][0],G2mth.ValEsd(Mag,Msig),
+                    G2mth.ValEsd(pol,Psig),G2mth.ValEsd(azm,Asig)))
+            else:
+                print('%s |M|=%8.3f Pol=%8.3f, Azm=%8.3f'%(atomData[i][0],Mag,pol,azm))
     
     def OnValidProtein(event):
 
@@ -6857,8 +6922,9 @@ at one of the following locations:
         elif data['ISODISTORT']['ISOmethod'] != 4 or radio is None:
             G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
         else:
-            G2G.G2MessageBox(G2frame,'ISODISTORT run complete; new cif file %s created.\n To use, import it as a new phase.'%rundata)
-            print(' ISODISTORT run complete; new cif file %s created. To use, import it as a new phase.'%rundata)
+            msg = f'ISODISTORT run complete; new cif file {rundata} created.\n To use, import it as a new phase.'
+            G2G.G2MessageBox(G2frame,msg=msg,title='ISODISTORT complete')
+            print(msg)
 
     def OnNewISOPhase(event):
         ''' Make CIF file with ISODISTORT
@@ -6874,7 +6940,7 @@ at one of the following locations:
     def OnNewPDFfitPhase(event):
         ''' Make new phase for PDFfit using ISODISTORT mode definitions as constraints
         '''
-        newPhase = G2pwd.ISO2PDFfit(data)
+        newPhase = G2rmcG.ISO2PDFfit(data)
         phaseName = newPhase['General']['Name']
         sub = G2frame.GPXtree.AppendItem(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
@@ -13391,6 +13457,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnClearDAHist, id=G2G.wxID_ATOMSCLEARHIST)
         G2frame.Bind(wx.EVT_MENU, OnFracSplit, id=G2G.wxID_ATOMFRACSPLIT)
         G2frame.Bind(wx.EVT_MENU, OnDensity, id=G2G.wxID_ATOMSDENSITY)
+        G2frame.Bind(wx.EVT_MENU, OnMagPolar, id=G2G.wxID_ATOMSMAGPOLAR)
         G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_ISODISP)
         if 'HydIds' in data['General']:
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,True)

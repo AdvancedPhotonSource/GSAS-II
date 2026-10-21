@@ -2445,11 +2445,11 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
                 k = 1.0-parmDict['Lam']**2/(4.0*peakDsp**2)
                 k = dpr/np.sqrt(k)
                 dMdv[iv,:] = k/peakDsp
-            if vary == 'DifC':
+            if vary == 'difC':
                 dMdv[iv,:] = peakDsp
-            if vary == 'DifA':
+            if vary == 'difA':
                 dMdv[iv,:] = peakDsp**2
-            if vary == 'DifB':
+            if vary == 'difB':
                 dMdv[iv,:] = 1.0/peakDsp
         return np.sqrt(peakWt)*dMdv                 
 
@@ -2534,10 +2534,10 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
                     dMdv[iv,:] = peakDsp
         return np.sqrt(peakWt)*dMdv                                                    
     
-    def outResult():
+    def outResult(nObs,nVary):
         chisq = np.sum(result[2]['fvec']**2)
-        GOF = chisq/(len(peakPos)-len(posVary))       #reduced chi^2
-        G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],len(peakPos),len(posVary)))
+        GOF = chisq/(nObs-nVary)       #reduced chi^2
+        G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],nObs,nVary))
         G2fil.G2Print ('chi**2 = %12.6g, reduced chi**2 = %6.2f'%(chisq,GOF))
         try:
             sig = np.sqrt(np.diag(result[1])*GOF)
@@ -2555,12 +2555,12 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
     posDict,posVary = SetPosParms()
     parmDict.update(posDict)
     if len(peakPos) > 5 and len(posVary):
+        G2fil.G2Print('Position calibration:')
         values =  np.array(Dict2Values(parmDict, posVary))
         result = so.leastsq(errPeakPos,values,Dfun=dervPeakPos,full_output=True,ftol=0.000001,
             col_deriv=True,args=(peakDsp,peakPos,peakPosWt,dataType,parmDict,posVary))
-        G2fil.G2Print('Position calibration:')
         Values2Dict(parmDict, posVary, result[0])
-        sig = outResult()
+        sig = outResult(len(peakPos),len(posVary))
         if  len(sig):
             Sigmas.update(zip(posVary,sig))
             GetInstParms(parmDict)
@@ -2569,12 +2569,12 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
     sigDict,sigVary = SetSigParms()
     parmDict.update(sigDict)
     if len(peakSig) > 5 and len(sigVary):
+        G2fil.G2Print('Sigma calibration:')
         values =  np.array(Dict2Values(parmDict, sigVary))
         result = so.leastsq(errPeakSig,values,Dfun=dervPeakSig,full_output=True,ftol=0.000001,
             col_deriv=True,args=(sigDsp,peakSig,peakSigWt,dataType,parmDict,sigVary))
-        G2fil.G2Print('Sigma calibration:')
         Values2Dict(parmDict, sigVary, result[0])
-        sig = outResult()
+        sig = outResult(len(peakSig),len(sigVary))
         if  len(sig):
             Sigmas.update(zip(sigVary,sig))
             GetInstParms(parmDict)
@@ -2586,12 +2586,12 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         alpDict,alpVary = SetAlpParms()
         parmDict.update(alpDict)
         if len(peakAlp) > 5 and len(alpVary):
+            G2fil.G2Print('Alpha calibration:')
             values =  np.array(Dict2Values(parmDict, alpVary))
             result = so.leastsq(errPeakAlp,values,Dfun=dervPeakAlp,full_output=True,ftol=0.000001,
                 col_deriv=True,args=(alpDsp,peakAlp,peakAlpWt,dataType,parmDict,alpVary))
-            G2fil.G2Print('Alpha calibration:')
             Values2Dict(parmDict, alpVary, result[0])
-            sig = outResult()
+            sig = outResult(len(peakAlp),len(alpVary))
             if  len(sig):
                 Sigmas.update(zip(alpVary,sig))
                 GetInstParms(parmDict)
@@ -2602,12 +2602,12 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         betDict,betVary = SetBetParms()
         parmDict.update(betDict)
         if len(peakBet) > 5 and len(betVary):
+            G2fil.G2Print('Beta calibration:')
             values =  np.array(Dict2Values(parmDict, betVary))
             result = so.leastsq(errPeakBet,values,Dfun=dervPeakBet,full_output=True,ftol=0.000001,
                 col_deriv=True,args=(betDsp,peakBet,peakBetWt,dataType,parmDict,betVary))
-            G2fil.G2Print('Beta calibration:')
             Values2Dict(parmDict, betVary, result[0])
-            sig = outResult()
+            sig = outResult(len(peakBet),len(betVary))
             if  len(sig):
                 Sigmas.update(zip(betVary,sig))
                 GetInstParms(parmDict)

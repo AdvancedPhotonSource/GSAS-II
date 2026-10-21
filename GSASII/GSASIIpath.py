@@ -2133,7 +2133,7 @@ def testLLamaModel():
     Returns the name of the most recently installed model 
     or None if the model needs to be installed.
     '''
-    modelDir = os.path.expanduser("~/.GSASII/llama_models")
+    modelDir = os.path.join(LocalG2Dir(),"llama_models")
     if not os.path.exists(modelDir):
         return None
     fileList = glob.glob(os.path.join(modelDir,'*.gguf'))
@@ -2147,7 +2147,7 @@ def testLLamaModel():
 
 def installLLamaModel():
     '''Download the Qwen2.5-3B-Instruct llama model'''
-    modelDir = os.path.expanduser("~/.GSASII/llama_models")
+    modelDir = os.path.join(LocalG2Dir(),"llama_models")
     os.makedirs(modelDir, exist_ok=True)
     print('Downloading a model...')
     from huggingface_hub import hf_hub_download
@@ -2179,7 +2179,7 @@ def ageLLMindex():
     '''
     import datetime
     f = 'chroma_db'
-    dbdir = os.path.expanduser('~/.GSASII/query_gsas2')
+    dbdir = os.path.join(LocalG2Dir(),"query_gsas2")
     db = os.path.join(dbdir,f)
     if os.path.exists(db):
         m_time_timestamp = os.path.getmtime(db)
@@ -2228,9 +2228,9 @@ def getLLMindex():
         #print("Saved to:", tmp.name)
         # create the files in a new location and then move them to the final location
         f = 'chroma_db'
-        finaldir = os.path.expanduser('~/.GSASII/query_gsas2')
+        finaldir = os.path.join(LocalG2Dir(),"query_gsas2")
         finaldb = os.path.join(finaldir,f)
-        newdir = os.path.expanduser('~/.GSASII/new_query_gsas2')
+        newdir = os.path.join(LocalG2Dir(),"new_query_gsas2")
         newdb = os.path.join(newdir,f)
         os.makedirs(newdir, exist_ok=True)
         os.makedirs(finaldir, exist_ok=True)

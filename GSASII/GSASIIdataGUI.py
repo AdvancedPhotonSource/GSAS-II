@@ -3341,6 +3341,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.testRBObjSizers = {}   #rigid body sizer datafile contents
         self.RMCchoice = 'RMCProfile'
         self.ifSetLimitsMode = 0
+        self.multiDistSave = []
         self.PlotBindings = []  # stores plot bindings so they can be revised
 
     def __init__(self, parent):
@@ -4867,7 +4868,7 @@ If you continue from this point, it is quite likely that all intensity computati
                      'Plot_Size':tuple(self.plotFrame.GetSize())}
             GSASIIpath.AddConfigValue(FrameInfo)
             if sys.platform != "darwin": # on Mac GetSashPosition seems off
-                GSASIIpath.AddConfigValue({'Split_Loc':2*self.mainPanel.GetSashPosition()})
+                GSASIIpath.AddConfigValue({'Split_Loc':self.mainPanel.GetSashPosition()})
             config = G2G.GetConfigValsDocs()
             G2G.SaveConfigVars(config)
         except:
@@ -7415,6 +7416,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.ImageEdit.Append(G2G.wxID_IMRECALIBALL,'Recalibrate all','Recalibrate all images by fitting to calibrant lines')
             self.ImageEdit.Append(G2G.wxID_CALCRINGS,'Calculate rings','Calculate rings from calibration parameters')
             self.ImageEdit.Append(G2G.wxID_IMDISTRECALIB,'Multi-distance Recalibrate','Recalibrate all images varying delta-distance and fitting wavelength')
+            G2G.Define_wxId('wxID_IMDISTUNDO')
+            self.multiDistUndo = self.ImageEdit.Append(G2G.wxID_IMDISTUNDO,'Undo last multi-distance recalib','Restore image parameters to values before last multi-distance Recalib')
+            self.ImageEdit.Enable(G2G.wxID_IMDISTUNDO,False)
             self.ImageEdit.Append(G2G.wxID_IMCLEARCALIB,'Clear calibration','Clear calibration data points and rings')
             self.ImageEdit.Append(G2G.wxID_IMMULTGAINMAP,'Multiimage Gain map','Make gain map from multiple images')
             ImageIntegrate = wx.Menu(title='')
@@ -7611,7 +7615,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 'wxID_ATOMSPDISAGL', 'wxID_ISODISP', 'wxID_ADDHATOM', 'wxID_UPDATEHATOM','wxID_ATOMSCLEARHIST',
                 'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY','wxID_ATOMSBNDANGLHIST','wxID_ATOMSSAVEHIST',
                 'wxID_ATOMSSETALL', 'wxID_ATOMSSETSEL','wxID_ATOMFRACSPLIT','wxID_COLLECTATOMS',
-                'wxID_ATOMSSETVP', 'wxID_ATOMSSETLST')
+                'wxID_ATOMSSETVP', 'wxID_ATOMSSETLST', 'wxID_ATOMSMAGPOLAR')
             self.AtomsMenu = wx.MenuBar()
             self.PrefillDataMenu(self.AtomsMenu)
             self.AtomsMenu.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -7655,6 +7659,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.AtomCompute.Append(G2G.wxID_ATOMSCLEARHIST,'Clear all B&&A histograms','Clear all bond & angle histograms')
             self.AtomCompute.Append(G2G.wxID_ATOMFRACSPLIT,'Apportion atom frac','2 atom type site fraction apportion')
             self.AtomCompute.Append(G2G.wxID_ATOMSDENSITY,'Density','Compute density for current phase')
+            self.AtomCompute.Append(G2G.wxID_ATOMSMAGPOLAR,'Magnetic polar coords','Compute polar magnetic moments')
             self.AtomCompute.ISOcalc = self.AtomCompute.Append(G2G.wxID_ISODISP,
                                 'Show New Var modes',
                                 'Show New Var constraints and dependent vars')

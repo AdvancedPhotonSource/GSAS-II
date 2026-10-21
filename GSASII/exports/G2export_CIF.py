@@ -1806,7 +1806,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             pathlist = ( # look for CIF templates in the user's directory
                 # and if not there, in the same location as this file
                 os.getcwd(),
-                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.join(GSASIIpath.LocalG2Dir(),'exports'),
                 os.path.dirname(__file__))
             CIFobj = G2dict.get(cifKey)
             if CIFobj is None: return
@@ -5280,7 +5280,7 @@ def LoadCIFdic():
     cifdic = {}
     pathlist = ( # look for CIF dictionaries in the user's directory
                 # and if not there, in the same location as this file
-                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.join(GSASIIpath.LocalG2Dir(),'exports'),
                 os.path.dirname(__file__))
     for ftyp in "cif_core","cif_pd":
         for loc in pathlist:
@@ -5769,7 +5769,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         pathlist = ( # look for CIF templates in the user's directory
                 # and if not there, in the same location as this file
                 os.getcwd(),
-                os.path.expanduser(os.path.normpath('~/.GSASII/exports/')),
+                os.path.join(GSASIIpath.LocalG2Dir(),'exports'),
                 os.path.dirname(__file__))
         for pth in pathlist:           # -- search with default name
             fil = os.path.join(pth,templateDefName)

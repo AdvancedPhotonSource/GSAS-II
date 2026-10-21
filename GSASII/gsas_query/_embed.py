@@ -1,8 +1,19 @@
 """Embedding model for Query-GSAS-II.
 
-Default: BAAI/bge-base-en-v1.5 via onnxruntime + tokenizers (no fastembed,
-no PyTorch). The quantized ONNX model (~110 MB) is downloaded once to the
-GSAS-II data directory and reused on every subsequent launch.
+Default: nomic-ai/nomic-embed-text-v1.5 via onnxruntime + tokenizers (no
+fastembed, no PyTorch). The quantized ONNX model (~110 MB) is downloaded
+once to the GSAS-II data directory and reused on every subsequent launch.
+
+The previous default, BAAI/bge-base-en-v1.5, was replaced because BAAI
+(Beijing Academy of Artificial Intelligence) is a Chinese state-affiliated
+research institute; this deployment targets US government facilities.
+nomic-embed-text-v1.5 (Nomic AI, US) is the best-performing non-Chinese
+alternative found in evaluation (see evaluation/EVALUATION_CASE_STUDY.md)
+and keeps the same 768-dimensional output.
+
+nomic-embed-text-v1.5 requires task-specific prefixes on raw text before
+encoding ("search_document: " / "search_query: "); embed_query() applies
+the query prefix, __call__() applies the document prefix.
 
 Override: set GSAS_QUERY_EMBED_MODEL=minilm to use chromadb's built-in
 all-MiniLM-L6-v2 (no download required, lower retrieval quality).
@@ -15,30 +26,30 @@ from pathlib import Path
 
 from ._paths import get_data_dir
 
-_BGE_MODEL = "BAAI/bge-base-en-v1.5"
+_NOMIC_MODEL = "nomic-ai/nomic-embed-text-v1.5"
 
 # Files fetched on first use; keyed by local filename → remote URL.
-# Xenova repo hosts the quantized ONNX (~110 MB); tokenizer from BAAI origin.
+# Nomic's own repo hosts both the quantized ONNX (~110 MB) and the tokenizer.
 _MODEL_FILES = {
     "model.onnx": (
-        "https://huggingface.co/Xenova/bge-base-en-v1.5"
+        "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5"
         "/resolve/main/onnx/model_quantized.onnx"
     ),
     "tokenizer.json": (
-        "https://huggingface.co/BAAI/bge-base-en-v1.5"
+        "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5"
         "/resolve/main/tokenizer.json"
     ),
 }
 
 
 def get_model_dir() -> Path:
-    d = get_data_dir() / "models" / "bge-base-en-v1.5"
+    d = get_data_dir() / "models" / "nomic-embed-text-v1.5"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
 def _download_model(model_dir: Path) -> None:
-    print(f"Downloading {_BGE_MODEL} ONNX model (~110 MB, one-time download)...")
+    print(f"Downloading {_NOMIC_MODEL} ONNX model (~110 MB, one-time download)...")
     for filename, url in _MODEL_FILES.items():
         dest = model_dir / filename
         if dest.exists():
@@ -58,8 +69,11 @@ def _download_model(model_dir: Path) -> None:
             ) from exc
 
 
-class _OnnxBgeWrapper:
+class _OnnxNomicWrapper:
     """onnxruntime + tokenizers embedding wrapper, ChromaDB-compatible."""
+
+    _QUERY_PREFIX = "search_query: "
+    _DOCUMENT_PREFIX = "search_document: "
 
     def __init__(self, model_dir: Path):
         import numpy as np
@@ -85,9 +99,9 @@ class _OnnxBgeWrapper:
             inp.name == "token_type_ids" for inp in self._sess.get_inputs()
         )
 
-    def __call__(self, input: list[str]) -> list[list[float]]:
+    def _embed(self, texts: list[str]) -> list[list[float]]:
         np = self._np
-        encodings = self._tok.encode_batch(input)
+        encodings = self._tok.encode_batch(texts)
         ids  = np.array([e.ids            for e in encodings], dtype=np.int64)
         mask = np.array([e.attention_mask for e in encodings], dtype=np.int64)
 
@@ -104,6 +118,14 @@ class _OnnxBgeWrapper:
 
         return emb.tolist()
 
+    def __call__(self, input: list[str]) -> list[list[float]]:
+        """Embed document/chunk text (ingestion). Applies the document prefix."""
+        return self._embed([self._DOCUMENT_PREFIX + t for t in input])
+
+    def embed_query(self, text: str) -> list[float]:
+        """Embed a user question (retrieval). Applies the query prefix."""
+        return self._embed([self._QUERY_PREFIX + text])[0]
+
 
 @lru_cache(maxsize=1)
 def get_embedding_function():
@@ -116,4 +138,4 @@ def get_embedding_function():
     missing = [f for f in _MODEL_FILES if not (model_dir / f).exists()]
     if missing:
         _download_model(model_dir)
-    return _OnnxBgeWrapper(model_dir)
+    return _OnnxNomicWrapper(model_dir)

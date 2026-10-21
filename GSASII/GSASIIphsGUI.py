@@ -5850,6 +5850,7 @@ to use these entries'''
         covData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
+        parmDict = G2IO.mkParmDictfromTree(G2frame)
         cell = generalData['Cell'][1:7]
         atomData = data['Atoms']
         px = ['0','0','1']
@@ -5870,8 +5871,8 @@ to use these entries'''
         if np.abs(1.-np.dot(vecZT,vecXT)) < 1.e-6:
             print('polar axis parallel to transverse axis - try again')
             return
-        # vecYT = np.cross(vecZT,vecXT)
-        # vecYT /=  nl.norm(vecYT)
+        vecYT = np.cross(vecZT,vecXT)
+        vecYT /=  nl.norm(vecYT)
         print('Magnetic moment polar coordinates:')
         print('Reference axes: Polar axis:',vecZ,' Transverse axis:',vecX)
         for i in indx:
@@ -5881,19 +5882,24 @@ to use these entries'''
             Mag = G2mth.GetMag(mag,cell)
             pol,azm = G2mth.GetMagPolar(mag,cell,vecZ,vecX)
             if names:
-                dMdm = list(G2mth.GetMagDerv(mag,cell))
-                dMdm = np.array([d for d in dMdm if d])
-                Msig = np.sqrt(np.inner(dMdm,np.inner(Magcov,dMdm)))
+                sname = names[0].split(':')
+                Names = [':'.join((sname[0],sname[1],ax,sname[-1])) for ax in ['AMx','AMy','AMz']]
+                Msig = 0.
                 Psig = 0.
                 Asig = 0.
-                # dpdm,dadm = list(G2mth.GetMagPolarDerv(mag,cell,vecZ,vecX))
-                # dpdm = np.array([d for d in dpdm if d])
-                # dadm = np.array([d for d in dadm if d])
-                # Psig = np.sqrt(np.inner(dpdm,np.inner(Magcov,dpdm)))
-                # Asig = np.sqrt(np.inner(dadm,np.inner(Magcov,dadm)))
+                dMdmDict = dict(zip(Names,list(G2mth.GetMagDerv(mag,cell))))
+                dpdm,dadm = list(G2mth.GetMagPolarDerv(mag,cell,vecZ,vecX))
+                dpdmDict = dict(zip(Names,dpdm))
+                dadmDict = dict(zip(Names,dadm))
+                dMdm = np.array([dMdmDict[name] for name in names])
+                dpdm = np.array([dpdmDict[name] for name in names])
+                dadm = np.array([dadmDict[name] for name in names])
+                Msig = np.sqrt(np.inner(dMdm,np.inner(Magcov,dMdm)))
+                Psig = np.sqrt(np.inner(dpdm,np.inner(Magcov,dpdm)))
+                Asig = np.sqrt(np.inner(dadm,np.inner(Magcov,dadm)))
             if names:                
                 print('%s |M|= %s Pol= %s, Azm= %s'%(atomData[i][0],G2mth.ValEsd(Mag,Msig),
-                    G2mth.ValEsd(pol,Psig),G2mth.ValEsd(azm,Asig)))
+                    G2mth.ValEsd(pol,Psig,True),G2mth.ValEsd(azm,Asig,True)))
             else:
                 print('%s |M|=%8.3f Pol=%8.3f, Azm=%8.3f'%(atomData[i][0],Mag,pol,azm))
     

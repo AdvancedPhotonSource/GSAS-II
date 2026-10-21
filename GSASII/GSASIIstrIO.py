@@ -1829,6 +1829,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         if mId[j] > 0:
                             phaseVary.append(names[j])
                             equivs[mId[j]].append([names[j],mCoef[j]])
+                        else:
+                            if symHold is not None: #variable is held due to symmetry
+                                symHold.append(names[j])
+                            G2mv.StoreHold(names[j],'Fixed by symmetry')                            
                     for equiv in equivs:
                         if len(equivs[equiv]) > 1:
                             name = equivs[equiv][0][0]
@@ -2113,7 +2117,6 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         pFile.write(135*'-'+'\n')
         fmt = {0:'%7s',ct:'%7s',cx:'%10.5f',cx+1:'%10.5f',cx+2:'%10.5f',cx+3:'%8.3f',cia+1:'%8.5f',
             cia+2:'%8.5f',cia+3:'%8.5f',cia+4:'%8.5f',cia+5:'%8.5f',cia+6:'%8.5f',cia+7:'%8.5f'}
-        #noFXsig = {cx:[10*' ','%10s'],cx+1:[10*' ','%10s'],cx+2:[10*' ','%10s'],cx+3:[8*' ','%8s']}
         for atyp in General['AtomTypes']:       #zero composition
             General['NoAtoms'][atyp] = 0.
         for i,at in enumerate(Atoms):
@@ -2129,17 +2132,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             for ind in range(cx,cx+4):
                 sigind = str(i)+':'+str(ind)
                 valstr += fmt[ind]%(at[ind])
-                # if sigind in atomsSig:
-                #    sigstr += fmt[ind]%(atomsSig[sigind])
-                # else:
-                #    sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
                 sigstr += fmtESD(sigKey[sigind],sigDict,fmt[ind])
             if at[cia] == 'I':
                 valstr += fmt[cia+1]%(at[cia+1])
-                # if '%d:%d'%(i,cia+1) in atomsSig:
-                #     sigstr += fmt[cia+1]%(atomsSig['%d:%d'%(i,cia+1)])
-                # else:
-                #     sigstr += 8*' '
                 sigstr += fmtESD(sigKey['%d:%d'%(i,cia+1)],sigDict,fmt[cia+1])
             else:
                 valstr += 8*' '
@@ -2147,10 +2142,6 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 for ind in range(cia+2,cia+8):
                     sigind = str(i)+':'+str(ind)
                     valstr += fmt[ind]%(at[ind])
-                    # if sigind in atomsSig:
-                    #     sigstr += fmt[ind]%(atomsSig[sigind])
-                    # else:
-                    #     sigstr += 8*' '
                     sigstr += fmtESD(sigKey[sigind],sigDict,fmt[ind])
             pFile.write(name+'\n')
             pFile.write(valstr+'\n')
@@ -2695,9 +2686,6 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                 if pfx+name in sigDict:
                                     wavesSig[name] = sigDict[pfx+name]
 
-
-
-
             Deformations = Phase.get('Deformations',{})
             for iAt in Deformations:
                 if iAt < 0:
@@ -2726,7 +2714,6 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
 
             density = G2mth.getDensity(General)[0]
             if pFile: pFile.write('\n Density: {:.4f} g/cm**3\n'.format(density))
-
 
         textureData = General['SH Texture']
         if textureData['Order']:

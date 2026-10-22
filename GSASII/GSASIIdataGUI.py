@@ -1191,6 +1191,8 @@ class GSASII(wx.Frame):
                     rd.selections = []
                     rd.dnames = []
                 rd.ReInitialize() # purge anything from a previous read
+                if not Start:   # reuse bank selections from 1st file
+                    rd.selections = list(userSel)
                 rd.errors = "" # clear out any old errors
                 if not rd.ContentsValidator(filename): # rejected on cursory check
                     errorReport += "\n  "+rd.formatName + ' validator error'
@@ -1202,6 +1204,7 @@ class GSASII(wx.Frame):
                     if dlg.ShowModal() == wx.ID_OK:
                         rd.selections = dlg.GetSelections()
                     Start = False
+                    userSel = list(rd.selections)
                     dlg.Destroy()
                 repeat = True
                 rdbuffer = {} # create temporary storage for file reader

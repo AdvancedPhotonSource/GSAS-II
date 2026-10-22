@@ -482,7 +482,9 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
 
         for rd in primaryReaders + secondaryReaders:
             # Initialize reader
-            rd.selections = []
+            rd.dnames = []
+            rd.ReInitialize()
+            rd.useNet = useNet  # matters only for phase importers
             if bank is None:
                 rd.selections = []
             else:
@@ -490,18 +492,14 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                     rd.selections = [i-1 for i in bank]
                 except TypeError:
                     rd.selections = [bank-1]
-            rd.dnames = []
-            rd.ReInitialize()
-            rd.useNet = useNet  # matters only for phase importers
-            # Rewind file
-            rd.errors = ""
+                if any(i < 0 for i in rd.selections):
+                    raise G2ImportException(f"Databank numbering starts at 1, got {bank}.")
             if not rd.ContentsValidator(filename):
                 # Report error
                 G2fil.G2Print("Warning: File {} has a validation error, continuing".format(filename))
             #if len(rd.selections) > 1:
             #    raise G2ImportException("File {} has {} banks. Specify which bank to read with databank param."
             #                    .format(filename,len(rd.selections)))
-
             block = 0
             if buffer is None:
                 rdbuffer = {}

@@ -146,6 +146,17 @@ def LoadConfigFile(filename):
             fp.close()
     return info
 
+def GetPlatformArchitecture():
+    '''Produces same result as platform.architecture()[0], but runs much
+    faster because struct.calcsize('P') gives the pointer size while
+    platform.architecture()[0] launches an external process
+    ('file <executable>') on POSIX systems every time it is called.
+
+    :returns: '32bit' or '64bit'
+    '''
+    import struct
+    return f"{struct.calcsize('P')*8}bit"
+    
 def GetBinaryPrefix(pyver=None):
     '''Creates the first part of the binary directory name
     such as linux_64_p3.9 (where the full name will be
@@ -165,11 +176,11 @@ def GetBinaryPrefix(pyver=None):
         raise Exception('Unknown platform')
     if 'arm' in platform.machine() and sys.platform == "darwin":
         bits = 'arm'
-    elif 'aarch' in platform.machine() and '64' in platform.architecture()[0]:
+    elif 'aarch' in platform.machine() and '64' in GSASIIpath.GetPlatformArchitecture():
         bits = 'arm64'
     elif 'arm' in platform.machine():
         bits = 'arm32'
-    elif '64' in platform.architecture()[0]:
+    elif '64' in GSASIIpath.GetPlatformArchitecture():
         bits = '64'
     else:
         bits = '32'
@@ -205,11 +216,11 @@ def HowIsG2Installed():
         else:
             rev = '-rev'
         if g2URL in g2repo.remote().urls:
-            G2_installed_result = 'github'+rev
+            G2_installed_result = f'github{rev}'
             return G2_installed_result
         elif g2URL.replace('https://github.com/',
                            'git@github.com:') in g2repo.remote().urls:
-            G2_installed_result = 'github'+rev
+            G2_installed_result = f'github{rev}'
             return G2_installed_result
         G2_installed_result = 'git'+rev
         return G2_installed_result
@@ -2154,7 +2165,7 @@ def testLLamaModel():
     Returns the name of the most recently installed model 
     or None if the model needs to be installed.
     '''
-    modelDir = os.path.expanduser("~/.GSASII/llama_models")
+    modelDir = os.path.join(LocalG2Dir(),"llama_models")
     if not os.path.exists(modelDir):
         return None
     fileList = glob.glob(os.path.join(modelDir,'*.gguf'))
@@ -2168,7 +2179,7 @@ def testLLamaModel():
 
 def installLLamaModel():
     '''Download the Qwen2.5-3B-Instruct llama model'''
-    modelDir = os.path.expanduser("~/.GSASII/llama_models")
+    modelDir = os.path.join(LocalG2Dir(),"llama_models")
     os.makedirs(modelDir, exist_ok=True)
     print('Downloading a model...')
     from huggingface_hub import hf_hub_download
@@ -2200,7 +2211,7 @@ def ageLLMindex():
     '''
     import datetime
     f = 'chroma_db'
-    dbdir = os.path.expanduser('~/.GSASII/query_gsas2')
+    dbdir = os.path.join(LocalG2Dir(),"query_gsas2")
     db = os.path.join(dbdir,f)
     if os.path.exists(db):
         m_time_timestamp = os.path.getmtime(db)
@@ -2249,9 +2260,9 @@ def getLLMindex():
         #print("Saved to:", tmp.name)
         # create the files in a new location and then move them to the final location
         f = 'chroma_db'
-        finaldir = os.path.expanduser('~/.GSASII/query_gsas2')
+        finaldir = os.path.join(LocalG2Dir(),"query_gsas2")
         finaldb = os.path.join(finaldir,f)
-        newdir = os.path.expanduser('~/.GSASII/new_query_gsas2')
+        newdir = os.path.join(LocalG2Dir(),"new_query_gsas2")
         newdb = os.path.join(newdir,f)
         os.makedirs(newdir, exist_ok=True)
         os.makedirs(finaldir, exist_ok=True)

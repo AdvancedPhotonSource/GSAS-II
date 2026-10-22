@@ -120,8 +120,7 @@ def get_python_versions(packagelist):
         except:
             pass
     versions.append(['Platform',
-                     sys.platform + ' ' + platform.architecture()[0] +
-                     ' ' + platform.machine()])
+                     sys.platform + ' ' + GSASIIpath.GetPlatformArchitecture() +                     ' ' + platform.machine()])
     return versions
 
 ImportErrors = []

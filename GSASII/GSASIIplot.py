@@ -5652,6 +5652,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.plot(xring,yring,'.',color=Colors[N%NC])
                     N += 1
             for ellipse in Data['ellipses']:
+                if ellipse == []:
+                    continue
                 try:
                     cent,phi,[width,height,tth],col = ellipse
                 except ValueError:

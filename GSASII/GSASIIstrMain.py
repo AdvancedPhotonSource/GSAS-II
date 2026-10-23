@@ -180,6 +180,10 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
     '''Computes the derivative of the fitting function (total Chi**2) with
     respect to every parameter in the parameter dictionary (parmDict)
     by applying shift below the parameter value as well as above.
+    For a standard sequential fit, only the first pattern in the
+    fit is used. This is called in GSASIIdataGUI.GSASII.OnDerivCalc,
+    which is used in the parameter impact computation. Grouped
+    sequential fits are not implmented.
 
     :returns: a dict with the derivatives keyed by variable number.
       Derivatives are a list with three values: evaluated over
@@ -187,6 +191,9 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
       variable and d is a small delta value chosen for that variable type.
     '''
     import re
+    if Controls.get('Groups',{}).get('groupDict',{}):
+        print('AllPrmDerivs is not implemented for grouped fits')
+        return {}    
     rms = lambda y: np.sqrt(np.mean(y**2))
     G2mv.Map2Dict(parmDict,varyList)
     begin = time.time()
@@ -262,7 +269,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
     return derivCalcs
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,histDict1,varyList,
-    calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None):
+    calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None,ifPrint=True):
     '''Core optimization routines, shared between SeqRefine and Refine
 
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
@@ -272,9 +279,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,h
     # end patch
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
-    ifPrint = True
-    if ifSeq:
-        ifPrint = False
+
     Rvals = {}
     chisq0 = None
     Lastshft = None
@@ -362,8 +367,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,h
         Rvals['Nobs'] = Histograms['Nobs']
         Rvals['Nvars'] = len(varyList)
         Rvals['RestraintSum'] = Histograms.get('RestraintSum',0.)
-        Rvals['Restraints'] = Histograms.get('Restraints',{})
-        Rvals['nRestraints'] = Histograms.get('nRestraints',{})
+        #Rvals['Restraints'] = Histograms.get('Restraints',{})
+        #Rvals['nRestraints'] = Histograms.get('nRestraints',{})
         Rvals['RestraintTerms'] = Histograms.get('RestraintTerms',0)
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
         Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs']+Rvals['RestraintTerms']-len(varyList)))
@@ -759,9 +764,12 @@ def DoNoFit(GPXfile,key):
     return Histograms[key]['Data'][3]
 
 def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
-    '''Fit LeBail intensities without changes to any other refined parameters.
+    '''Fit LeBail intensities without changes to any parameters flagged to be refined.
     This is a stripped-down version of :func:`Refine` that does not perform
-    any refinement cycles
+    any refinement cycles.
+
+    Note that since no refinements are done, we can treat this sequential fits
+    as if simultaneous and process all histograms together.
 
     :param str GPXfile: G2 .gpx file name
     :param wx.ProgressDialog dlg: optional progress window to update.
@@ -785,7 +793,11 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     constrDict,fixedList = G2stIO.ReadConstraints(GPXfile)
     restraintDict = {}
     Histograms_All,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
-    if seqList:
+    if seqList and type(seqList) is dict: # grouped fit
+        Histograms = {}
+        for key in seqList:
+            Histograms.update({i:Histograms_All[i] for i in seqList[key]})
+    elif seqList:
         Histograms = {i:Histograms_All[i] for i in seqList}
     else:
         Histograms = Histograms_All
@@ -847,10 +859,16 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
             print(traceback.format_exc())
         return False,{'msg':Msg.msg}
 
-def phaseCheck(phaseVary,Phases,histogram):
-    '''
-    Removes unused parameters from phase varylist if phase not in histogram
-    for seq refinement removes vars in "Fix FXU" and "FixedSeqVars" here
+def getPhaseVary(phaseVary,Phases,histogram):
+    '''Used in sequential refinements. Scans phases for variables that are refined, 
+    if the phase is present & "use" is set for the selected histogram.
+
+    Removes vars in "Fix FXU" and "FixedSeqVars" here
+
+    :param list phaseVary: a list of phase variables generated in G2stIO.GetPhaseData
+    :param dict Phases: the Phase dict, but only including phases currently being used
+    :param str histogram: current histogram
+    :returns: variables to be used: copy of phaseVary with items removed
     '''
     NewVary = []
     for phase in Phases:
@@ -874,16 +892,15 @@ def phaseCheck(phaseVary,Phases,histogram):
 
 def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     '''Perform a sequential refinement -- cycles through all selected histgrams,
-    one at a time
+    one at a time or in a group refinement, one group at a time
     '''
     from . import GSASIImpsubs as G2mp
     G2mp.InitMP()
 #    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     msgs = {}
+    pflag = True
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
-    G2fil.G2Print ('Starting Sequential Refinement')
-    G2stIO.ShowBanner(printFile)
     Controls = G2stIO.GetControls(GPXfile)
     preFrozenCount = 0
     for h in Controls['parmFrozen']:
@@ -893,6 +910,10 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     G2stIO.ShowControls(Controls,printFile,SeqRef=True,preFrozenCount=preFrozenCount)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
+    histNames = Controls.get('Seq Data',[]) # group names or individual hists
+    groupDict = Controls.get('Groups',{}).get('groupDict',{})
+    if groupDict:
+        histNames = list(groupDict.keys())
     if not Phases:
         G2fil.G2Print (' *** ERROR - you have no phases to refine! ***')
         G2fil.G2Print (' *** Refine aborted ***')
@@ -901,6 +922,12 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         G2fil.G2Print (' *** ERROR - you have no data to refine with! ***')
         G2fil.G2Print (' *** Refine aborted ***')
         return False,'No data'
+    if not histNames:
+        G2fil.G2Print (' *** ERROR - no sequential histograms/groups to fit! ***')
+        G2fil.G2Print (' *** Refine aborted ***')
+        return False,'Nothing selected'
+    G2fil.G2Print ('Starting Sequential Refinement')
+    G2stIO.ShowBanner(printFile)
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
@@ -910,35 +937,55 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     for item in phaseVary:
         if '::A0' in item:
             G2fil.G2Print ('**** WARNING - lattice parameters should not be refined in a sequential refinement ****')
-            G2fil.G2Print ('****           instead use the Dij parameters for each powder histogram            ****')
+            G2fil.G2Print ('****           instead use the Dij (hydrostatic strain) param for each powder hist ****')
             return False,'Lattice parameter refinement error - see console message'
         if '::C(' in item:
             G2fil.G2Print ('**** WARNING - phase texture parameters should not be refined in a sequential refinement ****')
-            G2fil.G2Print ('****           instead use the C(L,N) parameters for each powder histogram               ****')
+            G2fil.G2Print ('****           instead use the C(L,N) parameters (in Phase/Data) for each powder hist    ****')
             return False,'Phase texture refinement error - see console message'
-    if 'Seq Data' in Controls:
-        histNames = Controls['Seq Data']
-    else: # patch from before Controls['Seq Data'] was implemented?
-        histNames = G2stIO.GetHistogramNames(GPXfile,['PWDR',])
     if Controls.get('Reverse Seq'):
-        histNames.reverse()
+        histNames.reverse()        
     SeqResult = G2stIO.GetSeqResult(GPXfile)
 #    SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
-    Histo = {}
+    Histo = {}  # histogram(s) in current group or only 1 if not grouped
     NewparmDict = {}
     G2stIO.SetupSeqSavePhases(GPXfile)
     msgs['steepestNum'] = 0
     msgs['maxshift/sigma'] = []
-    lasthist = ''
-    for ihst,histogram in enumerate(histNames):
+    lastHstLst = None  # used to xfer Le Bail intensities from a previous seq fit to the current
+    for ihst,hg in enumerate(histNames):
+        # loop vars used here: 
+        #    hg: name of histogram or group
+        #    hlist: list of histogram names (one or several)
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
-        G2fil.G2Print('\nRefining with '+str(histogram))
         G2mv.InitVars()
-        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave) = \
-            G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqHistName=histogram)
-        ifPrint = False
+        pf1st = (pflag and ihst==0)  # put phase info into .lst only on 1st histo/group (better would be to do this when a new phase is added, but...)
+        if groupDict:
+            #for key in groupDict.keys():
+            word = f'{hg} group'
+            grEquivTbl,grHIDlist = G2stIO.groupEquivTbl(hg,groupDict,Histograms,warn=False)
+            hlist = groupDict[hg]
+            skip = False
+            for h in groupDict[hg]:
+                if h not in Histograms:
+                    G2fil.G2Print(f"Error: {h} not found in group {hg}, skipping!")
+                    #raise G2obj.G2Exception(f"refining with invalid histogram {h}")
+                    skip = True
+            if skip: continue
+            (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave
+             ) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=pf1st,pFile=printFile,grHistList=groupDict[hg])
+        else:
+            hlist = [hg]
+            if hg not in Histograms:
+                G2fil.G2Print(f"Error: histogram {hg} not found, skipping!")
+                #raise G2obj.G2Exception(f"refining with invalid histogram {hg}")
+                continue
+            word = f'{hg}'
+            (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave
+             ) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=pf1st,pFile=printFile,seqHistName=hg)
+        G2fil.G2Print(f'\nRefining with {word}')
         if dlg:
-            dlg.SetTitle('Residual for histogram '+str(ihst))
+            dlg.SetTitle(f'Residual for {word} (#{ihst})')
         calcControls = {}
         calcControls['atomIndx'] = atomIndx
         calcControls['Natoms'] = Natoms
@@ -948,17 +995,16 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         calcControls['BLtables'] = BLtables
         calcControls['MFtables'] = MFtables
         calcControls['maxSSwave'] = maxSSwave
-        if histogram not in Histograms:
-            G2fil.G2Print("Error: not found!")
-            raise G2obj.G2Exception("refining with invalid histogram {}".format(histogram))
-        hId = Histograms[histogram]['hId']
-        redphaseVary = phaseCheck(phaseVary,Phases,histogram)
-        Histo = {histogram:Histograms[histogram],}
+        hPhaseVary = []
+        for h in hlist:
+            hPhaseVary += getPhaseVary(phaseVary,Phases,h)
+        hPhaseVary = list(set(hPhaseVary))
+        Histo = {h:Histograms[h] for h in hlist}
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Controls=calcControls,Print=False)
         calcControls.update(controlDict)
         histVary,histDict,histDict1, controlDict = G2stIO.GetHistogramData(Histo,False)
         calcControls.update(controlDict)
-        varyList = rbVary+redphaseVary+hapVary+histVary
+        varyList = rbVary+hPhaseVary+hapVary+histVary
 #        if not ihst:
             # save the initial vary list, but without histogram numbers on parameters
         saveVaryList = varyList[:]
@@ -977,31 +1023,56 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
         parmDict.update(histDict)
-        if Controls['Copy2Next']:   # update with parms from last histogram
-            #parmDict.update(NewparmDict) # don't use in case extra entries would cause a problem
-            for parm in NewparmDict:
-                if parm in parmDict:
-                    parmDict[parm] = NewparmDict[parm]
-            for phase in Phases:
-                if Phases[phase]['Histograms'][histogram].get('LeBail',False) and lasthist:
-                    oldFsqs = Histograms[lasthist]['Reflection Lists'][phase]['RefList'].T[8:10]    #assume no superlattice!
-                    newRefs = Histograms[histogram]['Reflection Lists'][phase]['RefList']
-                    if len(newRefs) == len(oldFsqs.T):
-                        newRefs.T[8:10] = copy.copy(oldFsqs)
-                        # for i,ref in enumerate(newRefs):
-                        #     ref[8:10] = oldFsqs.T[i]
-                    else:
-                        print('ERROR - mismatch in reflection list length bewteen %s and %s; no copy done'%(lasthist,histogram))
-####TBD: if LeBail copy reflections here?
-        elif histogram in SeqResult:  # update phase from last seq ref
-            NewparmDict = SeqResult[histogram].get('parmDict',{})
+        # update with parms from last histogram
+        if Controls['Copy2Next']:
+            # update parmDict with NewparmDict, but only with entries that are already present
+            #for parm in NewparmDict:
+            #    if parm in parmDict:
+            #        parmDict[parm] = NewparmDict[parm]
+            parmDict.update({parm:NewparmDict[parm] for parm in NewparmDict if parm in parmDict})
+            
+            if lastHstLst and len(hlist) != len(lastHstLst):
+                stoploop = False
+                for phase in Phases:
+                    if stoploop: break
+                    for h in hlist:
+                        if Phases[phase]['Histograms'][h].get('LeBail',False):
+                            print(f'LeBail update skipped for group {hg} - group length changed')
+                            stoploop = True
+                            break
+            elif lastHstLst:
+                for phase in Phases:
+                    for h,ph in zip(hlist,lastHstLst):
+                        Phases[phase]['Histograms'][h]['LeBail'] = Phases[phase]['Histograms'][h].get('LeBail',False)
+                        if Phases[phase]['Histograms'][h]['LeBail']:
+                            # copy LeBail intensities from previous histogram
+                            oldFsqs = Histograms[ph]['Reflection Lists'][phase]['RefList'].T[8:10]    #assume no superlattice!
+                            newRefs = Histograms[h]['Reflection Lists'][phase]['RefList']
+                            if len(newRefs) == len(oldFsqs.T):
+                                newRefs.T[8:10] = copy.copy(oldFsqs)
+                                # for i,ref in enumerate(newRefs):
+                                #     ref[8:10] = oldFsqs.T[i]
+                            else:
+                                print(f'LeBail update problem - mismatch in reflection list length between histograms {ph} and {h}; no copy done')
+        elif hg in SeqResult:  # update phase from last seq ref
+            # I'm not 100% sure what this next code is doing. It seems to be loading 
+            # previous parameters from the sequential table for use in the next fit
+            # but why is unclear. Perhaps this is from when the sequential 
+            # results were not saved in the main data sections.
+            NewparmDict = SeqResult[hg].get('parmDict',{})
             for parm in NewparmDict:
                 if '::' in parm and parm in parmDict:
                     parmDict[parm] = NewparmDict[parm]
 
         G2stIO.GetFprime(calcControls,Histo)
-        # do constraint processing (again, if called from GSASIIdataGUI.GSASII.OnSeqRefine)
-        constrDict,fixedList = G2stIO.ReadConstraints(GPXfile,seqHist=hId)
+        # do constraint processing for current histogram. This is a repeat when 
+        # called from GSASIIdataGUI.GSASII.OnSeqRefine but this time the results are needed
+        if groupDict:
+            constrDict,fixedList = G2stIO.ReadConstraints(GPXfile,
+                                    grEquivTbl=grEquivTbl,grHIDlist=grHIDlist)
+        else:
+            constrDict,fixedList = G2stIO.ReadConstraints(GPXfile,
+                                    seqHist=Histograms[hg]['hId'])
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
 
         msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
@@ -1009,14 +1080,18 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             return False,'Unable to interpret multiplier(s): '+msg
 
         try:
-            errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
-                seqHistNum=hId,raiseException=True)
+            if groupDict:
+                errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
+                    seqHistNum=None,grEquivTbl=grEquivTbl,grHIDlist=grHIDlist,raiseException=True)
+            else:
+                errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
+                    seqHistNum=Histograms[hg]['hId'],raiseException=True)
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
             G2mv.normParms(parmDict)
             G2mv.Map2Dict(parmDict,varyList)   # changes varyList
         except G2mv.ConstraintException:
-            G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent for histogram {}***'.format(hId))
-            return False,' Constraint error'
+            G2fil.G2Print(f'*** ERROR - your constraints are internally inconsistent for hist/group #{ihst} ({hg}) ***')
+            return False,' Constraint error, see concole'
         if not ihst:
             # first histogram to refine against
             firstVaryList = []
@@ -1036,10 +1111,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 item = ':'.join(items)
                 newVaryList.append(item)
         if newVaryList != firstVaryList and Controls['Copy2Next']:
-            # variable lists are expected to match between sequential refinements when Copy2Next is on
-            #print '**** ERROR - variable list for this histogram does not match previous'
-            #print '     Copy of variables is not possible'
-            #print '\ncurrent histogram',histogram,'has',len(newVaryList),'variables'
+            # warn when variable list for this histogram does not match previous with copy2next
             combined = list(set(firstVaryList+newVaryList))
             c = [var for var in combined if var not in newVaryList]
             p = [var for var in combined if var not in firstVaryList]
@@ -1058,16 +1130,14 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             firstVaryList = newVaryList
 
         ifSeq = True
-        printFile.write('\n Refinement results for histogram id {}: {}\n'
-                            .format(hId,histogram))
-        printFile.write(135*'-'+'\n')
-        lasthist = histogram
+        printFile.write(f'\n{135*"="}\nRefinement results for {word}\n{135*"="}\n')
+        lastHstLst = hlist
         # remove frozen vars
-        if 'parmFrozen' not in Controls:
-            Controls['parmFrozen'] = {}
-        if histogram not in Controls['parmFrozen']:
-            Controls['parmFrozen'][histogram] = []
-        parmFrozenList = Controls['parmFrozen'][histogram]
+        parmFrozenList = []
+        if 'parmFrozen' not in Controls: Controls['parmFrozen'] = {}
+        for h in hlist:
+            if h not in Controls['parmFrozen']: Controls['parmFrozen'][h] = []
+            parmFrozenList += Controls['parmFrozen'][h]
         frozenList = [i for i in varyList if i in parmFrozenList]
         if len(frozenList) != 0:
            varyList = [i for i in varyList if i not in parmFrozenList]
@@ -1083,7 +1153,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         try:
             IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,histDict1,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
-                refPlotUpdate=refPlotUpdate)
+                refPlotUpdate=refPlotUpdate,ifPrint=pflag)
             try:
                 shft = '%.4f'% Rvals['Max shft/sig']
             except:
@@ -1096,7 +1166,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 msgs['maxshift/sigma'].append(Rvals['Max shft/sig'])
             # add the uncertainties into the esd dictionary (sigDict)
             if not IfOK:
-                G2fil.G2Print('***** Sequential refinement failed at histogram '+histogram,mode='warn')
+                G2fil.G2Print(f'***** Sequential refinement failed at histogram/group {hg}',mode='warn')
                 break
             sigDict = dict(zip(varyList,sig))
             # add indirectly computed uncertainties into the esd dict
@@ -1104,21 +1174,21 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
 
             newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
             newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
-            SeqResult[histogram] = {
+            SeqResult[hg] = {
                 'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
                 'varyListStart':varyListStart,'Lastshft':Lastshft,
-                'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
+                'covMatrix':covMatrix,'title':hg,'newAtomDict':newAtomDict,
                 'newCellDict':newCellDict,'depParmDict':{},
                 'constraintInfo':constraintInfo,
                 'parmDict':parmDict,
                 }
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
-            SeqResult[histogram]['RBsuDict'] = G2stMth.computeRBsu(parmDict,Phases,rigidbodyDict,
+            SeqResult[hg]['RBsuDict'] = G2stMth.computeRBsu(parmDict,Phases,rigidbodyDict,
                             covMatrix,varyList,sig)
             G2stIO.SetISOmodes(parmDict,sigDict,Phases,None)
-            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,
+            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,pflag,
                                          pFile=printFile,covMatrix=covMatrix,varyList=varyList)
-            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile,seq=True)
+            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,pflag,printFile,seq=True)
             # check for variables outside their allowed range, reset and freeze them
             frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
             msg = None
@@ -1136,46 +1206,61 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                    result[0][i] = parmDict[p]
                    sig[i] = -0.1
             # a dict with values & esds for dependent (constrained) parameters - avoid extraneous holds
-            SeqResult[histogram]['depParmDict'] = {i:(parmDict[i],sigDict[i]) for i in sigDict if i not in varyList}
+            SeqResult[hg]['depParmDict'] = {i:(parmDict[i],sigDict[i]) for i in sigDict if i not in varyList}
 
 
             G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,
-                rigidbodyDict,SeqResult[histogram],Controls['parmFrozen'])
+                rigidbodyDict,SeqResult[hg],Controls['parmFrozen'])
             if msg:
                 printFile.write(msg+'\n')
             NewparmDict = {}
             # make dict of varied parameters in current histogram, renamed to
             # next histogram, for use in next refinement.
             if Controls['Copy2Next'] and ihst < len(histNames)-1:
-                hId = Histo[histogram]['hId'] # current histogram
-                nexthId = Histograms[histNames[ihst+1]]['hId']
+                nexthg = histNames[ihst+1]  # next histogram/group in list
+                if groupDict:
+                    hIdlist = [str(Histograms[h]['hId']) for h in groupDict[hg]]
+                    nexthIdlist = [str(Histograms[h]['hId']) for h in groupDict[nexthg]]
+                else:
+                    hIdlist = [str(Histograms[hg]['hId']),]
+                    nexthIdlist = [str(Histograms[nexthg]['hId']),]
+                replDict = dict(zip(hIdlist,nexthIdlist))
                 for parm in set(list(varyList)+list(varyListStart)):
+                    # copy over atom positions (when refined) not delta values
+                    if items[2].startswith('dA'): parm = parm.replace(':dA',':A')
+                    nextparm = parm
                     items = parm.split(':')
-                    if len(items) < 3:
-                        continue
-                    if str(hId) in items[1]:
-                        items[1] = str(nexthId)
-                        newparm = ':'.join(items)
-                        NewparmDict[newparm] = parmDict[parm]
-                    else:
-                        if items[2].startswith('dA'): parm = parm.replace(':dA',':A')
-                        NewparmDict[parm] = parmDict[parm]
+                    if len(items) >= 3:
+                    # replace histograms in current histogram with ones in next
+                        items[1] = replDict.get(items[1],items[1])
+                        nextparm = ':'.join(items)
+                    NewparmDict[nextparm] = parmDict[parm]
 
         except G2obj.G2RefineCancel as Msg:
             if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
             G2fil.G2Print (' ***** Refinement stopped *****')
+            if GSASIIpath.GetConfigValue('debug'):
+                import traceback
+                print(traceback.format_exc())
             return False,Msg.msg
         except (G2obj.G2Exception,Exception) as Msg:  # cell metric error, others?
             if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
             G2fil.G2Print (' ***** Refinement error *****')
+            if GSASIIpath.GetConfigValue('debug'):
+                import traceback
+                print(traceback.format_exc())
             return False,Msg.msg
         if GSASIIpath.GetConfigValue('Show_timing'):
             t2 = time.time()
             G2fil.G2Print("Fit step time {:.2f} sec.".format(t2-t1))
             t1 = t2
-    SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
+    if groupDict:
+        entries = sorted(set(SeqResult.get('histNames',[])+histNames))
+        SeqResult['histNames'] = [i for i in entries if i in SeqResult]
+    else:
+        SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
     try:
         G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     except Exception as msg:
@@ -1584,7 +1669,9 @@ def BestPlane(PlaneData):
     G2fil.G2Print ('\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]]))
 
 def do_refine(*args):
-    'Called to run a refinement when this module is executed '
+    '''Called to run a refinement when this module is run directly rather than
+    imported.
+    '''
     starttime = time.time()
     #arg = sys.argv
     if len(args) >= 1:
@@ -1592,23 +1679,33 @@ def do_refine(*args):
     elif len(sys.argv) > 1:
         files = sys.argv[1:]
     else:
-        G2fil.G2Print ('ERROR GSASIIstrMain.do_refine error - missing filename')
-        G2fil.G2Print ('Use "python GSASIIstrMain.py f1.gpx [f2.gpx f3.gpx...]" to run')
-        G2fil.G2Print ('or call GSASIIstrMain.do_refine directly')
+        G2fil.G2Print ('ERROR GSASIIstrMain.do_refine: missing .gpx file to use')
         sys.exit()
     for GPXfile in files:
         if not ospath.exists(GPXfile):
-            G2fil.G2Print ('ERROR - '+GPXfile+" doesn't exist! Skipping.")
+            G2fil.G2Print (f"ERROR - {GPXfile} doesn't exist! Skipping.")
             continue
-        # TODO: test below
         # figure out if this is a sequential refinement and call SeqRefine(GPXfile,None)
-        #Controls = G2stIO.GetControls(GPXfile)
-        #if Controls.get('Seq Data',[]):
+        Controls = G2stIO.GetControls(GPXfile)
+        if Controls.get('Seq Data',[]) or Controls.get('Groups',[]):
+            SeqRefine(GPXfile,None)
+        else:
             Refine(GPXfile,None)
-        #else:
-        #    SeqRefine(GPXfile,None)
         G2fil.G2Print("Done with {}.\nExecution time {:.2f} sec.".format(GPXfile,time.time()-starttime))
 
 if __name__ == '__main__':
+    '''used to refine with a .gpx file, bypassing the GUI. To do this, if GSAS-II
+    is not installed inside Python, one must deal with the python path. The easiest 
+    way to do this is to create a file with commands like this::
+
+        import runpy
+        import sys
+        sys.argv[1:] = ['/Users/toby/Scratch/GroupPWDR/2Px4G_copy2test.gpx']
+        runpy.run_module("GSASII.GSASIIstrMain", run_name="__main__")
+
+    put that file inside the parent directory to GSASII and run it from there. 
+
+    Consider using GSASIIscriptable rather than this.
+    '''
     GSASIIpath.InvokeDebugOpts()
     do_refine()

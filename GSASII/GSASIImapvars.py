@@ -201,7 +201,8 @@ def GroupConstraints(constrDict):
     return groups,ParmList
 
 def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
-                        seqHistNum=None,raiseException=False):
+                        seqHistNum=None,raiseException=False,
+                        grEquivTbl=None,grHIDlist=None):
     '''Takes a list of relationship entries that have been stored by 
     :func:`ProcessConstraints` into lists ``constrDict`` and ``fixedList``
 
@@ -241,6 +242,13 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
       
     :param bool raiseException: When True, generation of an error causes
        an exception to be raised (used in sequential fits)
+
+    :param dict grEquivTbl: for grouped sequential refinements: converts 
+      histogram numbers (hId) that are in other histogram
+      groups to one in the current group
+
+    :param list grHIDlist: for grouped sequential refinements: is a list of 
+      hId values for the current group of histograms
 
     :returns: errmsg,warning,groups,parmlist
 
@@ -307,8 +315,8 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
         constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
 
     # Process the equivalences; If there are conflicting parameters, move them into constraints
-    warning = CheckEquivalences(constrDict,varyList,fixedList,parmDict,seqHistNum=seqHistNum)
-    
+    warning = CheckEquivalences(constrDict,varyList,fixedList,parmDict,seqHistNum=seqHistNum,
+                                grEquivTbl=grEquivTbl,grHIDlist=grHIDlist)    
 
     # look through "Constr" and "New Var" constraints looking for zero multipliers and
     # Hold, Unvaried & Undefined parameters
@@ -346,7 +354,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             elif parmDict is not None and var not in parmDict: # not defined, constraint will not be used
                 if var not in undefinedVars: undefinedVars.append(var)
                 notDefList.append(var)
-                if seqHistNum is None:
+                if seqHistNum is None and grHIDlist is None:
                     if ':dAx:' in var or ':dAy:' in var or ':dAz:' in var: # coordinates from undefined atoms 
                         if fixVal is None:
                             problem = True  # invalid in New Var
@@ -362,7 +370,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                 dropList.append(var)
             else:
                 valid += 1
-        if seqHistNum is not None and len(notDefList) > 0 and valid == 0:
+        if (seqHistNum is not None or grHIDlist is not None) and len(notDefList) > 0 and valid == 0:
             # for sequential ref can quietly ignore constraints with all undefined vars
             notDefList = []
         
@@ -384,7 +392,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                     msg += v
                 warn(msg,cdict,fixVal)
         if valid == 0: # no valid entries
-            if seqHistNum is None:
+            if seqHistNum is None and grHIDlist is None:
                 warn('Ignoring this constraint; contains no refined parameters',cdict,prefix='\nUnused ')
             skipList.append(cnum)
         elif problem: # mix of valid & refined and undefined items, cannot use this
@@ -589,7 +597,8 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     #     print(60*'=')
     return errmsg,warning,groups,parmlist # saved for sequential fits
     
-def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=None):
+def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=None,
+                      grEquivTbl=None,grHIDlist=None):
     '''Process equivalence constraints, looking for conflicts such as 
     where a parameter is used in both an equivalence and a constraint expression
     or where chaining is done (A->B and B->C). 
@@ -607,6 +616,11 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
        equivalences where a parameter is has been removed from a refinement. 
     :param int seqHistNum: the hId number of the current histogram in a sequential
       fit. None (default) otherwise. 
+    :param dict grEquivTbl: for grouped sequential refinements: converts 
+      histogram numbers (hId) that are in other histogram
+      groups to one in the current group
+    :param list grHIDlist: for grouped sequential refinements: is a list of 
+      hId values for the current group of histograms
 
     :returns: warning messages about changes that need to be made to equivalences 
     '''
@@ -711,7 +725,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
                     if cnum not in convertList: convertList.append(cnum)
             if msg:
                 warnEqv('Converting to "Constr"',cnum)
-            if warninfo['msg'] and seqHistNum is not None:
+            if warninfo['msg'] and (seqHistNum is not None or grHIDlist is not None):
                 # sequential fit -- print the recasts but don't stop with a warning
                 print(warninfo['msg'])
                 warninfo = {'msg':'', 'shown':-1}
@@ -765,7 +779,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
                     if i != 0: msg += ", "
                     msg += var
                     StoreHold(var,'Equiv fixed')
-            elif seqHistNum is not None: # don't need to warn for sequential fit
+            elif seqHistNum is not None or grHIDlist is not None: # don't need to warn for sequential fit
                 removeList.append(cnum)
                 continue
             else:
@@ -859,7 +873,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
                 del indParmList[cnum][j]
     return warninfo['msg']
 
-def ProcessConstraints(constList,seqmode='use-all',seqhst=None):
+def ProcessConstraints(constList,seqmode='use-all',seqhst=None,grEquivTbl=None,grHIDlist=None):
     """Interpret the constraints in the constList input into a dictionary, etc.
     All :class:`GSASIIobj.G2VarObj` objects are mapped to the appropriate
     phase/hist/atoms based on the object internals (random Ids). If this can't be
@@ -877,9 +891,15 @@ def ProcessConstraints(constList,seqmode='use-all',seqhst=None):
        When seqmode=='wildcards-only' then any constraint with a numerical 
        histogram number is skipped. With seqmode=='auto-wildcard',
        any non-null constraint number is set to the selected histogram.
-    :param int seqhst: number for current histogram (used for 
-      'wildcards-only' or 'auto-wildcard' only). Should be None for 
-      non-sequential fits.
+    :param int seqhst: defines a specific histogram that is used in a 
+      (non-grouped) sequential refinement. None for a non-sequential or a 
+      grouped sequential fit. Used only when seqmode is 'wildcards-only' or 
+      'auto-wildcard' only)
+    :param dict grEquivTbl: for grouped sequential refinements: converts 
+      histogram numbers (hId) that are in other histogram
+      groups to one in the current group
+    :param list grHIDlist: for grouped sequential refinements: is a list of 
+      hId values for the current group of histograms
 
     :returns:  a tuple of (constrDict,fixedList,ignored) where:
       
@@ -904,24 +924,67 @@ def ProcessConstraints(constList,seqmode='use-all',seqhst=None):
     for constr in constList:
         terms = copy.deepcopy(constr[:-3]) # don't change the tree contents
         # deal with wildcards in sequential fits
-        if seqmode == 'wildcards-only' and seqhst is not None:
-            skip = False
-            for term in terms:
-                if term[1].histogram == '*':
+        if seqhst is not None:
+            if seqmode == 'wildcards-only':
+                skip = False
+                for term in terms:
+                    if term[1].histogram == '*':
+                        term[1] = term[1].varname(seqhst)
+                    elif term[1].histogram:
+                        skip = True
+                if skip: continue
+            elif seqmode == 'auto-wildcard':
+                for term in terms:
                     term[1] = term[1].varname(seqhst)
-                elif term[1].histogram:
-                    skip = True
-            if skip: continue
-        elif seqmode == 'auto-wildcard' and seqhst is not None:
-            for term in terms:
-                term[1] = term[1].varname(seqhst)
-        elif seqhst is not None:
-            for term in terms:
-                if term[1].histogram == '*':
-                    term[1] = term[1].varname(seqhst)
+            else:
+                for term in terms:
+                    if term[1].histogram == '*':
+                        term[1] = term[1].varname(seqhst)
                 # else:
                 #     term[1] = term[1].varname()   # does this change anything???
-        # separate processing by constraint type
+        elif grHIDlist is not None:
+            varList = []
+            multList = []
+            wildcard = False
+            for term in terms:
+                if term[1].histogram == '*':
+                    wildcard = True
+                    break
+            if constr[-1] == 'e' and wildcard:  # regardless of mode, equivs with * get expanded
+                for term in terms:  # only expecting one term, but process all
+                    if term[1].histogram == '*':
+                        for ih in grHIDlist:
+                            varList.append(term[1].varname(ih))
+                            multList.append(term[0])
+                    else: # unexpected, have a mix with & without wildcards, likely invalid but process is if valid
+                        varList.append(term[1].varname())
+                        multList.append(term[0])
+                if len(varList) == 1: continue  # a single equivalence is meaningless, skip
+                firstvar = varList[0]
+                firstmult = multList[0]
+                eqlist = []
+                for v,m in zip(varList[1:],multList[1:]):
+                    eqlist.append([v,firstmult/m])
+                StoreEquivalence(firstvar,eqlist,False)
+                continue
+            #elif wildcard:
+            #    ignored += 1 # wildcards are only implemented in equivalences for grouped 
+            #                 # refs. I don't think they make sense for any other constr.
+            #    continue
+            if seqmode != 'wildcards-only' and not wildcard: # for 'auto-wildcard' & 'use-all', convert to current set of histograms
+                bad = False
+                for term in terms:
+                    ih = term[1].hId()
+                    if ih in grHIDlist: continue  # already in current group, no change is needed
+                    if ih not in grEquivTbl: # have a term with an unused histogram -- problem
+                        bad = True
+                        break
+                    else:
+                         term[1] = term[1].varname(grEquivTbl[ih])
+                if bad:
+                    ignored += 1
+                    continue
+       # separate processing by constraint type
         if constr[-1] == 'h':
             # process a hold
             var = str(terms[0][1])

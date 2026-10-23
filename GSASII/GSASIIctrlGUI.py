@@ -5080,7 +5080,7 @@ class ShowLSParms(wx.Dialog):
         self.choiceDict = {}
 
         parmFrozen = Controls.get('parmFrozen',{})
-        if G2frame.testSeqRefineMode():
+        if bool(G2frame.testSeqRefineMode(True)):
             frozenList = set()
             for h in parmFrozen:
                 if h == 'FrozenList': continue
@@ -5229,7 +5229,7 @@ class ShowLSParms(wx.Dialog):
                                         ))
         parmFrozen = self.Controls.get('parmFrozen',{})
         fcount = 0
-        if self.G2frame.testSeqRefineMode():
+        if bool(self.G2frame.testSeqRefineMode(True)):
             for h in parmFrozen:
                 if h == 'FrozenList': continue
                 fcount += len(parmFrozen[h])
@@ -5402,7 +5402,7 @@ class VirtualVarBox(wx.ListCtrl):
             if name in self.parmWin.frozenList:
                 del self.parmWin.frozenList[self.parmWin.frozenList.index(name)]
             parmFrozen = self.parmWin.Controls.get('parmFrozen',{})
-            if self.parmWin.G2frame.testSeqRefineMode():
+            if bool(self.parmWin.G2frame.testSeqRefineMode(True)):
                 for h in parmFrozen:
                     if h == 'FrozenList': continue
                     if name in parmFrozen[h]:

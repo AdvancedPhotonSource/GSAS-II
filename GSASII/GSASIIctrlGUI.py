@@ -2751,7 +2751,7 @@ def G2MessageBox(parent,msg,title='Error'):
     dlg = wx.MessageDialog(parent,StripIndents(msg), title, wx.OK|wx.CENTRE)
     dlg.CentreOnParent()
     dlg.ShowModal()
-    dlg.Destroy()
+    dlg.Destroy()    
 
 ################################################################################
 class G2ModelessMessage(wx.Dialog):

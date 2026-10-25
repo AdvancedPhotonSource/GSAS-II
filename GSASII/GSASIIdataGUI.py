@@ -596,11 +596,11 @@ def ShowVersions():
                     break
                 except:
                     pass
-        print ("  Image:      %s (PIL or Pillow)"%version)
-    print ("  Platform:   %s %s %s"%(sys.platform,platform.architecture()[0],platform.machine()))
+        print (f"  Image:      {version} (PIL or Pillow)")
+    print (f"  Platform:   {sys.platform} {GSASIIpath.GetPlatformArchitecture()} {platform.machine()}")
     try:
         import mkl
-        print ("  Max threads:%s"%mkl.get_max_threads())
+        print (f"  Max threads:{mkl.get_max_threads()}")
     except:
         pass
 

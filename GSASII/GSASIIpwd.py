@@ -3846,7 +3846,7 @@ def fullrmcDownload():
     import os
     import requests
     import platform
-    if platform.architecture()[0] != '64bit':
+    if GSASIIpath.GetPlatformArchitecture() != '64bit':
         return "fullrmc is only available for 64 bit machines. This is 32 bit"
     setXbit = True
     if sys.platform == "darwin":

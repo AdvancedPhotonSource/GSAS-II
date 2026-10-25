@@ -919,6 +919,9 @@ class G2Project(G2ObjectWrapper):
     :param str filename: To be deprecated. Serves the same function as newgpx,
             which has a somewhat more clear name.
             (Do not specify both newgpx and filename).
+    :param bool fastsave: When specified as True, the version number
+            is taken from the git_verinfo.py file rather than using git.
+            This saves a bit of time.
 
     There are two ways to initialize this object:
 
@@ -956,7 +959,9 @@ class G2Project(G2ObjectWrapper):
     :meth:`~G2Project.set_refinement`, :meth:`~G2Project.iter_refinements` and
     :meth:`~G2Project.do_refinements`.
     """
-    def __init__(self, gpxfile=None, author=None, filename=None, newgpx=None):
+    def __init__(self, gpxfile=None, author=None, filename=None, newgpx=None,
+                     fastsave=False):
+        self.fastsave = fastsave
         if filename is not None and newgpx is not None:
             raise G2ScriptException('Do not use filename and newgpx together')
         elif filename is not None:
@@ -1005,7 +1010,9 @@ class G2Project(G2ObjectWrapper):
     def save(self, filename=None):
         """Saves the project, either to the current filename, or to a new file.
 
-        Updates self.filename if a new filename provided"""
+        :param str filename: a file name to be used to save the .gpx file.
+           Updates self.filename if this is provided
+        """
         controls_data = self.data['Controls']['data']
         # place info in .gpx about GSAS-II
         #  report versions of modules; ignore what has not been used
@@ -1022,10 +1029,9 @@ class G2Project(G2ObjectWrapper):
         #    G2 version info
         controls_data['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
         try:
-            if GSASIIpath.HowIsG2Installed().startswith('git'):
-                g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
-                commit = g2repo.head.commit
-                controls_data['LastSavedUsing'] += f" git {commit.hexsha[:8]} script"
+            if GSASIIpath.HowIsG2Installed().startswith('git') and not self.fastsave:
+                commit = GSASIIpath.getG2CommitHash()
+                controls_data['LastSavedUsing'] += f" git {commit[:8]} script"
             else:
                 gv = GSASIIpath.getSavedVersionInfo()
                 if gv is not None:

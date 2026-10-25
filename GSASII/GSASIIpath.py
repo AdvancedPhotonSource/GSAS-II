@@ -176,11 +176,11 @@ def GetBinaryPrefix(pyver=None):
         raise Exception('Unknown platform')
     if 'arm' in platform.machine() and sys.platform == "darwin":
         bits = 'arm'
-    elif 'aarch' in platform.machine() and '64' in GSASIIpath.GetPlatformArchitecture():
+    elif 'aarch' in platform.machine() and '64' in GetPlatformArchitecture():
         bits = 'arm64'
     elif 'arm' in platform.machine():
         bits = 'arm32'
-    elif '64' in GSASIIpath.GetPlatformArchitecture():
+    elif '64' in GetPlatformArchitecture():
         bits = '64'
     else:
         bits = '32'
@@ -630,7 +630,11 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
             g2repo.remote().fetch()
             fetched = True
         except git.GitCommandError as msg:
-            print(f'Failed to get updates from {g2repo.remote().url}\nerror: {msg}')
+            print(f'Failed to get updates from {g2repo.remote().url}')
+            try:
+                print(f'error: {msg}')
+            except:
+                pass
     try:
         head = g2repo.head.ref
         tracking = head.tracking_branch()
@@ -719,8 +723,11 @@ def gitGetUpdate(mode='Background'):
         return subprocess.Popen([sys.executable, __file__, '--git-fetch'])
     else:
         g2repo = openGitRepo(path2GSAS2)
-        g2repo.remote().fetch()
-        if GetConfigValue('debug'): print('Updates fetched')
+        try:
+            g2repo.remote().fetch()
+            if GetConfigValue('debug'): print('Updates fetched')
+        except:
+            print('Git fetch failed in gitGetUpdate')
 
 def gitHistory(values='tag',g2repo=None,maxdepth=100):
     '''Provides the history of commits to the main, either as tags
@@ -777,7 +784,7 @@ def getGitBinaryReleases(cache=False):
 
       The dict keys are references to binary distributions, which are named
       as f"{platform}_p{pver}_n{npver}" where platform is determined
-      in :func:`GSASIIpath.GetBinaryPrefix` (linux_64, mac_arm, win_64,...)
+      in :func:`GetBinaryPrefix` (linux_64, mac_arm, win_64,...)
       and where `pver` is the Python version (such as "3.10") and `npver` is
       the numpy version (such as "1.26").
 
@@ -2484,7 +2491,8 @@ to update/regress repository from git repository:
             fp.write('Background git update message')
             fp.write(dt.datetime.strftime(dt.datetime.now(),
                                       " at %Y-%m-%dT%H:%M\n"))
-            fp.write(f'Update failed with message {msg}\n')
+            fp.write('Update failed')
+            fp.write(f'error message: {msg}\n')
 
         if g2repo.head.is_detached:
             fp.write('Background git update message')

@@ -796,6 +796,7 @@ class autoPeakFind(wx.Dialog):
         wx.Dialog.__init__(self,parent,-1,'Auto Peak Picking',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.parent = parent
+        self.parent.AutoPk = True
         self.x=x
         self.y=y
         self.inst=inst
@@ -817,7 +818,13 @@ class autoPeakFind(wx.Dialog):
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label=' Auto Peak picking controls:'))
-        mainSizer.Add(wx.StaticText(self.panel,label=' This will clear previously picked peaks'))
+        mainSizer.Add(wx.StaticText(self.panel,label='''
+ This will clear previously picked peaks.
+ This Dialog is modeless, you can interact with the Peak List 
+ and powder pattern plot to check the quality of the peak picking.
+ Don't forget to press OK below when done.
+ Edit the peak list after pressing OK.
+ '''))
         Sqrt = wx.CheckBox(self.panel,label=' Use sqrt(y)?')
         Sqrt.SetValue(self.sqrt)
         Sqrt.Bind(wx.EVT_CHECKBOX,OnSqrt)
@@ -856,6 +863,7 @@ class autoPeakFind(wx.Dialog):
         
     def OnOk(self,event):
         parent = self.GetParent()
+        parent.AutoPk = False
         parent.Raise()
         self.Destroy()
 

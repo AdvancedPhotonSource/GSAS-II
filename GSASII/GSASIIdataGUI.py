@@ -3270,6 +3270,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.PickId = 0
         self.PickIdText = None
         self.PeakTable = []
+        self.AutoPk = False     #flag for when Auto peak search is active
         self.LimitsTable = []
         self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
         self.HKL = np.array([])

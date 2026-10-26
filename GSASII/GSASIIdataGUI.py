@@ -597,11 +597,11 @@ def ShowVersions():
                     break
                 except:
                     pass
-        print ("  Image:      %s (PIL or Pillow)"%version)
-    print ("  Platform:   %s %s %s"%(sys.platform,platform.architecture()[0],platform.machine()))
+        print (f"  Image:      {version} (PIL or Pillow)")
+    print (f"  Platform:   {sys.platform} {GSASIIpath.GetPlatformArchitecture()} {platform.machine()}")
     try:
         import mkl
-        print ("  Max threads:%s"%mkl.get_max_threads())
+        print (f"  Max threads:{mkl.get_max_threads()}")
     except:
         pass
 
@@ -3286,6 +3286,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.PickId = 0
         self.PickIdText = None
         self.PeakTable = []
+        self.AutoPk = False     #flag for when Auto peak search is active
         self.LimitsTable = []
         self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
         self.HKL = np.array([])

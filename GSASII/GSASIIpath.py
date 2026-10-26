@@ -146,6 +146,17 @@ def LoadConfigFile(filename):
             fp.close()
     return info
 
+def GetPlatformArchitecture():
+    '''Produces same result as platform.architecture()[0], but runs much
+    faster because struct.calcsize('P') gives the pointer size while
+    platform.architecture()[0] launches an external process
+    ('file <executable>') on POSIX systems every time it is called.
+
+    :returns: '32bit' or '64bit'
+    '''
+    import struct
+    return f"{struct.calcsize('P')*8}bit"
+    
 def GetBinaryPrefix(pyver=None):
     '''Creates the first part of the binary directory name
     such as linux_64_p3.9 (where the full name will be
@@ -165,11 +176,11 @@ def GetBinaryPrefix(pyver=None):
         raise Exception('Unknown platform')
     if 'arm' in platform.machine() and sys.platform == "darwin":
         bits = 'arm'
-    elif 'aarch' in platform.machine() and '64' in platform.architecture()[0]:
+    elif 'aarch' in platform.machine() and '64' in GetPlatformArchitecture():
         bits = 'arm64'
     elif 'arm' in platform.machine():
         bits = 'arm32'
-    elif '64' in platform.architecture()[0]:
+    elif '64' in GetPlatformArchitecture():
         bits = '64'
     else:
         bits = '32'
@@ -205,16 +216,37 @@ def HowIsG2Installed():
         else:
             rev = '-rev'
         if g2URL in g2repo.remote().urls:
-            return 'github'+rev
+            G2_installed_result = f'github{rev}'
+            return G2_installed_result
         elif g2URL.replace('https://github.com/',
                            'git@github.com:') in g2repo.remote().urls:
-            return 'github'+rev
+            G2_installed_result = f'github{rev}'
+            return G2_installed_result
         G2_installed_result = 'git'+rev
         return G2_installed_result
     except:
         pass
     G2_installed_result = 'noVCS'
     return G2_installed_result
+
+G2_commit_hash_result = None
+def getG2CommitHash():
+    '''Returns the hex sha for the current GSAS-II commit (HEAD) for a
+    git-based install. The result is cached to avoid the cost of
+    starting a git process for repeated calls, since the checked-out
+    commit will not change while GSAS-II is running.
+
+    :returns: the hexsha string for the current commit, or None if it
+      cannot be determined (e.g. not installed via git).
+    '''
+    global G2_commit_hash_result
+    if G2_commit_hash_result is not None: return G2_commit_hash_result
+    try:
+        g2repo = openGitRepo(path2GSAS2)
+        G2_commit_hash_result = g2repo.head.commit.hexsha
+    except:
+        pass
+    return G2_commit_hash_result
 
 def getSavedVersionInfo():
     '''Get version number information from a file written by install
@@ -598,7 +630,11 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
             g2repo.remote().fetch()
             fetched = True
         except git.GitCommandError as msg:
-            print(f'Failed to get updates from {g2repo.remote().url}\nerror: {msg}')
+            print(f'Failed to get updates from {g2repo.remote().url}')
+            try:
+                print(f'error: {msg}')
+            except:
+                pass
     try:
         head = g2repo.head.ref
         tracking = head.tracking_branch()
@@ -687,8 +723,11 @@ def gitGetUpdate(mode='Background'):
         return subprocess.Popen([sys.executable, __file__, '--git-fetch'])
     else:
         g2repo = openGitRepo(path2GSAS2)
-        g2repo.remote().fetch()
-        if GetConfigValue('debug'): print('Updates fetched')
+        try:
+            g2repo.remote().fetch()
+            if GetConfigValue('debug'): print('Updates fetched')
+        except:
+            print('Git fetch failed in gitGetUpdate')
 
 def gitHistory(values='tag',g2repo=None,maxdepth=100):
     '''Provides the history of commits to the main, either as tags
@@ -745,7 +784,7 @@ def getGitBinaryReleases(cache=False):
 
       The dict keys are references to binary distributions, which are named
       as f"{platform}_p{pver}_n{npver}" where platform is determined
-      in :func:`GSASIIpath.GetBinaryPrefix` (linux_64, mac_arm, win_64,...)
+      in :func:`GetBinaryPrefix` (linux_64, mac_arm, win_64,...)
       and where `pver` is the Python version (such as "3.10") and `npver` is
       the numpy version (such as "1.26").
 
@@ -2452,7 +2491,8 @@ to update/regress repository from git repository:
             fp.write('Background git update message')
             fp.write(dt.datetime.strftime(dt.datetime.now(),
                                       " at %Y-%m-%dT%H:%M\n"))
-            fp.write(f'Update failed with message {msg}\n')
+            fp.write('Update failed')
+            fp.write(f'error message: {msg}\n')
 
         if g2repo.head.is_detached:
             fp.write('Background git update message')

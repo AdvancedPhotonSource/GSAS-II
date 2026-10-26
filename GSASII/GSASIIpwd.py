@@ -2648,6 +2648,52 @@ def getHeaderInfo(dataType):
         fmt = ["%10.5f","%10.1f","%8.2f","%8.4f","%10.3f","%10.3f"]
     return names, fmt, lnames
 
+def findPeaks(x,y):
+    ''' finds peaks in powder patterns by simple offset method
+    not as good as findPeaks2 (below)
+    
+    :param array x: pattern x positions
+    :param array y: pattern intensities corrected for background
+    
+    :return: list peaks: peak positions
+    '''
+    ysig = 1.0*np.std(y)
+    offset = [-1,1]
+    ymask = ma.array(y,mask=(y<ysig))
+    for off in offset:
+        ymask = ma.array(ymask,mask=(ymask-np.roll(y,off)<=0.))
+    indx = ymask.nonzero()
+    mags = ymask[indx]
+    poss = x[indx]
+    refs = list(zip(poss,mags))
+    return refs
+
+def findPeaks2(x,y,lam=0.0005,sig=1.0,ifsqrt=False):
+    ''' finds peaks in powder patterns by simple offset method with smoothing
+    better than with no smoothing (findPeaks above)
+    seems best with unit weights (default) for make_smoothing_spline
+    
+    :param array x: pattern x positions
+    :param array y: pattern intensities corrected for background
+    
+    :return: list peaks: peak positions
+    '''
+    y0 = y
+    if ifsqrt:
+        y0 = np.sqrt(y)
+    spl = si.make_smoothing_spline(x,y0,lam=lam)
+    ys = spl(x)
+    ysig = sig*np.std(ys)
+    offset = [-1,1]
+    ymask = ma.array(ys,mask=(ys<ysig))
+    for off in offset:
+        ymask = ma.array(ymask,mask=(ymask-np.roll(ys,off)<=0.))
+    indx = ymask.nonzero()
+    mags = ymask[indx]
+    poss = x[indx]
+    refs = list(zip(poss,mags))
+    return refs    
+
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],
                   oneCycle=False,controls=None,wtFactor=1.0,dlg=None,noFit=False):
     '''Called to perform a peak fit, refining the selected items in the peak
@@ -3800,7 +3846,7 @@ def fullrmcDownload():
     import os
     import requests
     import platform
-    if platform.architecture()[0] != '64bit':
+    if GSASIIpath.GetPlatformArchitecture() != '64bit':
         return "fullrmc is only available for 64 bit machines. This is 32 bit"
     setXbit = True
     if sys.platform == "darwin":

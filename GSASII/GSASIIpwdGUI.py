@@ -790,6 +790,83 @@ def RefineCell(G2frame):
 #####  Powder Peaks
 ################################################################################
 
+class autoPeakFind(wx.Dialog):
+        
+    def __init__(self,parent,x,y,inst,inst2,data):
+        wx.Dialog.__init__(self,parent,-1,'Auto Peak Picking',
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.parent = parent
+        self.parent.AutoPk = True
+        self.x=x
+        self.y=y
+        self.inst=inst
+        self.inst2=inst2
+        self.data=data
+        self.panel = None
+        self.sqrt = False
+        self.parms = {'lam':0.0,'sig':1.0}  #no smoothing default
+        self._findPeaks()
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnSqrt(event):
+            self.sqrt = not self.sqrt
+            self._findPeaks()
+            
+        if self.panel: self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Auto Peak picking controls:'))
+        mainSizer.Add(wx.StaticText(self.panel,label='''
+ This will clear previously picked peaks.
+ This Dialog is modeless, you can interact with the Peak List 
+ and powder pattern plot to check the quality of the peak picking.
+ Don't forget to press OK below when done.
+ Edit the peak list after pressing OK.
+ '''))
+        Sqrt = wx.CheckBox(self.panel,label=' Use sqrt(y)?')
+        Sqrt.SetValue(self.sqrt)
+        Sqrt.Bind(wx.EVT_CHECKBOX,OnSqrt)
+        lam = G2G.G2SliderWidget(self.panel,self.parms,'lam','lam',0.,.001,500000,self._findPeaks)
+        mainSizer.Add(lam)
+        sig = G2G.G2SliderWidget(self.panel,self.parms,'sig','sig',0.2,1.0,100,self._findPeaks)
+        mainSizer.Add(sig)
+        mainSizer.Add(Sqrt)
+        btn = wx.Button(self.panel, wx.ID_OK)
+        btn.Bind(wx.EVT_BUTTON, self.OnOk)
+        mainSizer.Add((5,-1))
+        mainSizer.Add(btn,0,wx.CENTER)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+    
+    def _findPeaks(self,event=None):
+        self.data['peaks'] = []
+        refs= G2pwd.findPeaks2(self.x,self.y,self.parms['lam'],self.parms['sig'],self.sqrt)
+        if 'T' in self.inst['Type'][0]:
+            refs = G2mth.sortArray(refs,0,reverse=True)     #big TOFs first
+        else:   #'C', 'E' or 'B'
+            refs = G2mth.sortArray(refs,0,reverse=False)    #small 2-Thetas or energies first
+        for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
+            for ref2 in refs[i+1:]:
+                if abs(ref2[0]-ref1[0]) < 2.*G2pwd.getFWHM(ref1[0],self.inst):
+                    del(refs[i])
+        if 'T' in self.inst['Type'][0]:
+            refs = G2mth.sortArray(refs,1,reverse=False)
+        else:   #'C', 'E' or 'B'
+            refs = G2mth.sortArray(refs,1,reverse=True)
+        for pos,mag in refs:
+            self.data['peaks'].append(G2mth.setPeakparms(self.inst,self.inst2,pos,mag))
+        UpdatePeakGrid(self.parent,self.data)
+        G2pwpl.PlotPatterns(self.parent,plotType='PWDR')
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.AutoPk = False
+        parent.Raise()
+        self.Destroy()
+
 def UpdatePeakGrid(G2frame, data):
     '''respond to selection of PWDR powder peaks data tree item.
     '''
@@ -807,31 +884,12 @@ def UpdatePeakGrid(G2frame, data):
         iFin = np.searchsorted(x0,limits[1])
         x = x0[iBeg:iFin]
         y0 = (profile[1]-bxye)[iBeg:iFin]
-        ysig = 1.0*np.std(y0)
-        offset = [-1,1]
-        ymask = ma.array(y0,mask=(y0<ysig))
-        for off in offset:
-            ymask = ma.array(ymask,mask=(ymask-np.roll(y0,off)<=0.))
-        indx = ymask.nonzero()
-        mags = ymask[indx]
-        poss = x[indx]
-        refs = list(zip(poss,mags))
-        if 'T' in Inst['Type'][0]:
-            refs = G2mth.sortArray(refs,0,reverse=True)     #big TOFs first
-        else:   #'C', 'E' or 'B'
-            refs = G2mth.sortArray(refs,0,reverse=False)    #small 2-Thetas or energies first
-        for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
-            for ref2 in refs[i+1:]:
-                if abs(ref2[0]-ref1[0]) < 2.*G2pwd.getFWHM(ref1[0],inst):
-                    del(refs[i])
-        if 'T' in Inst['Type'][0]:
-            refs = G2mth.sortArray(refs,1,reverse=False)
-        else:   #'C', 'E' or 'B'
-            refs = G2mth.sortArray(refs,1,reverse=True)
-        for pos,mag in refs:
-            data['peaks'].append(G2mth.setPeakparms(inst,inst2,pos,mag))
-        UpdatePeakGrid(G2frame,data)
-        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
+        if data['peaks']:
+            dlg = wx.MessageDialog(G2frame,'Erase old peak list?', 'Warning', wx.YES_NO|wx.CENTRE)
+            if dlg.ShowModal() == wx.ID_YES:
+                autoPeakFind(G2frame,x,y0,inst,inst2,data).Show()
+        else:
+            autoPeakFind(G2frame,x,y0,inst,inst2,data).Show()
 
     def OnCopyPeaks(event):
         'Copy peaks to other histograms'
@@ -1398,7 +1456,7 @@ def UpdatePeakGrid(G2frame, data):
                      G2frame.dataWindow.PFOneCycle,
                      G2frame.dataWindow.SeqPeakFit):
         item.Enable(pkmode)
-    G2frame.dataWindow.AutoSearch.Enable(not pkmode)
+#    G2frame.dataWindow.AutoSearch.Enable(not pkmode)
     G2frame.PickTable = []
     rowLabels = []
     PatternId = G2frame.PatternId
@@ -2437,6 +2495,8 @@ class autoBackground(wx.Dialog):
         '''
         self.xydata[4] = G2pwd.autoBkgCalc(self.bkgdict,self.xydata[1].data)
         G2pwpl.PlotPatterns(self.G2frame,plotType='PWDR')
+        
+        
 
 ################################################################################
 #####  Limits

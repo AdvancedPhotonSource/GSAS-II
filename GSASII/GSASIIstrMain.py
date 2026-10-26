@@ -1158,8 +1158,11 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 shft = '%.4f'% Rvals['Max shft/sig']
             except:
                 shft = '?'
-            G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f, last shft/sig = %s'%(
+            try:
+                G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f, last shft/sig = %s'%(
                 Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'],shft))
+            except:
+                pass
             if Rvals.get('lamMax',0) >= 10.:
                 msgs['steepestNum'] += 1
             if Rvals.get('Max shft/sig'):

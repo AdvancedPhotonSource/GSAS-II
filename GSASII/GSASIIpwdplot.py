@@ -1930,7 +1930,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             msg = 'Click on location to start excluded region,\nthen drag and release at end of region'
         Page.figure.text(.02,.93, msg, fontsize=14, fontweight='bold')
     elif Selection == 'Background':
-        backPts = G2frame.dataWindow.wxID_BackPts
+        if hasattr( G2frame.dataWindow,'wxID_BackPts'):
+            backPts = G2frame.dataWindow.wxID_BackPts
+        else:
+            backPts = []
         for mode in backPts: # what menu is selected?
             if G2frame.dataWindow.BackMenu.FindItemById(backPts[mode]).IsChecked():
                 break

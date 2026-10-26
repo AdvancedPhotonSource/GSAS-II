@@ -3548,7 +3548,15 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
     return sigDict,gamDict
 
 def GetReflPos(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
-    'Needs a doc string'
+    '''Computes a reflection position as a d-space and in native (2theta, TOF) 
+    units. The d-space value is placed directly into the reflection record.
+    Reflections are processed one-at-a-time. 
+
+    Called in :func:`getPowderProfile`.
+
+    :returns: a position value the current reflection. This is placed into
+        the reflection record in :func:`getPowderProfile`.
+    '''
     if im:
         h,k,l,m = refl[:4]
         vec = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
@@ -3573,7 +3581,7 @@ def GetReflPos(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
     return pos
 
 def GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
-    'Needs a doc string'
+    'Compute derivatives for reflection positions'
     dpr = 180./np.pi
     if im:
         h,k,l,m = refl[:4]
@@ -3624,6 +3632,8 @@ def GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
 def GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict):
     '''Computes the shifts in peak position due to the Hydrostatic strain
     (HStrain, Dij terms).
+
+    This is not used at present.
     '''
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
@@ -4004,20 +4014,23 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
             SSGData = Phase['General']['SSGData']
             im = 1  #offset in SS reflection list
         Dij = GetDij(phfx,SGData,parmDict)
-        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do something if Dij << 0. (BHT: why? Might want to ensure shifts keep A positive definite)
-        G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
-        if np.any(np.diag(G)<0.):
-            msg = 'Invalid metric tensor for phase #{}\n   ({})'.format(
-                pId,Phase['General']['Name'])
-        elif np.any(np.isnan(A)):
-            msg = 'Infinite metric tensor for phase #{}\n   ({})'.format(
-                pId,Phase['General']['Name'])
-        else:
-            msg = None
+        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
+        try:
+            G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+            if np.any(np.diag(G)<0.):
+                msg = f"Invalid metric tensor for phase #{pId}\n   ({Phase['General']['Name']})"
+            elif np.any(np.isnan(A)):
+                msg = f"Infinite metric tensor for phase #{pId}\n   ({Phase['General']['Name']})"
+            else:
+                msg = None
+        except:
+            msg = f"Invalid metric tensor for phase #{pId}\n   ({Phase['General']['Name']})"
         if msg:
-            print('\nInvalid cell metric tensor for phase #{} ({})\n'.format(
-                pId,Phase['General']['Name']),'values (A): {:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n'.format(*A))
-            raise G2obj.G2Exception('Error: '+msg+' See console.\nCheck for refinement of conflicting variables')
+            print(f"\nInvalid cell metric tensor for phase #{pId} ({Phase['General']['Name']})\n",
+                  f"values (A): {' '.join(f'{i:.4f}' for i in A)}\n")
+            raise G2obj.G2Exception(f'Error: {msg} See console.\n'+
+                    'Check for refinement of conflicting variables or\n'+
+                    'refinement of poorly defined cell constants')
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matrices
         Vst = np.sqrt(nl.det(G))    #V*
         if not Phase['General'].get('doPawley') and not parmDict.get(phfx+'LeBail'):
@@ -4168,7 +4181,7 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
                 Uniq = np.inner(refl[:3],SGMT)
                 refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)         #corrected reflection position - #TODO - what about tabluated offset?
                 Lorenz = sind(abs(parmDict[hfx+'2-theta'])/2)*refl[4+im]**4                                                #TOF Lorentz correction
-                refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
+                #refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)  # hydrostatic strain shift already applied to A values
                 refl[6+im:8+im] = GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict,histDict1,hfx)    #peak sig & gam
                 refl[12+im:14+im] = GetReflAlpBet(refl,im,hfx,parmDict)             #TODO - skip if alp, bet tabulated?
                 refl[11+im],refl[15+im],refl[16+im],refl[17+im] = GetIntensityCorr(refl,im,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)

@@ -6297,7 +6297,8 @@ is being refined.
         Controls['ShowCell'] = True
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
-        groupDict = Controls.get('Groups',{}).get('groupDict',{})
+        Controls['Groups'] = Controls.get('Groups',{})
+        groupDict = Controls['Groups'].get('groupDict',{})
         groupSeqSel = Controls['Groups'].get('groupSeqSel',list(groupDict.keys()))
         # check for deleted or unused histograms in refine list
         if not groupDict:

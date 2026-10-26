@@ -729,7 +729,7 @@ def GenAtomConstraints(oldPhase,newPhase,atCodes,Trans):
                 constraints.append([IndpCon]+DepCons+[0.0,None,'c'])
         for name in ['Afrac','AUiso']:
             IndpCon = [1.0,G2obj.G2VarObj([npRanId,None,name,nAtoms[ia][-1]])]
-            DepCons = [1.0,G2obj.G2VarObj([opRanId,None,xnames[iop],oAtoms[iAtOrg][-1]])]
+            DepCons = [1.0,G2obj.G2VarObj([opRanId,None,name,oAtoms[iAtOrg][-1]])]
             constraints.append([DepCons,IndpCon,None,None,'e'])
     return constraints,message
 

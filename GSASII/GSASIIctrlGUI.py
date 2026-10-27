@@ -6447,6 +6447,7 @@ class HelpButton(wx.Button):
         self.helpIndex = helpIndex
         self.wrap = wrap
         self.msg = self.msg.replace(' & ',' && ')
+        self.msg = self.msg.replace('###','\n\n')
     def _onClose(self,event):
         self.dlg.EndModal(wx.ID_CANCEL)
     def _onPress(self,event):
@@ -10358,12 +10359,67 @@ If "Yes", GSAS-II will reopen the project after the update.
     print ('exiting GSAS-II')
     sys.exit()
 
-def StringSearchTemplate(parent,title,prompt,start,help=None):
+# Group handling GUI
+#
+def SearchGroups(G2frame,Histograms,hist):
+    '''Determine which histograms are in groups, called by SearchGroups in 
+    :func:`GSASIIdataGUI.UpdateControls`.
+    '''
+    import re
+    def groupSearch(srchStr):
+        '''Apply the template string and report the created groups. Done every
+        time a key is pressed to edit the template string
+        '''
+        reSrch = re.compile(srchStr.replace('.',r'\.').replace('*','.'))
+        setDict = {}
+        keyList = []
+        noMatchCount = 0
+        for hist in Histograms:
+            if hist.startswith('PWDR '):
+                m = reSrch.search(hist)
+                if m:
+                    key = hist[m.start():m.end()]
+                    setDict[hist] = key
+                    if key not in keyList: keyList.append(key)
+                else:
+                    noMatchCount += 1
+        groupDict = {}
+        groupCount = {}
+        for k in keyList:
+            groupDict[k] = [hist for hist,key in setDict.items() if k == key]
+            groupCount[k] = len(groupDict[k])
+        OK = True
+        msg1 = f'With search template "{srchStr}",\n'
+        if len(groupCount) == 0:
+            msg1 += 'there are ho histograms in any groups.'
+        elif min(groupCount.values()) == max(groupCount.values()):
+            msg1 += f'there are {len(groupDict)} groups with {min(groupCount.values())} histograms each.'
+        else:
+            msg1 += (f'there are {len(groupDict)} groups with {min(groupCount.values())}'
+                     f' to {min(groupCount.values())} histograms in each.')
+        if noMatchCount:
+            msg1 += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups."
+        # place a sanity check limit on the number of histograms in a group
+        if len(groupCount) == 0:
+            OK = False
+        elif max(groupCount.values()) >= 150:
+            OK = False
+            msg1 += '\n\nThis exceeds the maximum group length of 150 histograms'
+        elif min(groupCount.values()) == max(groupCount.values()) == 1:
+            OK = False
+            msg1 += '\n\nEach histogram is in a separate group. Grouping histograms\nonly makes sense with multiple histograms in at least some groups.'
+        return OK,msg1,groupDict,noMatchCount
+    repeat = True
+    srchStr = hist[5:]
+    srchStr = StringSearchTemplate(G2frame,srchStr,onkey=groupSearch)
+    if srchStr is None: return {} # cancel pressed
+    OK,msg1,groupDict,noMatchCount = groupSearch(srchStr)
+    return {'groupDict':groupDict,'notGrouped':noMatchCount,'template':srchStr}
+
+def StringSearchTemplate(parent,start,onkey=None):
     '''Dialog to obtain a string value for grouping histograms
 
     :param wx.Frame parent: name of parent frame
-    :param str title: title string for dialog
-    :param str prompt: string to tell use what they are inputting
     :param str start: default input value, if any
     :param str help: if supplied, a help button is added to the dialog that
       can be used to display the supplied help text/URL for setting this
@@ -10373,46 +10429,110 @@ def StringSearchTemplate(parent,title,prompt,start,help=None):
         G2MessageBox(parent,
             'The pattern must retain some non-blank characters from the original string. Resetting so you can start again.','Try again')
         valItem.SetValue(start)
-        return
+        on_char_up(None)
+    def on_char_up(event):
+        '''Responds every time a key is pressed (including keys that 
+        are processed by the txtctrl (like backspace)
+        '''
+        if event: event.Skip(True)
+        if onkey: wx.CallAfter(showSearch)
+        # make sure some characters remain
+        if len(valItem.GetValue().replace('*','').strip()) == 0:
+            wx.CallAfter(on_invalid)
+
+    def showSearch():
+        'Update the dialog to show the groups'
+        OK,s = onkey(valItem.GetValue())[0:2]
+        OKbtn.Enable(bool(OK))
+        txtout.SetLabel(s)
+        dlg.Layout()
+        mainSizer.Fit(dlg)        
     def on_char_typed(event):
+        'Respond to a key being pressed'
         keycode = event.GetKeyCode()
-        if keycode == 32 or keycode == 63: # ' ' or '?' - replace with '?'
+        if keycode == 32 or keycode == 63 or keycode == 42: # ' ' or '?' or '*'- replace with '*'
             #has a range been selected?
             sel = valItem.GetSelection()
             if sel[0] == sel[1]:
                 insertion_point = valItem.GetInsertionPoint()
                 sel = (insertion_point,insertion_point+1)
             for i in range(*sel):
-                valItem.Replace(i, i + 1, '?')
+                valItem.Replace(i, i + 1, '*')
             # Move the insertion point forward one character
             valItem.SetInsertionPoint(i + 1)
             # make sure some characters remain
-            if len(valItem.GetValue().replace('?','').strip()) == 0:
+            if len(valItem.GetValue().replace('*','').strip()) == 0:
                 wx.CallAfter(on_invalid)
             event.Skip(False)
         elif keycode >= wx.WXK_SPACE: # anything else printable, ignore
             event.Skip(False)
         else: # arrows etc are processed naturally
             event.Skip(True)
+    def on_reset(event):
+        'respond to reset button, sets template to starting value'
+        valItem.SetValue(start)
+        on_char_up(None)
+
+    import textwrap
+    title = 'Set match template'  # title string for dialog
+    prompt = (                    # string to tell use what they are inputting
+            'Edit the histogram name below placing an asterisk (*) '
+            'at the location '
+            'of characters that change between groups of '
+            'histograms. Use backspace or delete to remove '
+            'characters that should be ignored as they will '
+            'vary within a histogram group (e.g. Bank 1). '
+            'Be sure to leave enough characters so the string '
+            'can be uniquely matched.')
+    help = '''
+    Here you will be presented with the name of the first histogram.
+    You can create a template for grouping histograms together by designating
+    which characters designate different groups and which characters can be
+    ignored. Use backspace or delete to removing characters that should be 
+    ignored and use of space or a wildcard (*) for the characters that 
+    define different datasets.
+    ###
+    As an example, if the title for the first dataset is "CuO2 SEPD1234 Bank 1",
+    if the template string is made into "SEPD1***" then the bank number
+    and characters before and after "SEPD1xxx" will be ignored, so that
+    "CuO2 SEPD1234 Bank 1" and "CuO2A SEPD1234 Bank 2" will be placed in
+    the same group, while "XYZ SEPD1235 Bank 1" will be placed in a
+    separate group. Note that any files with name "SEPD2xxx" (etc.) will
+    not be placed in any group.
+    '''
     dlg = wx.Dialog(parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     dlg.CenterOnParent()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((-1,5))
     sizer1 = wx.BoxSizer(wx.HORIZONTAL)
     txt = wx.StaticText(dlg,wx.ID_ANY,prompt)
-    sizer1.Add((10,-1),1,wx.EXPAND)
-    txt.Wrap(500)
+#    sizer1.Add((10,-1),1,wx.EXPAND)
+    txt.Wrap(600)
     sizer1.Add(txt,0,wx.ALIGN_CENTER)
     sizer1.Add((10,-1),1,wx.EXPAND)
     if help:
-        sizer1.Add(HelpButton(dlg,help),0,wx.ALL)
+        sizer1.Add(HelpButton(dlg,help,wrap=600),0,wx.ALL)
     mainSizer.Add(sizer1,0,wx.EXPAND)
-    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    mainSizer.Add((-1,10))
+    sizer2 = wx.BoxSizer(wx.HORIZONTAL)
     valItem = wx.TextCtrl(dlg,wx.ID_ANY,value=start,style=wx.TE_PROCESS_ENTER)
     valItem.Bind(wx.EVT_CHAR, on_char_typed)
     valItem.Bind(wx.EVT_TEXT_ENTER, lambda event: event.Skip(False))
+    valItem.Bind(wx.EVT_KEY_UP, on_char_up)
     wx.CallAfter(valItem.SetSelection,0,0) # clear the initial selection
-    mainSizer.Add(valItem,1,wx.EXPAND)
+    sizer2.Add(valItem,1,wx.EXPAND)
+    btn = wx.Button(dlg, wx.ID_ANY, 'Reset', style=wx.BU_EXACTFIT)
+    btn.Bind(wx.EVT_BUTTON, on_reset)
+    sizer2.Add(btn)
+    mainSizer.Add(sizer2,0,wx.EXPAND)
+    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    sizer1.Add((15,-1))
+    txtout = wx.StaticText(dlg,wx.ID_ANY,'')
+    mainSizer.Add((-1,5))
+    sizer1.Add(txtout,0,wx.ALIGN_CENTER)
+    mainSizer.Add((-1,5))
+    mainSizer.Add(sizer1,0,wx.EXPAND)
     btnsizer = wx.StdDialogButtonSizer()
     OKbtn = wx.Button(dlg, wx.ID_OK)
     OKbtn.SetDefault()
@@ -10423,6 +10543,7 @@ def StringSearchTemplate(parent,title,prompt,start,help=None):
     mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
     dlg.SetSizer(mainSizer)
     mainSizer.Fit(dlg)
+    on_char_up(None)
     ans = dlg.ShowModal()
     if ans != wx.ID_OK:
         dlg.Destroy()

@@ -8492,7 +8492,7 @@ def UpdateControls(G2frame,data):
             return
         ans = G2frame.OnFileSave(None)
         if not ans: return
-        data['Groups'] = G2gr.SearchGroups(G2frame,Histograms,hist)
+        data['Groups'] = G2G.SearchGroups(G2frame,Histograms,hist)
 #        wx.CallAfter(UpdateControls,G2frame,data)
         ans = G2frame.OnFileSave(None)
         if not ans: return

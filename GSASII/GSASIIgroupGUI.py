@@ -128,7 +128,6 @@ The full list of routines used in mod:`GSASIIgroupGUI` are:
 '''
 
 import math
-import re
 import wx
 
 from . import GSASIIdataGUI as G2gd
@@ -140,75 +139,6 @@ from . import GSASIIpwdplot as G2pwpl
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 shiftInfo = {'colorMode':False}  # home for into to color TextCtrls
-
-def SearchGroups(G2frame,Histograms,hist):
-    '''Determine which histograms are in groups, called by SearchGroups in 
-    :func:`GSASIIdataGUI.UpdateControls`.
-    '''
-    repeat = True
-    srchStr = hist[5:]
-    msg = ('Edit the histogram name below placing a question mark (?) '
-            'at the location '
-            'of characters that change between groups of '
-            'histograms. Use backspace or delete to remove '
-            'characters that should be ignored as they will '
-            'vary within a histogram group (e.g. Bank 1). '
-            'Be sure to leave enough characters so the string '
-            'can be uniquely matched.')
-    while repeat:
-        srchStr = G2G.StringSearchTemplate(G2frame,'Set match template',
-                                               msg,srchStr)
-        if srchStr is None: return {} # cancel pressed
-        reSrch = re.compile(srchStr.replace('.',r'\.').replace('?','.'))
-        setDict = {}
-        keyList = []
-        noMatchCount = 0
-        for hist in Histograms:
-            if hist.startswith('PWDR '):
-                m = reSrch.search(hist)
-                if m:
-                    key = hist[m.start():m.end()]
-                    setDict[hist] = key
-                    if key not in keyList: keyList.append(key)
-                else:
-                    noMatchCount += 1
-        groupDict = {}
-        groupCount = {}
-        for k in keyList:
-            groupDict[k] = [hist for hist,key in setDict.items() if k == key]
-            groupCount[k] = len(groupDict[k])
-
-        msg1 = f'With search template "{srchStr}", '
-
-        buttons = []
-        OK = True
-        if len(groupCount) == 0:
-            msg1 += f'there are ho histograms in any groups.'
-        elif min(groupCount.values()) == max(groupCount.values()):
-            msg1 += f'there are {len(groupDict)} groups with {min(groupCount.values())} histograms each.'
-        else:
-            msg1 += (f'there are {len(groupDict)} groups with between {min(groupCount.values())}'
-                       f' and {min(groupCount.values())} histograms in each.')
-        if noMatchCount:
-            msg1 += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups."
-        # place a sanity check limit on the number of histograms in a group
-        if len(groupCount) == 0:
-            OK = False
-        elif max(groupCount.values()) >= 150:
-            OK = False
-            msg1 += '\n\nThis exceeds the maximum group length of 150 histograms'
-        elif min(groupCount.values()) == max(groupCount.values()) == 1:
-            OK = False
-            msg1 += '\n\nEach histogram is in a separate group. Grouping histograms only makes sense with multiple histograms in at least some groups.'
-        if OK:
-            buttons += [('OK', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK))]
-        buttons += [('try again', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))]
-        res = G2G.ShowScrolledInfo(G2frame,msg1,header='Grouping result',
-                    buttonlist=buttons,height=150)
-        if res == wx.ID_OK:
-            repeat = False
-
-    return {'groupDict':groupDict,'notGrouped':noMatchCount,'template':srchStr}
 
 def UpdateGroup(G2frame,selectedGrp,plot=True):
     '''Code to display parameters from all sets of grouped histograms

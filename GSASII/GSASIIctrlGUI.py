@@ -10404,10 +10404,19 @@ def SearchGroups(G2frame,Histograms,hist):
             OK = False
         elif max(groupCount.values()) >= 150:
             OK = False
-            msg1 += '\n\nThis exceeds the maximum group length of 150 histograms'
+            msg1 += '\n\nThis exceeds the maximum number of histograms in a group (150)'
         elif min(groupCount.values()) == max(groupCount.values()) == 1:
             OK = False
-            msg1 += '\n\nEach histogram is in a separate group. Grouping histograms\nonly makes sense with multiple histograms in at least some groups.'
+            msg1 += '\n\nEach group has only a single histogram. Grouping histograms makes sense only\nwhen at least some groups have multiple histograms.'
+        else:
+            msg1 += '\n'
+            for i,k in enumerate(keyList):
+                if i >= 2:  # two is enough
+                    msg1 += '\n\t...'
+                    break 
+                hl = [Histograms[hist]['hId'] for hist,key in setDict.items() if k == key]
+                msg1 += f"\n\tGroup {i} histogram #'s: " + ', '.join([str(j) for j in hl])
+                
         return OK,msg1,groupDict,noMatchCount
     repeat = True
     srchStr = hist[5:]
@@ -10476,21 +10485,23 @@ def StringSearchTemplate(parent,start,onkey=None):
     import textwrap
     title = 'Set match template'  # title string for dialog
     prompt = (                    # string to tell use what they are inputting
-            'Edit the histogram name below placing an asterisk (*) '
-            'at the location '
-            'of characters that change between groups of '
+            'Edit the histogram name string pressing the asterisk (*) '
+            'or space key at the location '
+            'of character(s) that change between groups of '
             'histograms. Use backspace or delete to remove '
-            'characters that should be ignored as they will '
-            'vary within a histogram group (e.g. Bank 1). '
+            'characters that should be ignored, because they will '
+            'vary within a histogram group (e.g. bank numbers). '
             'Be sure to leave enough characters so the string '
             'can be uniquely matched.')
     help = '''
     Here you will be presented with the name of the first histogram.
-    You can create a template for grouping histograms together by designating
-    which characters designate different groups and which characters can be
-    ignored. Use backspace or delete to removing characters that should be 
-    ignored and use of space or a wildcard (*) for the characters that 
-    define different datasets.
+    From that, you create a template for grouping histograms together by 
+    setting which characters designate different groups and which characters 
+    should be ignored. 
+    Use backspace or delete to remove characters that should be 
+    ignored. Use a space or a wildcard (*) for the characters that 
+    define different datasets. You can select a series of characters with the 
+    mouse and press a key once. 
     ###
     As an example, if the title for the first dataset is "CuO2 SEPD1234 Bank 1",
     if the template string is made into "SEPD1***" then the bank number
@@ -10506,6 +10517,7 @@ def StringSearchTemplate(parent,start,onkey=None):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((-1,5))
     sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    sizer1.Add((5,-1))
     txt = wx.StaticText(dlg,wx.ID_ANY,prompt)
 #    sizer1.Add((10,-1),1,wx.EXPAND)
     txt.Wrap(600)
@@ -10527,7 +10539,7 @@ def StringSearchTemplate(parent,start,onkey=None):
     sizer2.Add(btn)
     mainSizer.Add(sizer2,0,wx.EXPAND)
     sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-    sizer1.Add((15,-1))
+    sizer1.Add((20,-1))
     txtout = wx.StaticText(dlg,wx.ID_ANY,'')
     mainSizer.Add((-1,5))
     sizer1.Add(txtout,0,wx.ALIGN_CENTER)

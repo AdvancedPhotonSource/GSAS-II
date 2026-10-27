@@ -1895,7 +1895,7 @@ def UpdateTexture(G2frame,data):
     # sanity check: should this project be fitting texture?
     mainSizer.Add(wx.StaticText(Texture,label=
         ' NB: Normally texture model fitting generally requires multiple datasets with differing sample orientations/detector values'))
-    if G2frame.testSeqRefineMode() and G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential results'):
+    if bool(G2frame.testSeqRefineMode(True)) and G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential results'):
         mainSizer.Add(wx.StaticText(Texture,label=
             " Sequential result found. Use Texture/Refine texture above. See Method B in texture tutorial."))
     h,pd = G2frame.GetUsedHistogramsAndPhasesfromTree()

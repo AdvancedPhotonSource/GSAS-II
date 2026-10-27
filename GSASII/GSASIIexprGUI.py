@@ -669,6 +669,9 @@ class ExpressionDialog(wx.Dialog):
             except Exception as msg:
                 self.setEvalResult(f'Error in evaluation: {msg}')
                 return
+            if val is None:
+                self.setEvalResult("Expression value is None")
+                return
             if not np.isfinite(val):
                 self.setEvalResult("Expression value is infinite or out-of-bounds")
                 return

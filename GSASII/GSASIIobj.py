@@ -1043,6 +1043,9 @@ class G2VarObj(object):
         'Allow G2VarObj to be a dict key by implementing hashing'
         return hash(self.varname())
 
+    def hId(self):
+        return _lookup(HistRanIdLookup,self.histogram)
+
     def varname(self,hist=None):
         '''Formats the GSAS-II variable name as a "traditional" GSAS-II variable
         string (p:h:<var>:a) or (p:h:<var>)
@@ -2023,6 +2026,21 @@ class ExpressionCalcObj(object):
                 self.exprDict[v] = None
 #                raise Exception,"No value for variable "+str(v)
         self.exprDict.update(self.fxnpkgdict)
+
+    # def UpdateCalc(self,updateD):
+    #     '''Updates the expression evaluation after SetupCalc is called. 
+    #     This should be much faster than calling SetupCalc again
+    #
+    #     Needs to be debugged and perhaps used to replace UpdateDict
+    #     '''
+    #     for var,val in updateD.items():
+    #         if var in self.lblLookup:
+    #             self.exprDict[self.lblLookup[var]] = val
+    #         elif var in self.exprDict:
+    #             self.exprDict[var] = val
+    #         else:
+    #             self.exprDict[var] = val
+    #             print(f'unexpected var {var} in ExpressionCalc.UpdateCalc')
 
     def UpdateVars(self,varList,valList):
         '''Update the dict for the expression with a set of values

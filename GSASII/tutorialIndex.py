@@ -110,7 +110,7 @@ tutorialIndex = (
     #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Example descriptive text'''],
          
 ['Parametric sequential fitting'], #######################################################
-    ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets',
+    ['SeqRefine', 'SequentialTutorial.html', 'Sequential refinement of multiple datasets',
      '''This shows the fitting of a structural model to multiple data sets collected as a function of temperature (7-300K). 
      This tutorial is the prerequisite for the next one.'''],
      

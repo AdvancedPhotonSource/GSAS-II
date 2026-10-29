@@ -1914,6 +1914,7 @@ def UpdateBackground(G2frame,data):
         for peak in data[1]['peaksList']:
             Peaks['peaks'].append([peak[0],0,peak[2],0,peak[4],0,peak[6],0])
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'),Peaks)
+        wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
 
     def OnMakeRDF(event):
         'Make a Radial Distribution Function from the background - useful for selecting Debye background positions'
@@ -1985,6 +1986,13 @@ def UpdateBackground(G2frame,data):
         bakRef.SetValue(bool(data[0][1]))
         bakRef.Bind(wx.EVT_CHECKBOX, OnBakRef)
         topSizer.Add(bakRef,0,WACV)
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Zoom')
+        btn.Bind(wx.EVT_BUTTON, lambda event:
+                # call the menu item since its binding is set in G2pwdplot
+                G2frame.GetEventHandler().ProcessEvent(
+                     wx.CommandEvent(wx.EVT_MENU.typeId, G2G.wxID_BACKZOOM)))
+        topSizer.Add((10,-1))
+        topSizer.Add(btn,0,WACV)
         backSizer.Add(topSizer)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Number of coeff.: '),0,WACV)

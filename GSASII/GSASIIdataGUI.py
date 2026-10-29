@@ -7110,6 +7110,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2G.Define_wxId('wxID_BACKCOPY', 'wxID_BACKFLAGCOPY','wxID_MAKEBACKRDF',
             'wxID_RESCALEALL','wxID_BACKPEAKSMOVE','wxID_BACKSAVE','wxID_BACKLOAD')
         G2G.Define_wxId('wxID_BACKSETLIMIT')
+        G2G.Define_wxId('wxID_BACKZOOM')
         def _makemenu():     # routine to create menu when first used
             self.BackMenu = wx.MenuBar()
             self.PrefillDataMenu(self.BackMenu)
@@ -7137,6 +7138,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.wxID_BackPts['Fit'] = wx.NewId()
             self.BackFixed.Append(self.wxID_BackPts['Fit'],'Fit background',
                 'Fit background function to fixed background points')
+            self.BackEdit.Append(G2G.wxID_BACKZOOM,'Zoom background','Change vertical scale to show background, repeat to zoom out')
             self.BackEdit.Append(G2G.wxID_BACKSETLIMIT,'Set plot limits...','Allows entry of plot min & max values')
             self.PostfillDataMenu()
             SetDataMenuBar(G2frame,self.BackMenu)

@@ -1466,42 +1466,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             except:
                 pass
         def applyLims(event):
-            Page.toolbar.push_current()
-            # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
-            # Page.canvas.draw_idle() # schedule an MPL update (needs test)
-            CurLims = {}
-            CurLims['xlims'] = list(Plot.get_xlim())
-            if G2frame.Weight:
-                CurLims['ylims'] = list(Page.figure.axes[1].get_ylim())
-                CurLims['dylims'] = list(Page.figure.axes[2].get_ylim())
-            elif G2frame.Contour:
-                CurLims['ylims'] = list(Plot.get_ylim())
-                CurLims['cylims'] = list(Page.Img.get_clim())
-            else:
-                CurLims['ylims'] = list(Plot.get_ylim())
-                CurLims['dylims'] = [0,0]
-            for var in 'xlims','ylims','dylims','cylims':
-                for i in range(2):
-                    if not G2frame.UseLimits[var][i]: continue
-                    try:
-                        CurLims[var][i] = float(G2frame.FixedLimits[var][i])
-                        CurLims[var][i] = float(G2frame.FixedLimits[var][i])
-                    except:
-                        pass
-            Plot.set_xlim(CurLims['xlims'])
-            if G2frame.Weight:
-                Page.figure.axes[1].set_ylim(CurLims['ylims'])
-                Page.figure.axes[2].set_ylim(CurLims['dylims'])
-            elif G2frame.Contour:
-                Plot.set_ylim(CurLims['ylims'])
-                Page.Img.set_clim(CurLims['cylims'])
-            else:
-                Plot.set_ylim(CurLims['ylims'])
-            Page.toolbar.push_current()
-            # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
-            # Page.canvas.draw_idle() # schedule an MPL update (needs test)
-            Plot.figure.canvas.draw()
-        
+            applyPlotLims(Page,Plot)            
         # onSetPlotLim starts here
         dlg = wx.Dialog(G2frame.plotFrame,
                     style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
@@ -1554,7 +1519,69 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             showChecked(i)
         dlg.ShowModal()
         dlg.Destroy()
-        applyLims(None) # apply limits
+        applyPlotLims(Page,Plot) # apply limits
+
+    def applyPlotLims(Page,Plot):
+        Page.toolbar.push_current()
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
+        CurLims = {}
+        CurLims['xlims'] = list(Plot.get_xlim())
+        if G2frame.Weight:
+            CurLims['ylims'] = list(Page.figure.axes[1].get_ylim())
+            CurLims['dylims'] = list(Page.figure.axes[2].get_ylim())
+        elif G2frame.Contour:
+            CurLims['ylims'] = list(Plot.get_ylim())
+            CurLims['cylims'] = list(Page.Img.get_clim())
+        else:
+            CurLims['ylims'] = list(Plot.get_ylim())
+            CurLims['dylims'] = [0,0]
+        for var in 'xlims','ylims','dylims','cylims':
+            for i in range(2):
+                if not G2frame.UseLimits[var][i]: continue
+                try:
+                    CurLims[var][i] = float(G2frame.FixedLimits[var][i])
+                    CurLims[var][i] = float(G2frame.FixedLimits[var][i])
+                except:
+                    pass
+        Plot.set_xlim(CurLims['xlims'])
+        if G2frame.Weight:
+            Page.figure.axes[1].set_ylim(CurLims['ylims'])
+            Page.figure.axes[2].set_ylim(CurLims['dylims'])
+        elif G2frame.Contour:
+            Plot.set_ylim(CurLims['ylims'])
+            Page.Img.set_clim(CurLims['cylims'])
+        else:
+            Plot.set_ylim(CurLims['ylims'])
+        Page.toolbar.push_current()
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
+        Plot.figure.canvas.draw()
+
+    prevZoom = [0,0]
+    def onSetBkgZoom(event):
+        '''Set the vertical scale to show the range of the background plus 
+        a little bit
+        '''
+        range = max(data[1][4])-min(data[1][4])
+        if G2frame.Weight:
+            what2set = Page.figure.axes[1]
+        elif G2frame.Contour:
+            return
+        else:
+            what2set = Plot
+        if abs(range) < 1e-7 or range < min(data[1][4])/1000.:
+            print(f'Background range is too small {min(data[1][4])} to {max(data[1][4])}')
+            return
+        if np.allclose(what2set.get_ylim(), prevZoom):
+            # multiple presses: zoom out a bit each time, a bit more on top
+            ymin = what2set.get_ylim()[0] - range/15
+            ymax = what2set.get_ylim()[1] + range/5
+        else:
+            ymin,ymax = min(data[1][4])-range/5,max(data[1][4]+range/5)
+        prevZoom[0:2] = [ymin,ymax]
+        what2set.set_ylim(prevZoom)
+        applyPlotLims(Page,Plot)
 
     def onPlotFormat(event):
         '''Change the appearance of the current plot'''
@@ -2089,6 +2116,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.phaseList = Phases
     if 'Background' in G2frame.GPXtree.GetItemText(G2frame.PickId):
         G2frame.Bind(wx.EVT_MENU, onSetPlotLim, id=G2G.wxID_BACKSETLIMIT)
+        G2frame.Bind(wx.EVT_MENU, onSetBkgZoom, id=G2G.wxID_BACKZOOM)
 
     # assemble a list of validated colors for tickmarks
     valid_colors = []

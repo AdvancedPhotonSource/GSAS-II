@@ -462,53 +462,56 @@ def PutG2Image(filename,Comments,Data,Npix,image):
     File.close()
     return
 
-objectScanIgnore = [int,bool,float,str,np.float64,np.float32,np.int32,np.int64,np.int16,np.ndarray,G2obj.G2VarObj,G2obj.ExpressionObj,np.bool_]
-try:
-    objectScanIgnore += [ma.MaskedArray] # fails in doc builds
-except AttributeError:
-    pass
-
-def objectScan(data,tag,indexStack=[]):
-    '''Recursively scan an object looking for unexpected data types.
-    This is used in debug mode to scan .gpx files for objects we did not
-    intend to be there.
-    '''
-    if type(data) is list or type(data) is tuple:
-        for i in range(len(data)):
-            val = objectScan(data[i],tag,indexStack+[i])
-            if val:
-                data[i] = val
-                print('...fixed')
-    elif type(data) is dict:
-        for key in data:
-            val = objectScan(data[key],tag,indexStack+[key])
-            if val:
-                data[key] = val
-                print('...fixed')
-    elif data is None:
-        return None
-    elif type(data) in objectScanIgnore:
-        return None
-    # not always recognized:
-    elif 'GSASIIobj.G2VarObj' in str(type(data)):
-        return None
-    elif 'GSASIIobj.ExpressionObj' in str(type(data)):
-        return None
-    else:
-        s = 'unexpected object in '+tag
-        for i in indexStack:
-            s += "[{}]".format(i)
-        #print(s,data.__class__.__name__) # loses full name of class
-        print(s,type(data))
-        global unexpectedObject
-        unexpectedObject = True
-        # fix bad objects
-        if "gdi.Colour" in str(type(data)):
-            return tuple(data)
-        return
-
-def pickleLoad(fp):
-    return pickle.load(fp,encoding='latin-1')
+# This provides a mechanism to inspect objects read from .gpx files
+# and look for things that we would not want to place in a .gpx
+# file (wx objects, for example). This has been superseded by
+# GSASIIfile.GPXpickleLoad, which only allows expected types of objects
+# to be read.
+#
+# objectScanIgnore = [int,bool,float,str,np.float64,np.float32,np.int32,np.int64,np.int16,np.ndarray,G2obj.G2VarObj,G2obj.ExpressionObj,np.bool_]
+# try:
+#     objectScanIgnore += [ma.MaskedArray] # fails in doc builds
+# except AttributeError:
+#     pass
+#
+# def objectScan(data,tag,indexStack=[]):
+#     '''Recursively scan an object looking for unexpected data types.
+#     This is used in debug mode to scan .gpx files for objects we did not
+#     intend to be there.
+#     '''
+#     if type(data) is list or type(data) is tuple:
+#         for i in range(len(data)):
+#             val = objectScan(data[i],tag,indexStack+[i])
+#             if val:
+#                 data[i] = val
+#                 print('...fixed')
+#     elif type(data) is dict:
+#         for key in data:
+#             val = objectScan(data[key],tag,indexStack+[key])
+#             if val:
+#                 data[key] = val
+#                 print('...fixed')
+#     elif data is None:
+#         return None
+#     elif type(data) in objectScanIgnore:
+#         return None
+#     # not always recognized:
+#     elif 'GSASIIobj.G2VarObj' in str(type(data)):
+#         return None
+#     elif 'GSASIIobj.ExpressionObj' in str(type(data)):
+#         return None
+#     else:
+#         s = 'unexpected object in '+tag
+#         for i in indexStack:
+#             s += "[{}]".format(i)
+#         #print(s,data.__class__.__name__) # loses full name of class
+#         print(s,type(data))
+#         global unexpectedObject
+#         unexpectedObject = True
+#         # fix bad objects
+#         if "gdi.Colour" in str(type(data)):
+#             return tuple(data)
+#         return
 
 def ProjFileOpen(G2frame,showProvenance=True):
     'Read a GSAS-II project file and load into the G2 data tree'
@@ -535,22 +538,22 @@ def ProjFileOpen(G2frame,showProvenance=True):
             if result == wx.ID_YES:
                 updateFromSeq = True
                 fp = open(GPXphase,'rb')
-                data = pickleLoad(fp) # first block in file should be Phases
+                data = G2fil.GPXpickleLoad(fp) # first block in file should be Phases
                 if data[0][0] != 'Phases':
                     raise Exception('Unexpected block in {} file. How did this happen?'
                             .format(GPXphase))
                 Phases = {}
                 for name,vals in data[1:]:
                     Phases[name] = vals
-                name,CovData = pickleLoad(fp)[0] # 2nd block in file should be Covariance
-                name,RigidBodies = pickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
+                name,CovData = G2fil.GPXpickleLoad(fp)[0] # 2nd block in file should be Covariance
+                name,RigidBodies = G2fil.GPXpickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
                 fp.close()
                 # index the histogram updates
                 hist = open(GPXhist,'rb')
                 try:
                     while True:
                         loc = hist.tell()
-                        datum = pickleLoad(hist)[0]
+                        datum = G2fil.GPXpickleLoad(hist)[0]
                         tmpHistIndex[datum[0]] = loc
                 except EOFError:
                     pass
@@ -565,7 +568,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             sizeList = {}
         while True:
             try:
-                data = pickleLoad(filep)
+                data = G2fil.GPXpickleLoad(filep)
             except EOFError:
                 break
             datum = data[0]
@@ -573,13 +576,13 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 sizeList[datum[0]] = filep.tell()-posPrev
                 posPrev = filep.tell()
             # scan the GPX file for unexpected objects
-            if GSASIIpath.GetConfigValue('debug'):
-                global unexpectedObject
-                unexpectedObject = False
-                objectScan(data,'tree item "{}" entry '.format(datum[0]))
-                #if unexpectedObject:
-                #    print(datum[0])
-                #    GSASIIpath.IPyBreak()
+            # if GSASIIpath.GetConfigValue('debug'):
+            #     global unexpectedObject
+            #     unexpectedObject = False
+            #     objectScan(data,'tree item "{}" entry '.format(datum[0]))
+            #     #if unexpectedObject:
+            #     #    print(datum[0])
+            #     #    GSASIIpath.IPyBreak()
             # insert groups before any individual PDWR items
             if datum[0].startswith('PWDR') and groupDict and not groupInserted:
                 Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Groups/Powder')
@@ -603,7 +606,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 data[0][1] = RigidBodies
             elif updateFromSeq and datum[0] in tmpHistIndex:
                 hist.seek(tmpHistIndex[datum[0]])
-                hdata = pickleLoad(hist)
+                hdata = G2fil.GPXpickleLoad(hist)
                 if data[0][0] != hdata[0][0]:
                     print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
                 datum = hdata[0]
@@ -672,6 +675,17 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     item[:20],sizeList[item]/1024.))
             print(50*'=')
         G2frame.NewPlot = True
+    except pickle.UnpicklingError as errmsg:
+        G2G.G2MessageBox(G2frame,
+        #msg = wx.MessageDialog(G2frame,message=
+                                   "Error reading file "+
+            f"{G2frame.GSASprojectfile!r}. This file has unexpected content and could contain a virus. "+
+            'If you trust source of this file, please provide report this as GSAS-II bug. '+
+            'Please provide the .gpx file.'+f'\n\nError message: {errmsg!r}',
+            #            caption="Load Error",
+            #,style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP
+                             "Load Error")
+        #msg.ShowModal()
     except Exception as errmsg:
         if GSASIIpath.GetConfigValue('debug'):
             print('\nError reading GPX file:',errmsg)

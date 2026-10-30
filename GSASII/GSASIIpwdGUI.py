@@ -2336,7 +2336,7 @@ def UpdateBackground(G2frame,data):
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2G.wxID_BACKFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackSave,id=G2G.wxID_BACKSAVE)
     G2frame.Bind(wx.EVT_MENU,OnBackLoad,id=G2G.wxID_BACKLOAD)
-    G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2G.wxID_BACKPEAKSMOVE)
+    #G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2G.wxID_BACKPEAKSMOVE)
     G2frame.Bind(wx.EVT_MENU,OnMakeRDF,id=G2G.wxID_MAKEBACKRDF)
     for k in 'Add', 'Move', 'Delete':
         G2frame.Bind(wx.EVT_MENU,OnBkgCh,id=G2frame.dataWindow.wxID_BackPts[k])

@@ -40,9 +40,6 @@ ateln2 = 8.0*math.log(2.0)
 #===============================================================================
 # Support for GPX file reading
 #===============================================================================
-def pickleLoad(fp):
-    return pickle.load(fp,encoding='latin-1')
-
 gpxIndex = {}; gpxNamelist = []; gpxSize = -1
 '''Global variables used in :func:`IndexGPX` to see if file has changed
 (gpxSize) and to index where to find each 1st-level tree item in the file.
@@ -91,7 +88,7 @@ def IndexGPX(GPXfile,read=False):
     try:
         while True:
             pos = fp.tell()
-            data = pickleLoad(fp)
+            data = G2fil.GPXpickleLoad(fp)
             datum = data[0]
             gpxIndex[datum[0]] = pos
             if read: Project[datum[0]] = {'data':datum[1]}
@@ -102,9 +99,12 @@ def IndexGPX(GPXfile,read=False):
         # print('project load successful')
     except EOFError:
         pass
+    except pickle.UnpicklingError as msg:
+        print('Read Error:',msg)
+        raise Exception(f"Error reading file {GPXfile}). This file has unexpected content and could contain a virus.")
     except Exception as msg:
         G2fil.G2Print('Read Error:',msg)
-        raise Exception("Error reading file "+str(GPXfile)+". This is not a GSAS-II .gpx file")
+        raise Exception(f"Error reading file {GPXfile}). This is not a GSAS-II .gpx file")
     finally:
         fp.close()
     if read: return Project,gpxNamelist
@@ -123,7 +123,7 @@ def GetControls(GPXfile):
         return Controls
     fp = open(GPXfile,'rb')
     fp.seek(pos)
-    datum = pickleLoad(fp)[0]
+    datum = G2fil.GPXpickleLoad(fp)[0]
     fp.close()
     Controls.update(datum[1])
     return Controls
@@ -190,7 +190,7 @@ def ReadConstraints(GPXfile, seqHist=None, grEquivTbl=None, grHIDlist=None):
     if pos is None:
         raise Exception("No constraints in GPX file")
     fl.seek(pos)
-    ConstraintsItem = pickleLoad(fl)[0]
+    ConstraintsItem = G2fil.GPXpickleLoad(fl)[0]
     seqmode = 'use-all'
     if seqHist is not None:
         seqmode = ConstraintsItem[1].get('_seqmode','wildcards-only')
@@ -308,7 +308,7 @@ def GetRestraints(GPXfile):
     if pos is None:
         raise Exception("No Restraints in GPX file")
     fl.seek(pos)
-    datum = pickleLoad(fl)[0]
+    datum = G2fil.GPXpickleLoad(fl)[0]
     fl.close()
     return datum[1]
 
@@ -321,7 +321,7 @@ def GetRigidBodies(GPXfile):
     if pos is None:
         raise Exception("No Rigid bodies in GPX file")
     fl.seek(pos)
-    datum = pickleLoad(fl)[0]
+    datum = G2fil.GPXpickleLoad(fl)[0]
     fl.close()
     return datum[1]
 
@@ -521,7 +521,7 @@ def GetPhaseNames(GPXfile):
     if pos is None:
         raise Exception("No Phases in GPX file")
     fl.seek(pos)
-    data = pickleLoad(fl)
+    data = G2fil.GPXpickleLoad(fl)
     fl.close()
     return [datus[0] for datus in data[1:]]
 
@@ -538,7 +538,7 @@ def GetAllPhaseData(GPXfile,PhaseName):
     if pos is None:
         raise Exception("No Phases in GPX file")
     fl.seek(pos)
-    data = pickleLoad(fl)
+    data = G2fil.GPXpickleLoad(fl)
     fl.close()
 
     for datus in data[1:]:
@@ -561,7 +561,7 @@ def GetHistograms(GPXfile,hNames):
         if pos is None:
             raise Exception("Histogram {} not found in GPX file".format(hist))
         fl.seek(pos)
-        data = pickleLoad(fl)
+        data = G2fil.GPXpickleLoad(fl)
         datum = data[0]
         if 'PWDR' in hist[:4]:
             PWDRdata = {}
@@ -743,7 +743,7 @@ def SaveUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,pa
     outfile = open(GPXfile,'wb')
     while True:
         try:
-            data = pickleLoad(infile)
+            data = G2fil.GPXpickleLoad(infile)
         except EOFError:
             break
         datum = data[0]
@@ -812,7 +812,7 @@ def GetSeqResult(GPXfile):
         return {}
     fl = open(GPXfile,'rb')
     fl.seek(pos)
-    datum = pickleLoad(fl)[0]
+    datum = G2fil.GPXpickleLoad(fl)[0]
     fl.close()
     return datum[1]
 
@@ -827,7 +827,7 @@ def SetupSeqSavePhases(GPXfile):
     if pos is None:
         raise Exception("No Phases in GPX file")
     fl.seek(pos)
-    data = pickleLoad(fl)
+    data = G2fil.GPXpickleLoad(fl)
     fl.close()
     # create GPX-like file to store latest Phase info; init with start vals
     GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
@@ -856,7 +856,7 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
 
     GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
     fp = open(GPXphase,'rb')
-    data = pickleLoad(fp) # first block in file should be Phases
+    data = G2fil.GPXpickleLoad(fp) # first block in file should be Phases
     if data[0][0] != 'Phases':
         raise Exception('Unexpected block in {} file. How did this happen?'
                             .format(GPXphase))
@@ -920,15 +920,15 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     G2fil.G2Print (f'Save to file: {GPXfile}')
     GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
     fp = open(GPXphase,'rb')
-    data = pickleLoad(fp) # first block in file should be Phases
+    data = G2fil.GPXpickleLoad(fp) # first block in file should be Phases
     if data[0][0] != 'Phases':
         raise Exception('Unexpected block in {} file. How did this happen?'.format(GPXphase))
     Phases = {}
     for name,vals in data[1:]:
         Phases[name] = vals
-    name,CovData = pickleLoad(fp)[0] # 2nd block in file should be Covariance
-    name,RigidBodies = pickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
-    name,parmFrozenDict = pickleLoad(fp)[0] # 4th block in file should be frozen parameters
+    name,CovData = G2fil.GPXpickleLoad(fp)[0] # 2nd block in file should be Covariance
+    name,RigidBodies = G2fil.GPXpickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
+    name,parmFrozenDict = G2fil.GPXpickleLoad(fp)[0] # 4th block in file should be frozen parameters
     fp.close()
     GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
     hist = open(GPXhist,'rb')
@@ -937,7 +937,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     while True:
         loc = hist.tell()
         try:
-            datum = pickleLoad(hist)[0]
+            datum = G2fil.GPXpickleLoad(hist)[0]
         except EOFError:
             break
         histIndex[datum[0]] = loc
@@ -946,7 +946,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     outfile = open(GPXfile,'wb')
     while True:
         try:
-            data = pickleLoad(infile)
+            data = G2fil.GPXpickleLoad(infile)
         except EOFError:
             break
         datum = data[0]
@@ -970,7 +970,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
                     for i in parmFrozenDict[key]]
         elif datum[0] in histIndex:
             hist.seek(histIndex[datum[0]])
-            hdata = pickleLoad(hist)
+            hdata = G2fil.GPXpickleLoad(hist)
             if data[0][0] != hdata[0][0]:
                 G2fil.G2Print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
             data[0] = hdata[0]

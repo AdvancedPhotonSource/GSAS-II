@@ -7122,6 +7122,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.BackEdit.Append(G2G.wxID_BACKSAVE,'Save ...','Save background parameters to file')
             self.BackEdit.Append(G2G.wxID_BACKLOAD,'Load ...','Load background parameters from file')
             self.BackEdit.Append(G2G.wxID_BACKPEAKSMOVE,'Move peaks','Move background peaks to Peak List')
+            self.BackEdit.Enable(G2G.wxID_BACKPEAKSMOVE,False)
+
             self.BackEdit.Append(G2G.wxID_MAKEBACKRDF,'Plot RDF','Plot radial distribution from differences')
             self.BackFixed = wx.Menu(title='') # fixed background point menu
             self.BackMenu.Append(menu=self.BackFixed, title='Fixed Points')
@@ -7349,7 +7351,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             SetDataMenuBar(G2frame,self.SASDInstMenu)
         self.SASDInstMenu = _makemenu
 
-        #SASD & REFL/ Substance editor
+        #SASD & REFD/ Substance editor
         G2G.Define_wxId('wxID_LOADSUBSTANCE','wxID_RELOADSUBSTANCES','wxID_ADDSUBSTANCE','wxID_COPYSUBSTANCE',
             'wxID_DELETESUBSTANCE','wxID_ELEMENTADD', 'wxID_ELEMENTDELETE',)
         def _makemenu():     # routine to create menu when first used

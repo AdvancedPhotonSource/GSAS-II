@@ -5,8 +5,8 @@ instrument parameter files and exporting various types of data files.
 
 This module has some routines that require wxPython, but imports
 for wx and GSAS-II GUI routines is done on a per-function basis so
-that this module can be imported for GSASIIscriptable use when
-wx is not installed.
+that this module can be still be imported by GSASIIscriptable even
+when wx is not installed.
 '''
 from __future__ import division, print_function
 import platform
@@ -16,6 +16,7 @@ import glob
 import copy
 #import inspect
 import re
+import pickle
 
 import numpy as np
 import numpy.ma as ma
@@ -2588,6 +2589,53 @@ def findPDFfit():
         newpython = os.path.join(pdffitDir,'bin','python')
     if os.path.exists(newpython): return newpython
     return None
+
+def GPXpickleLoad(fp):
+    #return pickle.load(fp,encoding='latin-1')
+    return _GPXUnpickler(fp, encoding='latin-1').load()
+
+# Data types permitted when unpickling a .gpx (GSAS-II project) file.
+# The expectation is that a .gpx file should contain only plain Python
+# objects, NumPy arrays/masked-arrays, and two GSASII objects:
+# G2obj.G2VarObj & G2obj.ExpressionObj.
+_GPX_SAFE_GLOBALS = {
+    'numpy.core.multiarray': ('_reconstruct', 'scalar'),
+    'numpy._core.multiarray': ('_reconstruct', 'scalar'),
+    'numpy': ('ndarray','dtype'),
+    '_codecs': ('encode',),                         # NumPy arrays restored via latin-1
+    'numpy.ma': ('MaskedArray',),
+    'numpy.ma.core': ('_mareconstruct', 'MaskedArray','MaskedConstant'),
+    'GSASII.GSASIIobj': ('G2VarObj', 'ExpressionObj'),
+    'GSASIIobj': ('G2VarObj', 'ExpressionObj'),
+    # older files
+    'copy_reg': ('_reconstructor',),
+    '__builtin__': ('object','bytes','xrange'),
+    'wx._core': ('Point'),
+}
+# If anything else is encountered, this is a potential trojan and
+# will be blocked (unless bypassed by defining environment 
+# variable GSASII_GPX_TROJAN_BYPASS
+
+GPXUnpicklerExceptions = set()
+class _GPXUnpickler(pickle.Unpickler):
+    '''A replacement for pickle.load that will read only the data-only 
+    classes that GSAS-II writes into a .gpx file. Blocks the arbitrary-object 
+    reconstruction that would allow a bare pickle.load to be an 
+    arbitrary-code-execution vector.
+
+    This blocking can be bypassed by defining environment 
+    variable GSASII_GPX_TROJAN_BYPASS with any value.
+    '''
+    def find_class(self, module, name):
+        if name in _GPX_SAFE_GLOBALS.get(module,[]):
+            return super().find_class(module, name)
+        if os.environ.get('GSASII_GPX_TROJAN_BYPASS'):
+            print(f'GPX unpickle security bypass: reading unlisted object {module}.{name}')
+            GPXUnpicklerExceptions.add(f'{module}.{name}')
+            return super().find_class(module, name)
+        print(f'Encountered unexpected object in GPX file: {module}.{name}')
+        raise pickle.UnpicklingError(
+            f'Refusing to unpickle unexpected object ({module}.{name}) from a .gpx file.')
 
 if __name__ == '__main__':
     for i in (1.23456789e-129,1.23456789e129,1.23456789e-99,1.23456789e99,-1.23456789e-99,-1.23456789e99):

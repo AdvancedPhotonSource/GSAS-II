@@ -1217,7 +1217,7 @@ Image Controls              azmthOff            (float) The offset to be applied
 \                           setRings            (bool) If True then display all the selected x,y ring positions (vida supra rings) used in the calibration.
 \                           showLines           (bool) If True then isplay the integration limits to be used.
 \                           size                (list:int) The number of pixels on the image x & y axes
-\                           type                (str) One of 'PWDR', 'SASD' or 'REFL' for powder, small angle or reflectometry data, respectively.
+\                           type                (str) One of 'PWDR', 'SASD' or 'REFD' for powder, small angle or reflectometry data, respectively.
 \                           tilt                (float) The angle the detector normal makes with the incident beam; range -90 to 90.
 \                           wavelength          (float) The radiation wavelength (:math:`\AA`) as entered by the user 
                                                 (or someday obtained from the image header).

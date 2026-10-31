@@ -17,7 +17,6 @@ calculation & for the 1st selected derivative (rest should be the same).
 import sys
 import os
 import copy
-import pickle
 import io as StringIO
 import cProfile,pstats
 import wx
@@ -34,6 +33,7 @@ GSASIIpath.SetBinaryPath()
 from GSASII import GSASIIstrMath as G2stMth
 from GSASII import GSASIItestplot as plot
 from GSASII import GSASIImapvars as G2mv
+from GSASII import GSASIIfiles as G2fil
 try:  # fails on doc build
     from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
@@ -128,13 +128,13 @@ class testDeriv(wx.Frame):
             
     def TestRead(self):
         file = open(self.testFile,'rb')
-        self.values = pickle.load(file,encoding='Latin-1')
-        self.HistoPhases = pickle.load(file,encoding='Latin-1')
-        (self.constrDict,self.fixedList,self.depVarList) = pickle.load(file,encoding='Latin-1')
-        self.parmDict = pickle.load(file,encoding='Latin-1')
-        self.varylist = pickle.load(file,encoding='Latin-1')
-        self.calcControls = pickle.load(file,encoding='Latin-1')
-        self.pawleyLookup = pickle.load(file,encoding='Latin-1')
+        self.values = G2fil.SaferPickleLoad(file,encoding='Latin-1')
+        self.HistoPhases = G2fil.SaferPickleLoad(file,encoding='Latin-1')
+        (self.constrDict,self.fixedList,self.depVarList) = G2fil.SaferPickleLoad(file,encoding='Latin-1')
+        self.parmDict = G2fil.SaferPickleLoad(file,encoding='Latin-1')
+        self.varylist = G2fil.SaferPickleLoad(file,encoding='Latin-1')
+        self.calcControls = G2fil.SaferPickleLoad(file,encoding='Latin-1')
+        self.pawleyLookup = G2fil.SaferPickleLoad(file,encoding='Latin-1')
         self.names = self.varylist+self.depVarList
         self.use = [False for i in range(len(self.names))]
         self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.names]

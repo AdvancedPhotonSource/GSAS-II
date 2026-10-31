@@ -1016,7 +1016,7 @@ if __name__ == "__main__":
 
     #app.MainLoop()
 
-    import pickle
+    import pickle  # used in exercising this module only
     def showEQ(calcobj):
         print
         print (calcobj.eObj.expression)
@@ -1046,7 +1046,7 @@ if __name__ == "__main__":
     showEQ(calcobj)
 
     fp = open('/tmp/obj.pickle','r')
-    obj = pickle.load(fp)
+    obj = G2fil.SaferPickleLoad(fp)
     fp.close()
     parmDict2 = {'0::Afrac:0':0.0, '0::Afrac:1': 1.0}
     calcobj = G2obj.ExpressionCalcObj(obj)

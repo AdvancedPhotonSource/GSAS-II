@@ -4,11 +4,8 @@ Shelx, Jana, REMOS, TOPAS (SNS), HB-3A (HIFR)
 '''
 import sys
 import numpy as np
-import pickle
 from .. import GSASIIobj as G2obj
-
-def pickleLoad(fp):
-    return pickle.load(fp,encoding='latin-1')
+from .. import GSASIIfiles as G2fil
 
 def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'
@@ -734,19 +731,22 @@ class GSAS2_INT_ReaderClass(G2obj.ImportStructFactor):
     def ContentsValidator(self, filename):
         "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
         fp = open(filename,'rb')
-        try: 
-            data = pickleLoad(fp)
-        except:
-            self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
-            fp.close()
-            return False
-        fp.seek(0)
+        blknum = 0
         nhist = 0
         while True:
+            blknum += 1
             try:
-                data = pickleLoad(fp)
+                data = G2fil.GPXpickleLoad(fp)
+            except G2fil.UnpicklingError as errmsg:
+                print(f'skipping block {blknum} due to error {errmsg}')
+                continue
             except EOFError:
                 break
+            except:
+                if blknum == 1:
+                    self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
+                    fp.close()
+                    return False
             if data[0][0][:4] == 'HKLF':
                 nhist += 1
                 self.dnames.append(data[0][0])
@@ -772,12 +772,17 @@ class GSAS2_INT_ReaderClass(G2obj.ImportStructFactor):
             poslist = rdbuffer.get('poslist')
             histnames = rdbuffer.get('histnames')
         else:
+            blknum = 0
             try:
                 fp = open(filename,'rb')
                 while True:
+                    blknum += 1
                     pos = fp.tell()
                     try:
-                        data = pickleLoad(fp)
+                        data = G2fil.GPXpickleLoad(fp)
+                    except G2fil.UnpicklingError as errmsg:
+                        print(f'skipping block {blknum} due to error {errmsg}')
+                        continue
                     except EOFError:
                         break
                     if data[0][0][:4] == 'HKLF':
@@ -810,7 +815,7 @@ class GSAS2_INT_ReaderClass(G2obj.ImportStructFactor):
 
         fp = open(filename,'rb')
         fp.seek(poslist[selblk])
-        data = pickleLoad(fp)
+        data = G2fil.GPXpickleLoad(fp)  # was loaded already, so should not fail
         self.RefDict = data[0][1][1]
 #        pull some sections from the HKLF children
         for i in range(1,len(data)):

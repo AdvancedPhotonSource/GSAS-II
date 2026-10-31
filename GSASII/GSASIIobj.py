@@ -10,7 +10,6 @@ import re
 import random as ran
 import sys
 import os.path
-import pickle
 import numpy as np
 from GSASII import GSASIImath as G2mth
 from GSASII import GSASIIspc as G2spc
@@ -153,10 +152,14 @@ def GetPhaseNames(fl):
     :param file fl: opened .gpx file
     :return: list of phase names
     '''
+    from . import GSASIIfiles as G2fil
     PhaseNames = []
     while True:
         try:
-            data = pickle.load(fl)
+            data = G2fil.GPXpickleLoad(fl)
+        except G2fil.UnpicklingError as errmsg:
+            #print(f'skipping block {cnt} due to error {errmsg}')
+            continue
         except EOFError:
             break
         datum = data[0]

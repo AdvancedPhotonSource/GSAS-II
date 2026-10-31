@@ -99,7 +99,7 @@ def IndexGPX(GPXfile,read=False):
         # print('project load successful')
     except EOFError:
         pass
-    except pickle.UnpicklingError as msg:
+    except G2fil.UnpicklingError as msg:
         print('Read Error:',msg)
         raise Exception(f"Error reading file {GPXfile}). This file has unexpected content and could contain a virus.")
     except Exception as msg:

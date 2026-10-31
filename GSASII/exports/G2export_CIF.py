@@ -5288,7 +5288,7 @@ def LoadCIFdic():
             if not os.path.exists(fil): continue
             fp = open(fil,'rb')
             try:
-                cifdic.update(pickle.load(fp))
+                cifdic.update(G2fil.SaferPickleLoad(fp))
                 #if DEBUG: print('reloaded '+fil)
                 break
             finally:

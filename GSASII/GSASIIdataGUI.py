@@ -5,7 +5,6 @@ Routines for main GUI wx.Frame follow.
 '''
 from __future__ import division, print_function
 import platform
-import pickle
 import time
 import math
 import random as ran
@@ -6017,23 +6016,23 @@ is being refined.
         PhasePartials = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0]+'.partials')
         if not os.path.exists(PhasePartials): return None,None,[]
         fp = open(PhasePartials,'rb')
-        pickle.load(fp)   # skip over initial None
+        G2fil.SaferPickleLoad(fp)   # skip over initial None
         while True:   # loop until we find target histogram or hit end of file
             yDict = {}
             try:
-                hId = pickle.load(fp)   # get histogram number
+                hId = G2fil.SaferPickleLoad(fp)   # get histogram number
                 if hId == target_hId:
                     # found the target, read until we get a None or EOF
-                    x = pickle.load(fp)
-                    yb = pickle.load(fp)
+                    x = G2fil.SaferPickleLoad(fp)
+                    yb = G2fil.SaferPickleLoad(fp)
                     while True:
-                        phase = pickle.load(fp)
+                        phase = G2fil.SaferPickleLoad(fp)
                         if phase is None:
                             fp.close()
                             return  x, yb, yDict
-                        yDict[phase] = pickle.load(fp)
+                        yDict[phase] = G2fil.SaferPickleLoad(fp)
                 else:
-                    while pickle.load(fp) is not None:
+                    while G2fil.SaferPickleLoad(fp) is not None:
                         pass
             except EOFError:
                 if yDict:
@@ -6118,15 +6117,15 @@ is being refined.
                 dlg.Destroy()
         # write the .csv file(s)
         histograms,phases = self.GetUsedHistogramsAndPhasesfromTree()
-        pickle.load(fp)   # skip over initial None
+        G2fil.SaferPickleLoad(fp)   # skip over initial None
         done = False
         while not done:   # looping over histograms
             valList = None
             lblList = ['x','obs','wgt','calc','background']
             try:
-                hId = pickle.load(fp)   # get histogram number
-                pickle.load(fp)   # skip over x values
-                pickle.load(fp)   # skip over bkg values
+                hId = G2fil.SaferPickleLoad(fp)   # get histogram number
+                G2fil.SaferPickleLoad(fp)   # skip over x values
+                G2fil.SaferPickleLoad(fp)   # skip over bkg values
                 for h in histograms:
                     if 'PWDR' not in h[:4]: continue
                     if hId == histograms[h]['hId']: break
@@ -6146,11 +6145,11 @@ is being refined.
                            histograms[h]['Data'][2],histograms[h]['Data'][3],
                            histograms[h]['Data'][4]]
                 while True: # read until we hit an EOF or a None
-                    phase = pickle.load(fp)   # get phase & then y vals
+                    phase = G2fil.SaferPickleLoad(fp)   # get phase & then y vals
                     if phase is None: break
                     lblList.append(phase)
                     ypartial = np.zeros_like(x)
-                    yp = pickle.load(fp)
+                    yp = G2fil.SaferPickleLoad(fp)
                     if len(yp):
                         ypartial[xB:xF] = yp
                         valList.append(ypartial)

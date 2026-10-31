@@ -41,6 +41,7 @@ from . import GSASIIplot as G2plt
 from . import GSASIIpwdplot as G2pwpl
 from . import GSASIIphsGUI2 as G2phsG2
 from . import GSASIIrmcGUI as G2rmcG
+from . import GSASIIfiles as G2fil
 # if GSASIIpath.GetConfigValue('debug'):
 #     print('Debug reloading',G2plt)
 #     import imp
@@ -6546,13 +6547,12 @@ at one of the following locations:
                 yvals = np.array(vals)[:,1:].T
                 choices = ['Constraints vs. Steps']
             if os.path.exists(plotFilePath):
-                import pickle
                 fp = open(plotFilePath,'rb')
                 while True:
                     try:
-                        title = pickle.load(fp)
+                        title = G2fil.SaferPickleLoad(fp)
                         imgDict[title] = fp.tell()
-                        im = pickle.load(fp)
+                        im = G2fil.SaferPickleLoad(fp)
                         choices += [title]
                     except:
                         break
@@ -6579,7 +6579,7 @@ at one of the following locations:
                     fp = open(plotFilePath,'rb')
                     fp.seek(imgDict[plt])
                     try:
-                        im = pickle.load(fp)
+                        im = G2fil.SaferPickleLoad(fp)
                         G2plt.PlotRawImage(G2frame,im,plt)
                     except:
                         pass
@@ -9374,6 +9374,7 @@ at one of the following locations:
         '''Select HAP items to copy from another GPX file to current
         phase & hist
         '''
+        import pickle   # used for exception
         sourceDict = data['Histograms'][G2frame.hist]
         try:
             pth = G2G.GetImportPath(G2frame)
@@ -9385,15 +9386,20 @@ at one of the following locations:
         finally:
             dlg.Destroy()
 
-        import pickle
         phases = None
         phasenames = []
+        blknum = 0
         try:
             fp = open(filename,'rb')
             while True:
+                blknum += 1
                 try:
-                    d = pickle.load(fp)
-                except EOFError:
+                    d = G2fil.GPXpickleLoad(fp)
+                except G2fil.UnpicklingError as errmsg:
+                    print(f'skipping block {blknum} due to error {errmsg}')
+                    continue
+                except EOFError as errmsg:
+                    print(f'ending read due to error {errmsg}')
                     break
                 if d[0][0] == 'Phases':
                     phases = d
@@ -13424,6 +13430,7 @@ tab, use Operations->"Pawley create")''')
         for Id in G2frame.dataWindow.ReplaceMenuId:     #loop over submenu items
             G2frame.Bind(wx.EVT_MENU, OnReplacePhase, id=Id)
         # Data (unless Hist/Phase tree entry shown)
+        # note that these binds are duplicated in GSASIIddataGUI
         if not GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataMenu)
             G2frame.Bind(wx.EVT_MENU, OnDataUse, id=G2G.wxID_DATAUSE)

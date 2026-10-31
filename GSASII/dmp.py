@@ -16,7 +16,7 @@ Created on Fri Jul 21 10:40:08 2023 by Brian Toby
 """
 
 import sys
-import pickle
+import pickle  # used for development with locally-generated files
 
 def dump2tmp(uselocals=True, useglobals=True, usefunctions=False):
     '''

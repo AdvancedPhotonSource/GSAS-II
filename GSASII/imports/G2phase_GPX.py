@@ -2,12 +2,12 @@
 '''Class to read a phase from an existing GSAS-II project file
 '''
 from __future__ import division, print_function
-import platform
 import sys
 import pickle
 import random as ran
 from .. import GSASIIobj as G2obj
 from .. import GSASIIstrIO as G2stIO
+from .. import GSASIIfiles as G2fil
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .GPX file and pulls out a selected phase'
@@ -24,10 +24,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         if True:
             fp = open(filename,'rb')
         try:
-            if '2' in platform.python_version_tuple()[0]:
-                data = pickle.load(fp)
-            else:
-                data = pickle.load(fp,encoding='latin-1')
+            data = G2fil.GPXpickleLoad(fp)
         except:
             self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
             fp.close()

@@ -14,7 +14,6 @@ import sys
 import os
 import platform
 import glob
-import pickle
 
 import wx
 import numpy as np
@@ -78,9 +77,6 @@ def RwFtest(npts,Rwp0,nvar0,Rwp1,nvar1):
     F = (ratio - 1.) * nu2 / nu1
     import scipy.stats
     return scipy.stats.f.cdf(F,nu1,nu2)
-
-def pickleLoad(fp):
-    return pickle.load(fp,encoding='latin-1')
 
 def main(application):
     '''Start up the GSAS-II GUI'''
@@ -385,7 +381,7 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = pickleLoad(filep)
+                    data = G2fil.GPXpickleLoad(filep)
                 except EOFError:
                     break
                 if not data[0][0].startswith('PWDR'): continue
@@ -469,7 +465,7 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = pickleLoad(filep)
+                    data = G2fil.GPXpickleLoad(filep)
                 except EOFError:
                     break
                 if not data[0][0].startswith('Phase'): continue
@@ -539,7 +535,7 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = pickleLoad(filep)
+                    data = G2fil.GPXpickleLoad(filep)
                 except EOFError:
                     break
                 if data[0][0].startswith('PWDR'):

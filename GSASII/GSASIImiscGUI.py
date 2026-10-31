@@ -675,7 +675,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     item[:20],sizeList[item]/1024.))
             print(50*'=')
         G2frame.NewPlot = True
-    except pickle.UnpicklingError as errmsg:
+    except G2fil.UnpicklingError as errmsg:
         G2G.G2MessageBox(G2frame,
         #msg = wx.MessageDialog(G2frame,message=
                                    "Error reading file "+

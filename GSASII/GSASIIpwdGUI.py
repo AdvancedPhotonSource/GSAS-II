@@ -999,7 +999,7 @@ def UpdatePeakGrid(G2frame, data):
         PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
             Id = G2gd.GetGPXtreeItemId(G2frame,PatternId, item)
-            oldvals = pickle.load(file)
+            oldvals = G2fil.SaferPickleLoad(file)  # file with peak undo file -- just created
             G2frame.GPXtree.SetItemPyData(Id,oldvals)
             if item == 'Peak List':
                 data.update(G2frame.GPXtree.GetItemPyData(Id))
@@ -8455,7 +8455,8 @@ def UpdateModelsGrid(G2frame,data):
         print ('Undo last refinement')
         file = open(G2frame.undosasd,'rb')
         PatternId = G2frame.PatternId
-        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),pickle.load(file))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),
+                                      G2fil.SaferPickleLoad(file))
         print (' Models recovered')
         file.close()
 
@@ -9297,10 +9298,13 @@ def UpdateREFDModelsGrid(G2frame,data):
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
 
     def DoUnDo():
+        '''Undo REFD fit with just-created pickle file
+        '''
         print ('Undo last refinement')
         file = open(G2frame.undorefd,'rb')
         PatternId = G2frame.PatternId
-        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),pickle.load(file))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),
+                                      G2fil.SaferPickleLoad(file))
         print (' Model recovered')
         file.close()
 

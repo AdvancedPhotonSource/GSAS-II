@@ -9117,7 +9117,10 @@ def skimGPX(fl):
             cnt += 1
             note = None
             try:
-                data = G2IO.pickleLoad(fp)
+                data = G2fil.GPXpickleLoad(fp)
+            except G2fil.UnpicklingError as errmsg:
+                print(f'skipping block {cnt} due to error {errmsg}')
+                continue
             except EOFError:
                 #print(cnt,'entries read')
                 break

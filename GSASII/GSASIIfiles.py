@@ -2590,8 +2590,18 @@ def findPDFfit():
     if os.path.exists(newpython): return newpython
     return None
 
+# Routines to wrap unpickling
+GPXUnpicklerExceptions = set()   # contains undefined objects read by
+# GPXpickleLoad when environment variable GSASII_GPX_TROJAN_BYPASS is set
+MiscUnpicklerExceptions = set()  # contains undefined objects read by
+# SaferPickleLoad when Debug mode is in use
+UnpicklingError = pickle.UnpicklingError # copy of exception
+
 def GPXpickleLoad(fp):
-    #return pickle.load(fp,encoding='latin-1')
+    '''Replaces pickle.load(fp,encoding='latin-1') with a filtered
+    routine that has a limited range of things that can be read.
+    '''
+    #print('GPXpickleLoad')
     return _GPXUnpickler(fp, encoding='latin-1').load()
 
 # Data types permitted when unpickling a .gpx (GSAS-II project) file.
@@ -2611,12 +2621,10 @@ _GPX_SAFE_GLOBALS = {
     'copy_reg': ('_reconstructor',),
     '__builtin__': ('object','bytes','xrange'),
     'wx._core': ('Point'),
-}
-# If anything else is encountered, this is a potential trojan and
+} # If anything else is encountered, this is a potential trojan and
 # will be blocked (unless bypassed by defining environment 
-# variable GSASII_GPX_TROJAN_BYPASS
+# variable GSASII_GPX_TROJAN_BYPASS)
 
-GPXUnpicklerExceptions = set()
 class _GPXUnpickler(pickle.Unpickler):
     '''A replacement for pickle.load that will read only the data-only 
     classes that GSAS-II writes into a .gpx file. Blocks the arbitrary-object 
@@ -2634,9 +2642,53 @@ class _GPXUnpickler(pickle.Unpickler):
             GPXUnpicklerExceptions.add(f'{module}.{name}')
             return super().find_class(module, name)
         print(f'Encountered unexpected object in GPX file: {module}.{name}')
-        raise pickle.UnpicklingError(
+        raise UnpicklingError(
             f'Refusing to unpickle unexpected object ({module}.{name}) from a .gpx file.')
 
+def SaferPickleLoad(fp,encoding='latin-1'):
+    '''Replaces pickle.load(fp) with a filtered routine
+    that has a limited range of things that can be read.
+    '''
+    #print('SaferPickleLoad')
+    return _SafeUnpickler(fp, encoding=encoding).load()
+
+# Data types permitted when unpickling from a file (other than a .gpx)
+_PICKLE_SAFE_GLOBALS = {
+    'numpy.core.multiarray': ('_reconstruct', 'scalar'),
+    'numpy._core.multiarray': ('_reconstruct', 'scalar'),
+    'numpy': ('ndarray','dtype'),
+    '_codecs': ('encode',),                         # NumPy arrays restored via latin-1
+    'numpy.ma': ('MaskedArray',),
+    'numpy.ma.core': ('_mareconstruct', 'MaskedArray','MaskedConstant'),
+}
+# If anything else is encountered, this is a potential trojan and
+# will be blocked for general users. In Debug mode this will be read
+# and flagged. If expected should be added to _PICKLE_SAFE_GLOBALS.
+
+class _SafeUnpickler(pickle.Unpickler):
+    '''A replacement for pickle.load that will read only the data-only
+    classes that are expected in a pickle. Blocks the arbitrary-object 
+    reconstruction that would allow a bare pickle.load to be an 
+    arbitrary-code-execution vector.
+    '''
+    def find_class(self, module, name):
+        if name in _PICKLE_SAFE_GLOBALS.get(module,[]):
+            return super().find_class(module, name)
+        elif GSASIIpath.GetConfigValue('debug'):
+            print(f'debug unpickle security bypass: reading unlisted object {module}.{name}')
+            MiscUnpicklerExceptions.add(f'{module}.{name}')
+            return super().find_class(module, name)
+        else:  # this is planned to be temporary until we have more experience
+            # TODO: remove this stanza
+            print(f'_SafeUnpickler: reading unlisted object {module}.{name}'
+                      '\nPlease report this message to Brian or Bob.')
+            MiscUnpicklerExceptions.add(f'{module}.{name}')
+            return super().find_class(module, name)
+        print(f'Encountered unexpected object in pickle file: {module}.{name}')
+        raise UnpicklingError(
+            f'Refusing to unpickle unexpected object ({module}.{name}) from a pickle file.')
+
+    
 if __name__ == '__main__':
     for i in (1.23456789e-129,1.23456789e129,1.23456789e-99,1.23456789e99,-1.23456789e-99,-1.23456789e99):
         print (FormatSigFigs(i),i)

@@ -2,13 +2,9 @@
 '''
 '''
 from __future__ import division, print_function
-import platform
-import pickle
 import numpy as np
 from .. import GSASIIobj as G2obj
-
-def pickleLoad(fp):
-    return pickle.load(fp,encoding='latin-1')
+from .. import GSASIIfiles as G2fil
 
 class GSAS2_ReaderClass(G2obj.ImportPowderData):
     """Routines to import powder data from a GSAS-II file
@@ -26,19 +22,22 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
     def ContentsValidator(self, filename):
         "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
         fp = open(filename,'rb')
-        try: 
-            data = pickleLoad(fp)
-        except:
-            self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
-            fp.close()
-            return False
-        fp.seek(0)
+        blknum = 0
         nhist = 0
         while True:
+            blknum += 1
             try:
-                data = pickleLoad(fp)
+                data = G2fil.GPXpickleLoad(fp)
+            except G2fil.UnpicklingError as errmsg:
+                print(f'skipping block {blknum} due to error {errmsg}')
+                continue
             except EOFError:
                 break
+            except:
+                if blknum == 1:
+                    self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
+                    fp.close()
+                    return False
             if data[0][0][:4] == 'PWDR':
                 nhist += 1
                 self.dnames.append(data[0][0])
@@ -64,12 +63,16 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             poslist = rdbuffer.get('poslist')
             histnames = rdbuffer.get('histnames')
         else:
+            blknum = 0
             try:
                 fp = open(filename,'rb')
                 while True:
                     pos = fp.tell()
                     try:
-                        data = pickleLoad(fp)
+                        data = G2fil.GPXpickleLoad(fp)
+                    except G2fil.UnpicklingError as errmsg:
+                        print(f'skipping block {blknum} due to error {errmsg}')
+                        continue
                     except EOFError:
                         break
                     if data[0][0][:4] == 'PWDR':
@@ -102,7 +105,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
 
         fp = open(filename,'rb')
         fp.seek(poslist[selblk])
-        data = pickleLoad(fp)
+        data = G2fil.GPXpickleLoad(fp)  # was loaded already, so should not fail
         N = len(data[0][1][1][0])
         #self.powderdata = data[0][1][1]
         self.powderdata = [
@@ -127,6 +130,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
                 if data[i][0] == keepitem:
                     self.pwdparms[data[i][0]] = data[i][1]
                     break
+        self.instmsg = '.gpx file'
         self.idstring = data[0][0][5:]
         self.repeat_instparm = False # prevent reuse of iparm when several hists are read
         fp.close()

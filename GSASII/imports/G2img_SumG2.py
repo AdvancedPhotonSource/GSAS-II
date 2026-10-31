@@ -3,8 +3,8 @@
 '''
 
 from __future__ import division, print_function
-import pickle
 from .. import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
 class G2_ReaderClass(G2obj.ImportImage):
     '''Routine to read an image that has been pickled in Python. Images
     in this format are created by the "Sum image data" command. At least for
@@ -23,7 +23,7 @@ class G2_ReaderClass(G2obj.ImportImage):
         '''
         try:
             fp = open(filename,'rb')
-            pickle.load(fp)
+            G2fil.SaferPickleLoad(fp)
             fp.close()
         except:
             return False
@@ -33,7 +33,7 @@ class G2_ReaderClass(G2obj.ImportImage):
         '''Read using pickle
         '''
         Fp = open(filename,'rb')
-        self.Comments,self.Data,self.Npix,self.Image = pickle.load(Fp)
+        self.Comments,self.Data,self.Npix,self.Image = G2fil.SaferPickleLoad(Fp)
         Fp.close()
         self.LoadImage(ParentFrame,filename)
         return True

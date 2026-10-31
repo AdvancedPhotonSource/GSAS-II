@@ -1749,7 +1749,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         for each phase. Plot is refreshed each time a setting is changed.
         '''
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
-        phPartialFile = Controls['PhasePartials']
+        phPartialFile = Controls.get('PhasePartials')
         if phPartialFile is None or not os.path.exists(phPartialFile):
             dlg = wx.MessageDialog(G2frame,
                 'Phase partials (intensity profiles for each individual phase) have not been computed. Do you want to compute them?',

@@ -20,12 +20,22 @@ class PhaseReaderClass(G2obj.ImportPhase):
             )
 
     def ContentsValidator(self, filename):
-        "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
+        "Test if any section can be read as a pickle block, if not it can't be .GPX!"
         if True:
             fp = open(filename,'rb')
-        try:
-            data = G2fil.GPXpickleLoad(fp)
-        except:
+        good = 0
+        bad = 0
+        while True:
+            try:
+                G2fil.GPXpickleLoad(fp)
+                good += 1
+            except EOFError:
+                break
+            except:
+                bad += 1
+                if bad >= 10: break
+                pass
+        if good == 0:
             self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
             fp.close()
             return False

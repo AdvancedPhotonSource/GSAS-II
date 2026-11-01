@@ -85,28 +85,32 @@ def IndexGPX(GPXfile,read=False):
     gpxSize = os.path.getsize(GPXfile)
     fp = open(GPXfile,'rb')
     Project = {}
-    try:
-        while True:
-            pos = fp.tell()
+    bnum = 0
+    while True:
+        bnum += 1
+        pos = fp.tell()
+        try:
             data = G2fil.GPXpickleLoad(fp)
-            datum = data[0]
-            gpxIndex[datum[0]] = pos
-            if read: Project[datum[0]] = {'data':datum[1]}
-            gpxNamelist.append([datum[0],])
-            for datus in data[1:]:
-                if read: Project[datum[0]][datus[0]] = datus[1]
-                gpxNamelist[-1].append(datus[0])
-        # print('project load successful')
-    except EOFError:
-        pass
-    except G2fil.UnpicklingError as msg:
-        print('Read Error:',msg)
-        raise Exception(f"Error reading file {GPXfile}). This file has unexpected content and could contain a virus.")
-    except Exception as msg:
-        G2fil.G2Print('Read Error:',msg)
-        raise Exception(f"Error reading file {GPXfile}). This is not a GSAS-II .gpx file")
-    finally:
-        fp.close()
+        except EOFError:
+            break
+        except G2fil.UnpicklingError as msg:
+            print(f"Error reading block {bnum} in file {GPXfile}). This file has unexpected content and could contain a virus.")
+            print('Read Error:',msg)
+            #raise Exception(f"Error reading block {bnum} in file {GPXfile}). This file has unexpected content and could contain a virus.")
+            continue
+        except Exception as msg:
+            G2fil.G2Print('Read Error:',msg)
+            fp.close()
+            raise Exception(f"Unexpected error reading block {bnum} file {GPXfile}). Is this a GSAS-II .gpx file?")
+        datum = data[0]
+        gpxIndex[datum[0]] = pos
+        if read: Project[datum[0]] = {'data':datum[1]}
+        gpxNamelist.append([datum[0],])
+        for datus in data[1:]:
+            if read: Project[datum[0]][datus[0]] = datus[1]
+            gpxNamelist[-1].append(datus[0])
+    # print('project load successful')
+    fp.close()
     if read: return Project,gpxNamelist
 
 def GetControls(GPXfile):

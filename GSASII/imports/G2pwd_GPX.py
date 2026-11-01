@@ -20,16 +20,22 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             )
         
     def ContentsValidator(self, filename):
-        "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
+        "Test if a section can be read as a pickle block, if not it can't be .GPX!"
         fp = open(filename,'rb')
         blknum = 0
         nhist = 0
+        bad = 0
         while True:
             blknum += 1
             try:
                 data = G2fil.GPXpickleLoad(fp)
             except G2fil.UnpicklingError as errmsg:
                 print(f'skipping block {blknum} due to error {errmsg}')
+                bad += 1
+                if bad >= 10:
+                    print('giving up')
+                    fp.close()
+                    return False
                 continue
             except EOFError:
                 break
@@ -66,12 +72,17 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             blknum = 0
             try:
                 fp = open(filename,'rb')
+                bad = 0
                 while True:
                     pos = fp.tell()
                     try:
                         data = G2fil.GPXpickleLoad(fp)
                     except G2fil.UnpicklingError as errmsg:
                         print(f'skipping block {blknum} due to error {errmsg}')
+                        bad += 1
+                        if bad >= 10:
+                            self.errors = 'Giving up'
+                            return False
                         continue
                     except EOFError:
                         break

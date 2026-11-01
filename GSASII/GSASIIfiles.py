@@ -2609,18 +2609,25 @@ def GPXpickleLoad(fp):
 # objects, NumPy arrays/masked-arrays, and two GSASII objects:
 # G2obj.G2VarObj & G2obj.ExpressionObj.
 _GPX_SAFE_GLOBALS = {
-    'numpy.core.multiarray': ('_reconstruct', 'scalar'),
-    'numpy._core.multiarray': ('_reconstruct', 'scalar'),
-    'numpy': ('ndarray','dtype'),
+    'numpy.core.multiarray': ('_reconstruct', 'scalar',),
+    'numpy._core.multiarray': ('_reconstruct', 'scalar',),
+    'numpy': ('ndarray','dtype',
+            # data types that might be needed with scalars. None of these
+            # have been seen in existing .gpx files
+            'float16','float32','float64','float128','longdouble',
+            'int8','int16','int32','int64','intc','intp','longlong',
+            'uint8','uint16','uint32','uint64','uintc','uintp','ulonglong',
+            'bool_','complex64','complex128','complex256',
+            'str_','bytes_','void','datetime64','timedelta64',),
     '_codecs': ('encode',),                         # NumPy arrays restored via latin-1
     'numpy.ma': ('MaskedArray',),
-    'numpy.ma.core': ('_mareconstruct', 'MaskedArray','MaskedConstant'),
-    'GSASII.GSASIIobj': ('G2VarObj', 'ExpressionObj'),
-    'GSASIIobj': ('G2VarObj', 'ExpressionObj'),
-    # older files
+    'numpy.ma.core': ('_mareconstruct', 'MaskedArray','MaskedConstant',),
+    'GSASII.GSASIIobj': ('G2VarObj', 'ExpressionObj',),
+    'GSASIIobj': ('G2VarObj', 'ExpressionObj',),
+    # found in older files, not present in newer .gpx files:
     'copy_reg': ('_reconstructor',),
     '__builtin__': ('object','bytes','xrange'),
-    'wx._core': ('Point'),
+    'wx._core': ('Point',),
 } # If anything else is encountered, this is a potential trojan and
 # will be blocked (unless bypassed by defining environment 
 # variable GSASII_GPX_TROJAN_BYPASS)
@@ -2654,12 +2661,12 @@ def SaferPickleLoad(fp,encoding='latin-1'):
 
 # Data types permitted when unpickling from a file (other than a .gpx)
 _PICKLE_SAFE_GLOBALS = {
-    'numpy.core.multiarray': ('_reconstruct', 'scalar'),
-    'numpy._core.multiarray': ('_reconstruct', 'scalar'),
-    'numpy': ('ndarray','dtype'),
+    'numpy.core.multiarray': ('_reconstruct', 'scalar',),
+    'numpy._core.multiarray': ('_reconstruct', 'scalar',),
+    'numpy': ('ndarray','dtype',),
     '_codecs': ('encode',),                         # NumPy arrays restored via latin-1
     'numpy.ma': ('MaskedArray',),
-    'numpy.ma.core': ('_mareconstruct', 'MaskedArray','MaskedConstant'),
+    'numpy.ma.core': ('_mareconstruct', 'MaskedArray','MaskedConstant',),
 }
 # If anything else is encountered, this is a potential trojan and
 # will be blocked for general users. In Debug mode this will be read
@@ -2678,12 +2685,12 @@ class _SafeUnpickler(pickle.Unpickler):
             print(f'debug unpickle security bypass: reading unlisted object {module}.{name}')
             MiscUnpicklerExceptions.add(f'{module}.{name}')
             return super().find_class(module, name)
-        else:  # this is planned to be temporary until we have more experience
-            # TODO: remove this stanza
-            print(f'_SafeUnpickler: reading unlisted object {module}.{name}'
-                      '\nPlease report this message to Brian or Bob.')
-            MiscUnpicklerExceptions.add(f'{module}.{name}')
-            return super().find_class(module, name)
+        # else:  # this is planned to be temporary until we have more experience
+        #     # TODO: remove this stanza
+        #     print(f'_SafeUnpickler: reading unlisted object {module}.{name}'
+        #               '\nPlease report this message to Brian or Bob.')
+        #     MiscUnpicklerExceptions.add(f'{module}.{name}')
+        #     return super().find_class(module, name)
         print(f'Encountered unexpected object in pickle file: {module}.{name}')
         raise UnpicklingError(
             f'Refusing to unpickle unexpected object ({module}.{name}) from a pickle file.')

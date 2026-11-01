@@ -5851,7 +5851,7 @@ to use these entries'''
         covData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
-        parmDict = G2IO.mkParmDictfromTree(G2frame)
+        #parmDict = G2IO.mkParmDictfromTree(G2frame)
         cell = generalData['Cell'][1:7]
         atomData = data['Atoms']
         px = ['0','0','1']
@@ -9374,7 +9374,6 @@ at one of the following locations:
         '''Select HAP items to copy from another GPX file to current
         phase & hist
         '''
-        import pickle   # used for exception
         sourceDict = data['Histograms'][G2frame.hist]
         try:
             pth = G2G.GetImportPath(G2frame)

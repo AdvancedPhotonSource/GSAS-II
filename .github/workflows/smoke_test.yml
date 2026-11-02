@@ -60,5 +60,10 @@ jobs:
         # run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
         run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install
 
+      # compile all modules with the matrix Python (pixi env) to catch syntax
+      # errors, e.g. 3.12-only syntax that fails on 3.10/3.11
+      - name: Check Python syntax
+        run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} python -m compileall -q GSASII
+
       - name: test
         run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} test

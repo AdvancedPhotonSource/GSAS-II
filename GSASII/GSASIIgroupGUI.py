@@ -738,7 +738,7 @@ def getSampleVals(G2frame,Histograms):
         return a
    # loop over histograms in group
     for hist in groupDict[groupName]:
-        prmPrefix = f':{Histograms[hist]['hId']}:'
+        prmPrefix = f":{Histograms[hist]['hId']}:"
         indexDict[hist] = {}
         indexDict[hist]['Inst. name'] = {
             'val' : ('Sample Parameters','InstrName')}
@@ -827,7 +827,7 @@ def getInstVals(G2frame,Histograms):
     indexDict = {'_dataSource':Histograms}
    # loop over histograms in group
     for hist in groupDict[groupName]:
-        prmPrefix = f':{Histograms[hist]['hId']}:'
+        prmPrefix = f":{Histograms[hist]['hId']}:"
         indexDict[hist] = {}
         insVal = Histograms[hist]['Instrument Parameters'][0]
         insType = insVal['Type'][1]
@@ -935,7 +935,7 @@ def getBkgVals(G2frame,Histograms):
     indexDict = {'_dataSource':Histograms}
     # loop over histograms in group
     for hist in groupDict[groupName]:
-        prmPrefix = f':{Histograms[hist]['hId']}:'
+        prmPrefix = f":{Histograms[hist]['hId']}:"
         indexDict[hist] = {}
         for lbl,indx,typ in [('Function type',0,'str'),
                              ('bkg refine flag',1,'ref'),
@@ -1005,7 +1005,7 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
         return
     indexDict = {'_dataSource':PhaseData['Histograms']}
     for hist in groupDict[groupName]:
-        prmPrefix = f'{pId}:{Histograms[hist]['hId']}:'
+        prmPrefix = f"{pId}:{Histograms[hist]['hId']}:"
         indexDict[hist] = {}
         # phase fraction
         indexDict[hist]['Phase frac'] = {

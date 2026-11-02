@@ -60,5 +60,8 @@ jobs:
         # run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
         run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install
 
+      - name: Check Python syntax
+        run: python -m compileall -q GSASII
+
       - name: test
         run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} test

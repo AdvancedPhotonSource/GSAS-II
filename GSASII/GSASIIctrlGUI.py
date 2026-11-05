@@ -9110,6 +9110,7 @@ def skimGPX(fl):
         return {'error':'File does not exist!'}
     cnt = 0
     hist = 0
+    bad = 0
     fp = open(fl,'rb')
     result['last saved'] = time.ctime(os.stat(fl).st_mtime)
     try:
@@ -9120,6 +9121,8 @@ def skimGPX(fl):
                 data = G2fil.GPXpickleLoad(fp)
             except G2fil.UnpicklingError as errmsg:
                 print(f'skipping block {cnt} due to error {errmsg}')
+                bad += 1
+                if bad >= 10: break
                 continue
             except EOFError:
                 #print(cnt,'entries read')

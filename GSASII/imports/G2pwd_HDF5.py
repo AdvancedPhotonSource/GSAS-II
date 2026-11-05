@@ -467,7 +467,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
             if isinstance(l, h5py.ExternalLink): continue
             if ".Group'" in typ:
                 #t = f'{prefix}/{i}'
-                #print(f'\n{nextprefix} contents {(60-len(t))*'='}')
+                #print(f"\n{nextprefix} contents {(60-len(t))*'='}")
                 self.RecurseH5Element(obj[i],nextprefix,length)
         return self.HDF5entries
 

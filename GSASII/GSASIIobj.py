@@ -154,11 +154,16 @@ def GetPhaseNames(fl):
     '''
     from . import GSASIIfiles as G2fil
     PhaseNames = []
+    bad = 0
     while True:
         try:
             data = G2fil.GPXpickleLoad(fl)
         except G2fil.UnpicklingError as errmsg:
+            bad += 1
             #print(f'skipping block {cnt} due to error {errmsg}')
+            if bad >= 10:
+                print(f'Too many bad blocks, error: {errmsg}')
+                break
             continue
         except EOFError:
             break

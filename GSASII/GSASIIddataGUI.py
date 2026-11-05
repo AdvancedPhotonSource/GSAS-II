@@ -1417,6 +1417,7 @@ def MakeHistPhaseWin(G2frame):
         phases = None
         phasenames = []
         blknum = 0
+        bad = 0
         try:
             fp = open(filename,'rb')
             while True:
@@ -1425,6 +1426,8 @@ def MakeHistPhaseWin(G2frame):
                     d = G2fil.GPXpickleLoad(fp)
                 except G2fil.UnpicklingError as errmsg:
                     print(f'skipping block {blknum} due to error {errmsg}')
+                    bad += 1
+                    if bad >= 10: break
                     continue
                 except EOFError as errmsg:
                     print(f'ending read due to error {errmsg}')

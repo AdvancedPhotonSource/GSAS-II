@@ -733,12 +733,15 @@ class GSAS2_INT_ReaderClass(G2obj.ImportStructFactor):
         fp = open(filename,'rb')
         blknum = 0
         nhist = 0
+        bad = 0
         while True:
             blknum += 1
             try:
                 data = G2fil.GPXpickleLoad(fp)
             except G2fil.UnpicklingError as errmsg:
                 print(f'skipping block {blknum} due to error {errmsg}')
+                bad += 1
+                if bad >= 10: break
                 continue
             except EOFError:
                 break

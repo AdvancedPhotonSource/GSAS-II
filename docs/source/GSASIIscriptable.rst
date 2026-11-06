@@ -1098,13 +1098,13 @@ GSAS-II is commonly installed outside of a Python installation, which
 means that Python must be instructed on how to access the GSASII
 package. In :ref:`that section <ScriptingShortcut>` three methods are
 provided for defining G2sc as the location of the GSASIIscriptable
-module, as shown in this section. The scripting examples below assume
-that one of these choices for import statements has been included to 
-provide access to GSASIIscriptable.
+module, as shown here:
 
   .. code-block::  python
 
     from GSASII import GSASIIscriptable as G2sc
+
+or
     
   .. code-block::  python
 
@@ -1112,8 +1112,15 @@ provide access to GSASIIscriptable.
     sys.path.insert(0,'/Users/toby/g2main/GSAS-II') # needed to find GSASII package
     from GSASII import GSASIIscriptable as G2sc
 
+or
+
   .. code-block::  python
-    import G2script as G2sc  
+    import G2script as G2sc
+
+The scripting examples below assume
+that one of these choices for import statements has been included to 
+provide access to GSASIIscriptable.
+
 
 Status Information
 -----------------------------

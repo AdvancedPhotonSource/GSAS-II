@@ -1238,7 +1238,7 @@ class ImportBaseclass(object):
         # used for readers that will use multiple passes to read
         # more than one data block
         self.repeat = False
-        self.selections = []
+        #self.selections = []  # don't clear, want to carry these between reads
         self.repeatcount = 0
         self.readfilename = '?'
         self.scriptable = False
@@ -1348,12 +1348,14 @@ class ImportPhase(ImportBaseclass):
         self.SymOps = {} # specified when symmetry ops are in file (e.g. CIF)
         self.Constraints = None  # constraints read from a phase (ISODISTORT CIFs)
         self.ConstraintOffsets = None # offsets applied to parameters when (ISODISTORT occupancy mode CIFs)
+        self.useNet = True # allows access to internet when reading phases
 
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
         self.Constraints = None
         self.ConstraintOffsets = None
+        self.useNet = True
 
 ######################################################################
 class ImportStructFactor(ImportBaseclass):
@@ -1461,7 +1463,6 @@ class ImportPowderData(ImportBaseclass):
         self.instdict = {} # place items here that will be transferred to the instrument parameters
         self.pwdparms = {} # place parameters that are transferred directly to the tree
                            # here (typically from an existing GPX file)
-        self.selections = []
         self.dnames = []
 ######################################################################
 class ImportSmallAngleData(ImportBaseclass):

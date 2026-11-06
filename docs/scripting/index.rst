@@ -7,7 +7,8 @@ covering the :mod:`GSASIIscriptable` package, used to
 create Python scripts for running GSAS-II. 
 Note that most
 data structures used in GSAS-II are defined in module :mod:`GSASIIobj`, also
-included here. 
+included here. If you are familiar with  :mod:`GSASIIscriptable`,
+:ref:`CodeExamples` may be a good place to start.
 
 .. only:: html
 

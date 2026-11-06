@@ -1201,7 +1201,7 @@ class GSASII(wx.Frame):
             # file's extension and later with ones that merely allow it
             errorReport = ''
             for rd in primaryReaders+secondaryReaders:
-                if Start:   #clear old bank selections to allow new ones to be selected by user
+                if Start:   # on 1st file, clear old bank selections to allow new ones to be selected by user
                     rd.selections = []
                     rd.dnames = []
                 rd.ReInitialize() # purge anything from a previous read
@@ -1211,7 +1211,7 @@ class GSASII(wx.Frame):
                     if rd.errors:
                         errorReport += ': '+rd.errors
                     continue
-                if len(rd.selections)>1 and Start:
+                if len(rd.selections)>1 and Start: # on 1st file if more than one bank, phase,...(?) ask for a selection
                     dlg = G2G.G2MultiChoiceDialog(self,'Dataset Selector','Select data to read from the list below',rd.dnames)
                     if dlg.ShowModal() == wx.ID_OK:
                         rd.selections = dlg.GetSelections()
@@ -3308,7 +3308,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.Legend = False
         self.SinglePlot = True
         self.Waterfall = False
-        self.selections= None
+        self.selections= None  # used for PWDR plotting
         self.PDFselections = None
         self.SubBack = False
         self.seqReverse = False

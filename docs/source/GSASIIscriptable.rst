@@ -1093,7 +1093,27 @@ Code Examples
 
 Accessing GSASIIscriptable
 -----------------------------
-As discussed in the :ref:`ScriptingShortcut` section of this chapter, GSAS-II is commonly installed outside of a Python installation, which means that Python must be instructed on how to access the GSASII package. In :ref:`that section <ScriptingShortcut>` three methods are provided for defining G2sc as the location of the GSASIIscriptable module. The scripting examples below all assume that one of choices for import statements has been executed to provide access to GSASIIscriptable.
+As discussed in the :ref:`ScriptingShortcut` section of this chapter,
+GSAS-II is commonly installed outside of a Python installation, which
+means that Python must be instructed on how to access the GSASII
+package. In :ref:`that section <ScriptingShortcut>` three methods are
+provided for defining G2sc as the location of the GSASIIscriptable
+module, as shown in this section. The scripting examples below assume
+that one of these choices for import statements has been included to 
+provide access to GSASIIscriptable.
+
+  .. code-block::  python
+
+    from GSASII import GSASIIscriptable as G2sc
+    
+  .. code-block::  python
+
+    import sys
+    sys.path.insert(0,'/Users/toby/g2main/GSAS-II') # needed to find GSASII package
+    from GSASII import GSASIIscriptable as G2sc
+
+  .. code-block::  python
+    import G2script as G2sc  
 
 Status Information
 -----------------------------

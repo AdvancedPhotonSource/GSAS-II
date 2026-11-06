@@ -483,6 +483,9 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
         for rd in primaryReaders + secondaryReaders:
             # Initialize reader
             rd.selections = []
+            rd.dnames = []
+            rd.ReInitialize()
+            rd.useNet = useNet  # matters only for phase importers
             if bank is None:
                 rd.selections = []
             else:
@@ -490,17 +493,13 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                     rd.selections = [i-1 for i in bank]
                 except TypeError:
                     rd.selections = [bank-1]
-            rd.dnames = []
-            rd.ReInitialize()
-            rd.useNet = useNet  # matters only for phase importers
+                if min(rd.selections) < 0:
+                    raise G2ImportException(f"Error: Databank numbering starts at 1. Selection of {1+min(rd.selections)} found.")
             # Rewind file
             rd.errors = ""
             if not rd.ContentsValidator(filename):
                 # Report error
                 G2fil.G2Print("Warning: File {} has a validation error, continuing".format(filename))
-            #if len(rd.selections) > 1:
-            #    raise G2ImportException("File {} has {} banks. Specify which bank to read with databank param."
-            #                    .format(filename,len(rd.selections)))
 
             block = 0
             if buffer is None:
@@ -565,7 +564,7 @@ def load_iprms(instfile, reader, bank=None):
         nbank,iparms = G2fil.ReadInstprm(lines, bank, reader.Sample)
 
         reader.instfile = instfile
-        reader.instmsg = '{} (G2 fmt) bank {}'.format(instfile,bank)
+        reader.instmsg = f'{instfile} (G2 fmt) bank {bank}'
         return iparms
     elif ext.lower() not in ('.prm', '.inst', '.ins'):
         raise ValueError('Expected .prm file, found: ', instfile)
@@ -594,7 +593,7 @@ def load_iprms(instfile, reader, bank=None):
         raise G2ImportException(f"Instrument parameter file has {ibanks} banks, select one with instbank param.")
     reader.powderentry[2] = 1
     reader.instfile = instfile
-    reader.instmsg = '{} bank {}'.format(instfile,reader.instbank)
+    reader.instmsg = f'{instfile} bank {reader.instbank}'
     return G2fil.SetPowderInstParms(Iparm, reader)
 
 def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
@@ -684,7 +683,7 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
             exec(corr)
             G2fil.G2Print('done')
         except Exception as err:
-            print('error: {}'.format(err))
+            print(f'error: {err}')
             print('with commands -------------------')
             print(corr)
             print('---------------------------------')
@@ -810,7 +809,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
                 imagefile,ImageTag  = imagefile
             darkImage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
             if darkImg is None:
-                raise Exception('Error reading dark image {}'.format(imagefile))
+                raise Exception(f'Error reading dark image {imagefile}')
             sumImg += np.array(darkImage*darkScale,dtype=np.int32)
     if 'background image' in Controls:
         backImg,backScale = Controls['background image']
@@ -821,7 +820,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
             ImageTag = None # fix this for multiimage files
             backImage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
             if backImage is None:
-                raise Exception('Error reading background image {}'.format(imagefile))
+                raise Exception(f'Error reading background image {imagefile}')
             if darkImg:
                 backImage += np.array(darkImage*darkScale/backScale,dtype=np.int32)
             else:
@@ -835,7 +834,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
             ImageTag = None # fix this for multiimage files
             GMimage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
             if GMimage is None:
-                raise Exception('Error reading Gain map image {}'.format(imagefile))
+                raise Exception(f'Error reading Gain map image {imagefile}')
             sumImg = sumImg*GMimage/1000
     sumImg -= int(Controls.get('Flat Bkg',0))
     Imax = np.max(sumImg)

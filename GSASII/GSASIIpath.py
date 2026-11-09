@@ -1314,8 +1314,12 @@ def InvokeDebugOpts():
         os.environ['PYTHONBREAKPOINT'] = '0'
 
 def TestSPG():
-    '''Test if pyspg.[so,.pyd] can be run from a location in the existing path
-    Do not modify the path if not.
+    '''Test if a routine in pyspg.[so,.pyd] can be run from a location 
+    in the existing path. Do not modify the path if not.
+
+    This has been updated to use the new version of the binaries, where 
+    `pyspg.fortver()` is used to test and obtain the version numbers, 
+    but as a fallback will use the old binaries.
     '''
     def showVersion():
         try:
@@ -1329,29 +1333,39 @@ def TestSPG():
                 print('  Binaries:   undated')
     try:
         from . import pyspg
-        pyspg
-        showVersion()
+    except ImportError:
+        try:
+            import pyspg
+        except ImportError:
+            return False
+
+    # check if the updated pyspg is installed
+    try:
+        bverstr, vernum = pyspg.fortver()
+        verstr = bverstr.decode('utf-8', errors='replace')
+        print(f'  Binary ver: {verstr}, {vernum} (new)')
         return True
-    except ImportError:
+    except:
         pass
+
+    # patch (11/26): try the older binaries (<=v5.10.3)
     try:
-        import pyspg
-        pyspg
-    except ImportError:
-        return False
-    try:
-        pyspg.sgforpy('P -1')
+        showVersion()
+        pyspg.sgforpy('P -1')   # now in pyspgpy
+        return True
     except Exception as err:
         print(70*'=')
         print(f'Module pyspg in {pyspg.__file__} could not be run\nerror msg: {err}')
         print(70*'=')
         return False
-    showVersion()
-    return True
 
 def pathhack_TestSPG(fpth):
     '''Test if pyspg.[so,.pyd] can be run from a specified location. If so 
     modify the path to include it.
+
+    This has been updated to use the new version of the binaries, where 
+    `pyspg.fortver()` is used to test and obtain the version numbers, 
+    but as a fallback will use the old binaries.
     '''
     try:
         if not os.path.exists(fpth): return False
@@ -1382,7 +1396,16 @@ def pathhack_TestSPG(fpth):
         sys.path = savpath
         return False
     try:
-        pyspg.sgforpy('P -1')
+        pyspg.fortver()
+        sys.path = savpath
+        if fpth not in sys.path: sys.path.append(fpth)
+        return True
+    except:
+        pass
+
+    # patch (11/26): try the older binaries (<=v5.10.3)
+    try:
+        pyspg.sgforpy('P -1')   # now in pyspgpy
     except Exception as err:
         print(70*'=')
         print(f'Module pyspg in {fpth!r} could not be run\nerror msg: {err}')
@@ -1390,6 +1413,7 @@ def pathhack_TestSPG(fpth):
         sys.path = savpath
         return False
     sys.path = savpath
+    if fpth not in sys.path: sys.path.append(fpth)
     return True
 
 def SetBinaryPath(showConfigMsg=False):

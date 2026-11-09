@@ -148,17 +148,26 @@ def ShowVersions():
             loc = os.path.dirname(pyspg.__file__)
         else:
             loc = GSASIIpath.binaryPath
+    except:
+        out += "Binary location:  not found\n"
+        return out
+    try:
+        bverstr, vernum = pyspg.fortver()
+        verstr = bverstr.decode('utf-8', errors='replace')
+        dated = f'{verstr}, {vernum}, new'
+    except:
         try:
             f = os.path.join(loc,'GSASIIversion.txt')
             with open(f,'r') as fp:
                 version = fp.readline().strip()
                 vnum = fp.readline().strip()
-            dated = f'{vnum}, {version}'
+            if vnum == '':
+                dated = 'older, nover'
+            else:
+                dated = f'{vnum}, {version}, older'
         except:
             dated = 'undated'
-        out += f"Binary location:  {loc} ({dated})\n"
-    except:
-        out += "Binary location:  not found\n"
+    out += f"Binary location:  {loc} ({dated})\n"
     return out
 
 def LoadG2fil():

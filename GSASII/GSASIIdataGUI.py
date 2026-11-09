@@ -667,8 +667,11 @@ def ShowVersions():
                 if not GSASIIpath.pathhack_TestSPG(GSASIIpath.binaryPath):
                     versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
     else:
-        # TODO: use GSASIIversion.txt (in binary directory) to see
-        # if version is recent enough rather than use presence of convcell[.exe]
+        # TODO: at some point, use pyspg.fortver() to see if the GSASII
+        # binaries are sufficiently up-to-date to be used, but for now
+        # if convcell[.exe] is present, we should be fine. When that is
+        # implemented, use of GSASIIversion.txt can be retired
+        # (see sources/tagbinary.py and sources/meson.build)
         if GSASIIpath.binaryPath:
             prog = os.path.join(GSASIIpath.binaryPath,"convcell")
         else:

@@ -60,6 +60,7 @@ py.install_sources([
     'gltext.py',
     'k_vector_search.py',
     'nistlat.py',
+    'pyspgpy.py',
     'scanCCD.py',
     'testDeriv.py',
     'testSSymbols.py',

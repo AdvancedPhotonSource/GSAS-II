@@ -1,30 +1,11 @@
-# Where is this source file ?
-#py.extension_module('_core',
-#    'src/main.cpp',
-#    subdir: 'gsas_ii',
-#    install: true,
-#    dependencies : [pybind11_dep],
-#)
-
-#install_subdir('src/gsas_ii', install_dir: py.get_install_dir() / 'gsas_ii', strip_directory: true)
-
 py.extension_module('fmask',
         'fmask.c',
         dependencies : [py_dep, numpy_dep],
-#        include_directories : ['include'],
         install: true,
         subdir: 'GSASII',
         )
 
 # Fortran compilation:
-
-#histogram2d_source = custom_target('histogram2dmodule.c',
-#  input : ['histogram2d.for'],  # .f so no F90 wrappers
-#  output : ['histogram2dmodule.c', 'histogram2d-f2pywrappers.f'],
-#  command : [py, '-m', 'numpy.f2py', '@INPUT@', '-m', 'histogram2d', '--lower']
-#)
-
-
 DIFFaXsubs_src = [
   'DIFFaXsubs/DIFFaXsubs.for',
 ]
@@ -32,7 +13,6 @@ DIFFaXsubs_lib = static_library('DIFFaXsubs_lib',
  DIFFaXsubs_src,
 )
 NISTlatsubs_src = [
-#  'NISTlatsubs/BLOCKDATA1.f',
   'NISTlatsubs/CENTER.f',
   'NISTlatsubs/CKPT02.f',
   'NISTlatsubs/DERIV.f',
@@ -85,20 +65,6 @@ powsubs_src = [
 powsubs_lib = static_library('powsubs_lib',
  powsubs_src,
 )
-spsubs_src = [
-  'spsubs/genhkl.for',
-  'spsubs/sglatc.for',
-  'spsubs/sglcen.for',
-  'spsubs/sglpak.for',
-  'spsubs/sgmtml.for',
-  'spsubs/sgoprn.for',
-  'spsubs/sgrmat.for',
-  'spsubs/sgroupnp.for',
-  'spsubs/sgtrcf.for',
-]
-spsubs_lib = static_library('spsubs_lib',
- spsubs_src,
-)
 texturesubs_src = [
   'texturesubs/aplms.for',
   'texturesubs/cosd.for',
@@ -122,15 +88,6 @@ py.extension_module('pypowder',
   subdir: 'GSASII',
   link_with: powsubs_lib
 )
-
-# r = run_command(py, '-m', 'numpy.f2py', 'polymask.for', '-m', 'polymask', '--lower', check:true)
-# py.extension_module(
-#   'polymask',
-#   ['polymask.for', 'polymaskmodule.c', 'polymask-f2pywrappers.f'],
-#   dependencies : [py_dep, numpy_dep, fortranobject_dep],
-#   install : true,
-#   subdir: 'GSASII',
-# )
 
 r = run_command(py, '-m', 'numpy.f2py', 'pydiffax.for', '-m', 'pydiffax', '--lower', check:true)
 py.extension_module('pydiffax',
@@ -166,21 +123,19 @@ py.extension_module('pytexture',
   link_with: texturesubs_lib
 )
 
-#r = run_command(py, '-m', 'numpy.f2py', 'spotmask.for', '-m', 'spotmask', '--lower', check:true)
-#py.extension_module('spotmask',
-#  ['spotmask.for', 'spotmaskmodule.c', 'spotmask-f2pywrappers.f'],
-#  dependencies : [py_dep, numpy_dep, fortranobject_dep],
-#  install : true,
-#  subdir: 'GSASII',
-#)
-
+# create a copy of pyspg.for with the current git version info in FORTVER
+pyspg_versioned = custom_target('pyspg_versioned',
+  input : 'pyspg.for',
+  output : 'pyspg_versioned.for',
+  command : [py, files('patch_pyspg.py'), '@INPUT@', '@OUTPUT@'],
+  build_always_stale : true,
+)
 r = run_command(py, '-m', 'numpy.f2py', 'pyspg.for', '-m', 'pyspg', '--lower', check:true)
 py.extension_module('pyspg',
-  ['pyspg.for', 'pyspgmodule.c', 'pyspg-f2pywrappers.f'],
+  [pyspg_versioned, 'pyspgmodule.c', 'pyspg-f2pywrappers.f'],
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: spsubs_lib
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'unpack_cbf.for', '-m', 'unpack_cbf', '--lower', check:true)
@@ -191,16 +146,7 @@ py.extension_module('unpack_cbf',
   subdir: 'GSASII',
 )
 
-#r = run_command(py, '-m', 'numpy.f2py', 'histosigma2d.for', '-m', 'histosigma2d', '--lower', check:true)
-#py.extension_module('histosigma2d',
-#  ['histosigma2d.for', 'histosigma2dmodule.c', 'histosigma2d-f2pywrappers.f'],
-#  dependencies : [py_dep, numpy_dep, fortranobject_dep],
-#  install : true,
-#  subdir: 'GSASII',
-#)
-
 executable('convcell', files('convcell.f'), install:true)
-#executable('LATTIC', files('LATTIC.f'), link_with:NISTlatsubs_lib, install:true)
 executable('LATTIC', files('LATTIC.f','NISTlatsubs/BLOCKDATA1.f'), link_with:NISTlatsubs_lib, install:true)
 subdir('k_vec_cython')
 

@@ -10,6 +10,7 @@ import copy
 
 from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
+from . import pyspgpy   # replacement to older Fortran version
 from . import GSASIIlattice as G2lat
 
 try:
@@ -78,7 +79,7 @@ def SpcGroup(SGSymbol):
         SGSymbol = SGSymbol.replace('-2','m')
     if SGSymbol.split()[1] =='3/m':
         SGSymbol = SGSymbol.replace('3/m','-6')
-    SGInfo = pyspg.sgforpy(SGSymbol)
+    SGInfo = pyspgpy.sgforpy(SGSymbol)
     SGData['SpGrp'] = SGSymbol.strip().lower().capitalize()
     SGData['SGLaue'] = LaueSym[SGInfo[0]-1]
     SGData['SGInv'] = bool(SGInfo[1])

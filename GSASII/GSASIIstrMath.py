@@ -1534,14 +1534,6 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Nops *= (1+SGData['SGInv'])
     MFtables = calcControls['MFtables']
     TwinLaw = np.ones(1)
-#    TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
-#    TwDict = refDict.get('TwDict',{})
-#    if 'S' in calcControls[hfx+'histType']:
-#        NTL = calcControls[phfx+'NTL']
-#        NM = calcControls[phfx+'TwinNMN']+1
-#        TwinLaw = calcControls[phfx+'TwinLaw']
-#        TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
-#        TwinInv = list(np.where(calcControls[phfx+'TwinInv'],-1,1))
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
@@ -1571,16 +1563,6 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         iFin = min(iBeg+blkSize,nRef)
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
         H = refl.T[:3].T                          #array(blkSize,3)
-#        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,3) or (blkSize,3)
-#        TwMask = np.any(H,axis=-1)
-#        if TwinLaw.shape[0] > 1 and TwDict: #need np.inner(TwinLaw[?],TwDict[iref][i])*TwinInv[i]
-#            for ir in range(blkSize):
-#                iref = ir+iBeg
-#                if iref in TwDict:
-#                    for i in TwDict[iref]:
-#                        for n in range(NTL):
-#                            H[ir][i+n*NM] = np.inner(TwinLaw[n*NM],np.array(TwDict[iref][i])*TwinInv[i+n*NM])
-#            TwMask = np.any(H,axis=-1)
         SQ = 1./(2.*refl.T[4])**2               #array(blkSize)
         SQfactor = 4.0*SQ*twopisq               #ditto prev.
         Uniq = np.inner(H,SGMT)
@@ -1604,7 +1586,6 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
         sinm = np.sin(mphase)                               #ditto - match magstrfc.for
         cosm = np.cos(mphase)                               #ditto
-#        HM = np.inner(Bmat,H)                             #put into cartesian space RVD
         HM = np.inner(Bmat.T,H)                             #put into cartesian space JS
         HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Kdata = MAGS & HM = UVEC in magstrfc.for both OK
         eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)
@@ -1616,20 +1597,6 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)   #Sum(fams**2,Mxyz) Re + Im
         refl.T[7] = np.copy(refl.T[9])
         refl.T[10] = atan2d(fbms[0],fams[0]) #- what is phase for mag refl?
-#        if 'P' in calcControls[hfx+'histType']:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
-#            refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0) #add fam**2 & fbm**2 here
-#            refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
-#        else:                                       #HKLF: F^2 = (A[0]+A[1])^2 + (B[0]+B[1])^2
-#            if len(TwinLaw) > 1:
-#                refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
-#                refl.T[7] = np.sum(TwinFr*TwMask*np.sum(fas,axis=0)**2,axis=-1)+   \
-#                    np.sum(TwinFr*TwMask*np.sum(fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
-#                refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f" & use primary twin
-#            else:   # checked correct!!
-#                refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
-#                refl.T[7] = np.copy(refl.T[9])
-#                refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
-##                refl.T[10] = atan2d(np.sum(fbs,axis=0),np.sum(fas,axis=0)) #include f' & f"
         iBeg += blkSize
 #    print 'sf time %.4f, nref %d, blkSize %d'%(time.time()-time0,nRef,blkSize)
     return copy.deepcopy(refDict['RefList'])
@@ -2020,6 +1987,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
     '''
     phfx = pfx.split(':')[0]+hfx
+
     ast = np.sqrt(np.diag(G))
     GS = G/np.outer(ast,ast)
     uAmat,uBmat = G2lat.Gmat2AB(GS)
@@ -2051,21 +2019,20 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     if not Xdata.size:          #no atoms in phase!
         return
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)      #NB: Mmod is ReIm,Mxyz,Ntau,Natm
+    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt,MmodA,MmodB = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)      #NB: Mmod is ReIm,Mxyz,Ntau,Natm
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
 
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms - Mmod matched drawing & Bilbao drawings
 
         mXYZ,MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod(glTau,Xdata+dXdata,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
-        #expand Mmod over mag symm ops. --> GSSdata
-        if not SGData['SGGray']:    #for fixed Mx,My,Mz
-            GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
-            if SGData['SGInv'] and not SGData['SGFixed']:   #inversion if any
-                GSdata = np.hstack((GSdata,-GSdata))
-            GSdata = np.hstack([GSdata for cen in SSCen])        #dup over cell centering - Natm,Nops,Mxyz
-            GSdata = SGData['MagMom'][nxs,:,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
-            GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
 
+        Mmod += Gdata.T
+        KMdata = np.inner(Mmod,uAmat)
+        KMnorm = nl.norm(KMdata,axis=-1)
+        KMdata /= KMnorm[:,:,nxs]           #Ntau,Natm,Mxyz
+        KAdata = np.inner(MmodA,uAmat)/KMnorm[:,:,nxs] 
+        KBdata = np.inner(MmodB,uAmat)/KMnorm[:,:,nxs] 
+        
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType'] or 'NB' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
@@ -2104,7 +2071,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     iBeg = 0
     while iBeg < nRef:
         iFin = min(iBeg+blkSize,nRef)
-        mRef= iFin-iBeg
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
         H = refl.T[:4]                          #array(blkSize,4)
         HP = H[:3]+modQ[:,nxs]*H[3:]            #projected hklm to hkl
@@ -2117,6 +2083,13 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             Uniq = np.hstack((Uniq,-Uniq))
             Phi = np.hstack((Phi,-Phi))
             UniqP = np.hstack((UniqP,-UniqP))
+        Uniq = np.hstack([Uniq for cen in SGData['SGCen']])
+        Phi = np.hstack([Phi for cen in SGData['SGCen']])
+        UniqP = np.hstack([UniqP for cen in SGData['SGCen']])
+        if SGData['SGGray']:
+            Uniq = np.hstack((Uniq,Uniq))
+            Phi = np.hstack((Phi,Phi))
+            UniqP = np.hstack((UniqP,UniqP))            
         if 'T' in calcControls[hfx+'histType']:
             if 'P' in calcControls[hfx+'histType']:
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[14])
@@ -2139,53 +2112,44 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #refBlk x ops x atoms
 
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
-
             phasem = twopi*np.inner(mXYZ,HP.T).T    #2pi(Q.r)
             cosm = np.cos(phasem)                   #Nref,nops,natm
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
-            HM = np.inner(Bmat.T,HP.T)                #put into cartesian space X||H,Z||H*L; Bmat.T correct Cart coordinates
-            eM = (HM*refl.T[5]).T                   # normalize HP by d*    Nref,hkl=Unit vectors || Q
-
-            if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution
-                fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
-                fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
-#  calc mag. structure factors; Nref,Ntau,Nops,Natm,Mxyz
-            Rs = [-1.,-1.,-1.,-1.]
-            fams = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (Rs[0]*MmodAR+Rs[1]*H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(Rs[2]*MmodAI+Rs[3]*H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
-                0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
-            Is = [1.,-1.,-1.,1.]
-            fbms = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (Is[0]*MmodAR+Is[1]*H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(Is[2]*MmodAI+Is[3]*H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
-                0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
-
-            if not SGData['SGGray']:
-                fams += fam0[:,nxs,:,:,:]
-                fbms += fbm0[:,nxs,:,:,:]
-
-#sum ops & atms
-            fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
-            fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
-# #put into cartesian space
-            facm = np.inner(fasm,uBmat)       #uBmat best fit for DyMnGe; +,- & -,+ fams, fbms; Nref, Ntau, Mxyz
-            fbcm = np.inner(fbsm,uBmat)         #Nref,Ntau,Mxyz
-#form e.F dot product
-            eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau
-            eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)
+#put HP into cartesian space X||H,Z||H*L
+            Ue = np.inner(UniqP,Bmat)                   # Nref,Nops,hkl
+            UeN = Ue/nl.norm(Ue,axis=-1)[:,:,nxs]       # Unit vectors for Ue   
+#form e.K dot product = cos angle between HP & mag moment
+            KM = KMdata[:,nxs,:,:]*H.T[nxs,:,nxs,3:]
+            KA = KAdata[:,nxs,:,:]*H.T[nxs,:,nxs,3:]+Gdata.T[nxs,nxs,:,:]
+            KB = KBdata[:,nxs,:,:]*H.T[nxs,:,nxs,3:]+Gdata.T[nxs,nxs,:,:]
+            eDotK = np.sum(UeN[nxs,:,:,nxs,:]*KM[:,:,nxs,:,:],axis=-1)    #Ntau,Nref,Nops,Natm
+            eKA = np.sum(UeN[nxs,:,:,nxs,:]*KA[:,:,nxs,:,:],axis=-1)    #Ntau,Nref,Nops,Natm
+            eKB = np.sum(UeN[nxs,:,:,nxs,:]*KB[:,:,nxs,:,:],axis=-1)    #Ntau,Nref,Nops,Natm
+            Q = UeN[nxs,:,:,nxs,:]*eDotK[:,:,:,:,nxs]-KM[:,:,nxs,:,:]      #Ntau,Nref,Nops,Natm,Mxyz
+            QA = UeN[nxs,:,:,nxs,:]*eKA[:,:,:,:,nxs]-KA[:,:,nxs,:,:]      #Ntau,Nref,Nops,Natm,Mxyz
+            QB = UeN[nxs,:,:,nxs,:]*eKB[:,:,:,:,nxs]-KB[:,:,nxs,:,:]      #Ntau,Nref,Nops,Natm,Mxyz
 #intensity Halpern & Johnson
-            fass = np.sum((facm-eM[:,nxs,:]*eDotFa[:,:,nxs])**2,axis=-1)    #Nref,Ntau
-            fbss = np.sum((fbcm-eM[:,nxs,:]*eDotFb[:,:,nxs])**2,axis=-1)
-# gray *2
-            if SGData['SGGray']:
-                fass *= 2.
-                fbss *= 2.
+            fa = TMcorr[nxs,:,nxs,:,nxs]*cosm[nxs,:,:,:,nxs]*KMnorm[:,nxs,nxs,:,nxs]
+            fb = TMcorr[nxs,:,nxs,:,nxs]*sinm[nxs,:,:,:,nxs]*KMnorm[:,nxs,nxs,:,nxs]
+            fam = QA*fa+fb*QB   #Q*fa      #    #Ntau,Nref,Nops,Natm,Mxyz
+            fbm = QA*fb-fa*QB   #Q*fb      #
+# #sum ops & atms
+            fams = np.sum(np.sum(fam,axis=-2),axis=-2)     #Ntau,Nref,Mxyz  
+            fbms = np.sum(np.sum(fbm,axis=-2),axis=-2)
+#sqrt(sum) over Mxyz - sign????
+            fasm = np.sqrt(np.sum(fams**2,axis=-1))   #Ntau,Nref
+            fbsm = np.sqrt(np.sum(fbms**2,axis=-1))
+# # gray *2
+            # if SGData['SGGray']:
+            #     fasm *= 2.
+            #     fbsm *= 2.
 ## #do integration
-            fas = np.sum(fass*glWt[nxs,:],axis=1)
-            fbs = np.sum(fbss*glWt[nxs,:],axis=1)
+            fas = np.sum(fasm*glWt[:,nxs],axis=0)
+            fbs = np.sum(fbsm*glWt[:,nxs],axis=0)
 
-            refl.T[10] = fas+fbs   #Sum(fams**2,Mxyz) Re + Im
+            refl.T[10] = fas+fbs
             refl.T[11] = atan2d(fbs,fas)
 
         else:
@@ -2252,7 +2216,7 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     if not Xdata.size:          #no atoms in phase!
         return
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)
+    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt,MmodA,MmodB = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType'] or 'NB' in calcControls[hfx+'histType']:
@@ -2394,7 +2358,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         return {}
     mSize = len(Mdata)  #no. atoms
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)
+    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt,MmodA,MmodB = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)
     waveShapes,SCtauF,SCtauX,SCtauU,UmodAB = G2mth.makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
@@ -2645,7 +2609,7 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
         return {}
     mSize = len(Mdata)  #no. atoms
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)     #NB: Mmod is ReIm,Mxyz,Ntau,Natm
+    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt,MmodA,MmodB = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)     #NB: Mmod is ReIm,Mxyz,Ntau,Natm
     waveShapes,SCtauF,SCtauX,SCtauU,UmodAB = G2mth.makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))

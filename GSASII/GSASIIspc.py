@@ -2826,6 +2826,11 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             CSI = [[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
         elif siteSym == '-1':
             CSI = [[1,0,0],[2,0,0],[3,0,0], [0,0,0],[0,0,0],[0,0,0]],3*[[1.,0.,0.],]+3*[[0.,0.,0.],]
+        elif siteSym in ['3',]:
+            CSI = [[[1,0,0],[2,0,0],[0,0,0],[3,0,0],[4,0,0],[0,0,0]],    \
+                [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+            CSI[1][2][0] = 0.0
+            CSI[1][5][0] = 0.0
         else:
             if 'Fourier' in waveType:
                 CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
@@ -3043,10 +3048,10 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             CSI[0][2][0] = 1
             CSI[1][2][0] = 1.0
         elif siteSym in ['3',]:
-            CSI[0][0][0] = CSI[0][3][0] = CSI[0][4][0] = 1
-            CSI[1][0][0] = -np.sqrt(3.0)
-            CSI[1][3][0] = 2.0
-            CSI[1][4][0] = 1.0
+            CSI = [[[1,0,0],[2,0,0],[0,0,0],[3,0,0],[4,0,0],[0,0,0]],    \
+                [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+            CSI[1][2][0] = 0.0
+            CSI[1][5][0] = 0.0
         elif siteSym in ['622','2(100)','32(100)',]:
             CSI[0][0][0] = CSI[0][1][0] = CSI[0][3][0] = 1
             CSI[1][0][0] = 1.0
@@ -3167,6 +3172,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         CSI,dF,dFTP = DoMag()
 
     if debug:
+        print('CSI,waveType,Stype,nH %s %s %d %s'%(waveType,Stype,nH,str(CSI)))
         return CSI,dF,dFTP
     else:
         return CSI,[],[]

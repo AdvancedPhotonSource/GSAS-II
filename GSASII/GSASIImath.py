@@ -1834,15 +1834,19 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x ngl; sum waves
     else:
         Umod = 1.0
-    if nWaves[3]:
+    if nWaves[3]:   #0 or 1 only
         tauM = np.arange(1.,nWaves[3]+1-nx)[:,nxs]*glTau  #Mwaves x ngl
-        MmodA = Am[:,:,:,nxs]*np.sin(twopi*tauM[nxs,:,nxs,:]) #atoms X waves X 3 X tau
-        MmodB = Bm[:,:,:,nxs]*np.cos(twopi*tauM[nxs,:,nxs,:]) #ditto
+        MmodA = Am[:,:,:,nxs]*np.sin(twopi*tauM[nxs,:,nxs,:])/2. #atoms X waves X 3 X tau
+        MmodB = Bm[:,:,:,nxs]*np.cos(twopi*tauM[nxs,:,nxs,:])/2. #ditto
         Mmod = np.sum(MmodA+MmodB,axis=1)
-        Mmod = np.swapaxes(Mmod,1,2)    #Mxyz,Ntau,Natm
+        Mmod = np.moveaxis(Mmod,-1,0)    #Ntau,Natm,Mxyz
+        MmodA = np.moveaxis(np.sum(MmodA,axis=1),-1,0)  #Ntau,Natm,Mxyz
+        MmodB = np.moveaxis(np.sum(MmodB,axis=1),-1,0)
     else:
         Mmod = 1.0
-    return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt
+        MmodA= 1.0
+        MmodB = 1.0
+    return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt,MmodA,MmodB
 
 def MagMod(glTau,xyz,modQ,MSSdata,SGData,SSGData):
     '''

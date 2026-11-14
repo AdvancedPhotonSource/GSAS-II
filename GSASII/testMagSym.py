@@ -170,7 +170,7 @@ class testMagSym(wx.Frame):
 
         def OnTestHKL(event):
             print('Extinctions for '+Data['SGData']['MagSpGrp'])
-            hkls = np.mgrid[-6:6,-6:6,-6:6]
+            hkls = np.mgrid[-10:10,-10:10,-10:10]
             HKLs = hkls.reshape((3,-1)).T
             for hkl in HKLs[1:]:    #skip 0,0,0
                 ext = G2spc.checkMagextc(hkl,SGData)

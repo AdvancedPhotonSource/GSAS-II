@@ -480,6 +480,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             namelist = ['Tmin','Tmax']
         elif 'MX' in name or 'MY' in name or 'MZ' in name:
             namelist = ['MXcos','MYcos','MZcos','MXsin','MYsin','MZsin']
+        elif ('X' in name or 'Y' in name or 'Z' in name) and ('sin' in name or 'cos' in name):
+            namelist = ['Xcos','Ycos','Zcos','Msin','Ysin','Zsin']
         elif 'mV' in name:
             namelist = ['mV0','mV1','mV2']
         elif 'Debye' in name or 'BkPk' in name:   #special cases for Background fxns

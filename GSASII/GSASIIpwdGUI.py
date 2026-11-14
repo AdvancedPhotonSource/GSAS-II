@@ -7576,6 +7576,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 File = open(filename,'w')
                 File.write('%s\n'%phaseName)
                 colLabels = [G2frame.PeakTable.GetColLabelValue(i) for i in range(G2frame.PeakTable.GetNumberCols())]
+                colLabels = [colLabel.replace('\u03bc','mu') for colLabel in colLabels]
                 File.write('%s\n'%(','.join(colLabels)))
                 nRows = G2frame.PeakTable.GetNumberRows()
                 for i in range(nRows):

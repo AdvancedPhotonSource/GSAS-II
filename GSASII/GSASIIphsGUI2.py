@@ -24,6 +24,7 @@ from . import GSASIImath as G2mth
 from . import GSASIIpwd as G2pwd
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIphsGUI as G2phsG
+from . import GSASIIobj as G2obj
 
 try:
     wx.NewIdRef
@@ -2040,6 +2041,7 @@ def UpdateTexture(G2frame,data):
 def UpdateWavesData(G2frame,data,Scroll=0):
     '''Create the Wave Data tab for modulated structures
     '''
+
     def OnAtmSel(event):
         Obj = event.GetEventObject()
         G2frame.atmSel = Obj.GetValue()
@@ -2110,7 +2112,83 @@ def UpdateWavesData(G2frame,data,Scroll=0):
                     atm[-1]['SS1'][item][0] = waveType.GetValue()
                 atm[-1]['SS1'][item].append([[0.0 for i in range(nt)],False])
                 wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
+                
+                # pId = data['pId']
+                # var = G2obj.G2VarObj('%d::%s:%d:%d'%(pId,'Xcos',iatm,item))
 
+            # def add_EqnConstr(self,total,varlist,multlist=[],reloadIdx=True,override=False):
+            #     '''Set a constraint equation on a list of variables.
+        
+            #     Note that this will cause the project to be saved if not
+            #     already done so. It will always save the .gpx file before
+            #     creating a constraint if reloadIdx is True.
+        
+            #     :param float total: A value that the constraint must equal
+            #     :param list varlist: A list of variables to use in the equation.
+            #       Each value in the list may be one of the following three items:
+            #       (A) a :class:`GSASIIobj.G2VarObj` object,
+            #       (B) a variable name (str), or
+            #       (C) a list/tuple of arguments for :meth:`make_var_obj`.
+            #     :param list multlist: a list of multipliers for each variable in
+            #       varlist. If there are fewer values than supplied for varlist
+            #       then missing values will be set to 1. The default is [] which
+            #       means that all multipliers are 1.
+            #     :param bool reloadIdx: If True (default) the .gpx file will be
+            #       saved and indexed prior to use. This is essential if atoms, phases
+            #       or histograms have been added to the project.
+            #     :param bool override: This routine looks up variables using
+            #       :func:`GSASIIobj.getDescr` (which is not comprehensive). If
+            #       not found, the routine will throw an exception, unless
+            #       override=True is specified.
+        
+            #     Example::
+        
+            #         gpx.add_EqnConstr(1.0,('0::Ax:0','0::Ax:1'),[1,1])
+        
+            #     '''
+            #     if reloadIdx:
+            #         self.index_ids()
+            #     elif G2obj.TestIndexAll():
+            #         self.index_ids()
+            #     if len(varlist) < 2:
+            #         raise Exception('Constraint var error: varlist must have at least 2 variables')
+            #     try:
+            #         float(total)
+            #     except:
+            #         raise Exception('Constraint var error: total be a valid float')
+            #     constr = []
+            #     typ_prev = None
+            #     vardefwarn = False
+            #     for i,var in enumerate(varlist):
+            #         m = 1.
+            #         try:
+            #             m = float(multlist[i])
+            #         except IndexError:
+            #             pass
+            #         # make var object
+            #         if isinstance(var, str):
+            #             var = self.make_var_obj(var,reloadIdx=False)
+            #         elif not isinstance(var, G2obj.G2VarObj):
+            #             var = self.make_var_obj(*var,reloadIdx=False)
+            #         if G2obj.getDescr(var.name) is None:
+            #             vardefwarn = True
+            #             print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
+            #         # make constraint
+            #         constr.append([m,var])
+            #         typ = _constr_type(var)
+            #         if typ_prev is None:
+            #             typ_prev = typ
+            #             var_prev = var
+            #         if typ_prev != typ:
+            #             msg = 'Type ({}) for var {} is different from {} ({})'.format(typ,var,var_prev,typ_prev)
+            #             raise Exception('add_EquivConstr Error: '+msg)
+            #         typ_prev = typ
+            #         var_prev = var
+            #     if vardefwarn and not override:
+            #         raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
+            #     constr += [float(total), None, 'c']
+            #     self.add_constraint_raw(typ, constr)
+            
             def OnRefWave(event):
                 Obj = event.GetEventObject()
                 item,iwave = Indx[Obj.GetId()]

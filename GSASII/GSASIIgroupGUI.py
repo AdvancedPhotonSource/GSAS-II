@@ -4,8 +4,14 @@ GSASIIgroupGUI: Routines for working with groups of histograms.
 
 Outline of code in GSASIIgroupGUI:
 
-* :func:`SearchGroups` is used to define which histograms are in each 
-  group. Defines variables in Controls['Groups'] (see below)
+* :func:`GSASIIctrlGUI.SearchGroups` is used to define which histograms 
+  are in each group based on patterns in the histogram labels. 
+  Defines variables in Controls['Groups'] (see below)
+
+* :func:`groupByTable` is also used to define which histograms 
+  are in each group, but each histogram must be assigned to a group
+  by pressing a GUI button.
+  Also defines variables in Controls['Groups'] (see below)
 
 * :func:`UpdateGroup` is used to create the contents of the DataWindow
 
@@ -128,7 +134,12 @@ The full list of routines used in mod:`GSASIIgroupGUI` are:
 '''
 
 import math
+import re
+import copy
+from difflib import SequenceMatcher
+
 import wx
+import wx.lib.scrolledpanel as wxscroll
 
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIspc as G2spc
@@ -465,14 +476,14 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
             w = wx.StaticText(Panel,label=row)
         else: # used for "renameable" sample vars (str)
             w = G2G.ValidatedTxtCtrl(Panel,arr,key,size=(125,-1))
-        Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        Sizer.Add(w,0,WACV|wx.ALIGN_RIGHT)
         lblDict[row] = w
 
         if deltaMode:
             resetBut = wx.Button(Panel,label='↩',style=wx.BU_EXACTFIT)
             resetBut.valDict = {'arrays': valList, 'hists': histList,
                                   'dataSource':dataSource}
-            Sizer.Add(resetBut,0,wx.ALIGN_CENTER_VERTICAL)               
+            Sizer.Add(resetBut,0,WACV)               
             resetBut.Bind(wx.EVT_BUTTON,onResetAll)
 
         if len(refList) > 2: # >two refinement flags in this row. Include ste/clear all button
@@ -485,7 +496,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
             refAll.refDict = {'arrays': refList, 'hists': histList,
                               'dataSource':dataSource}
             refAll.checkButList = checkButList[row]
-            Sizer.Add(refAll,0,wx.ALIGN_CENTER_VERTICAL)               
+            Sizer.Add(refAll,0,WACV)               
             refAll.Bind(wx.EVT_BUTTON,onRefineAll)
         else:
             Sizer.Add((-1,-1))
@@ -500,7 +511,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
                 but.valDict = {'arrays': valList, 'hists': histList,
                                   'dataSource':dataSource,
                                    'valSetFxnList' :valSetFxnList[row]}
-                Sizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
+                Sizer.Add(but,0,WACV)
                 but.Bind(wx.EVT_BUTTON,onSetAll)
             elif i == 1 and CopyCtrl:
                 Sizer.Add((-1,-1))
@@ -529,7 +540,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
                 valrefsiz.Add(wx.StaticText(Panel,label=deltaS),0)
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
-                valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL)
+                valrefsiz.Add(w,0,WACV)
                 checkButList[row].append(w)
                 Sizer.Add(valrefsiz,0,
                                  wx.EXPAND|wx.ALIGN_RIGHT)
@@ -545,7 +556,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
                 else:
                     deltaS = f"\u0394 {delta:.4g} "
                 Sizer.Add(wx.StaticText(Panel,label=deltaS),0,
-                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                                 WACV|wx.ALIGN_RIGHT)
             elif 'setintfunc' in DataArray[hist][row]:
                 # integer value that has a function to be called when changed
                 # GUI: provide a Spin Box to increment or decrement
@@ -554,10 +565,10 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
                 spin = wx.SpinButton(Panel, wx.ID_ANY)
                 spin.Bind(wx.EVT_SPIN, OnSpin)
                 spin.txt = wx.StaticText(Panel,label='?')                
-                spinsiz.Add(spin.txt,0,wx.ALIGN_CENTER_VERTICAL)
+                spinsiz.Add(spin.txt,0,WACV)
                 spinsiz.Add((5,-1))
-                spinsiz.Add(spin,0,wx.ALIGN_CENTER_VERTICAL)
-                Sizer.Add(spinsiz,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
+                spinsiz.Add(spin,0,WACV)
+                Sizer.Add(spinsiz,0,WACV|wx.ALIGN_CENTER)
 
                 spin.SetRange(1,36)
                 spin.arr,spin.indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
@@ -583,10 +594,10 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
                 if firstentry is None: firstentry = txtctrl
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
-                valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL)
+                valrefsiz.Add(w,0,WACV)
                 checkButList[row].append(w)
                 Sizer.Add(valrefsiz,0,
-                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                                 WACV|wx.ALIGN_LEFT)
                 ColorTxtbox(txtctrl,DataArray[hist][row],row)
             elif 'val' in DataArray[hist][row]:
                 # a value that is not refined, but can be edited
@@ -597,7 +608,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
                             nDig=nDig,
                             xmin=minval,xmax=maxval,notBlank=False)
                 valSetFxnList[row].append(w.ChangeValue)
-                Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                Sizer.Add(w,0,WACV|wx.ALIGN_LEFT)
                 if firstentry is None: firstentry = w
                 ColorTxtbox(w,DataArray[hist][row],row)
 
@@ -605,7 +616,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
                 # a refinement flag for a group of parameters
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
-                Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
+                Sizer.Add(w,0,WACV|wx.ALIGN_CENTER)
                 checkButList[row].append(w)
             elif 'str' in DataArray[hist][row]:
                 # a value that is not refined and cannot be edited
@@ -616,7 +627,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
                     f = DataArray[hist][row]['fmt']
                     val = f'{val:{f}}'
                 Sizer.Add(wx.StaticText(Panel,label=val),0,
-                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
+                                 WACV|wx.ALIGN_CENTER)
             else:
                 print('Should not happen',DataArray[hist][row],hist,row)
     return firstentry,lblDict
@@ -1225,3 +1236,332 @@ def ColorTxtbox(txtctrl,DataArray,row):
                     break
             else: # unexpected
                 txtctrl.SaveBackgroundColor(color)
+
+def _tokens(s, seps=r'[\s_.\-]+'):
+    return [t for t in re.split(seps, s) if t]
+def _common_tokens(strings, skip=()):
+    '''Tokens found, in the same order, in every string.
+    (Claude Opus 5.5)
+    '''
+    common = [t for t in _tokens(strings[0]) if t not in skip]
+    for s in strings[1:]:
+        sm = SequenceMatcher(None, common, _tokens(s), autojunk=False)
+        common = [t for a, _, n in sm.get_matching_blocks() for t in common[a:a+n]]
+        if not common:
+            break
+    return common
+def commonDescriptor(strings, default='group', skip=('PWDR', 'HKLF'), joiner='_'):
+    '''Return a short descriptor built from the tokens shared by all
+    strings. Returns default if there are fewer than two strings or
+    nothing is in common.
+    (Claude Opus 5.5)
+    '''
+    strings = list(strings)
+    if len(strings) < 2:
+        return default
+    common = _common_tokens(strings, skip)
+    return joiner.join(common) if common else default
+def groupDescriptors(groups, default='group', skip=('PWDR', 'HKLF'), joiner='_'):
+    '''Given a list of lists of strings, return one descriptor per list,
+    dropping tokens shared by every group so only the distinguishing
+    part remains. A group with only one string, or nothing in common,
+    is named f'{default}{n}', where n is its 1-based position.
+    (Claude Opus 5.5)
+    '''
+    per = [_common_tokens(g, skip) if len(g) > 1 else [] for g in groups]
+    nonempty = [p for p in per if p]
+    shared = set.intersection(*map(set, nonempty)) if len(nonempty) > 1 else set()
+    out = []
+    for i, toks in enumerate(per, start=1):
+        if not toks:
+            out.append(f'{default}{i}')
+        else:
+            out.append(joiner.join([t for t in toks if t not in shared] or toks))
+    return out
+
+def groupByTable(G2frame,hlist,Controls):
+    '''Provides a dialog for dividing histograms into groups for sequential fits
+
+    :param wx.Frame G2frame: GSAS-II parent window
+    :param list hlist: list of histogram names
+    :param dict Controls: contents of Controls data tree entry. Entry 
+      Controls['Groups']['groupDict'] is used for input, if present.
+      Output is placed in Controls['Groups']. No changes are made
+      if Cancel is pressed.
+    '''
+    def sel2dict(selTbl,reorg=False):
+        '''Converts a table of selected histograms to a dict of groups
+
+        :param selTbl: a table of histograms with selected column numbers. 
+          The table (dict) key is the histogram name and value is 
+          the column number. 
+          Histograms assigned the same column number are grouped 
+        :type selTbl: dict
+
+        :rtype: tuple[dict, int, int]
+        :returns: grpDict, ungrouped, groups
+          *  grpDict is a dict of grouped histograms where 
+             key is a column for the group and each value is a list containing 
+             the histograms that are grouped.
+          * ungrouped is the number of ungrouped histograms
+          * groups is the number of groups
+        '''
+        grpDict = {}
+        found = {}
+        ungrouped = 0
+        for h in hlist:
+            if selTbl[h] is None:
+                ungrouped += 1
+                continue
+            if not reorg:
+                num = selTbl[h]
+                found[num] = num
+                grpDict[num] = grpDict.get(num,[])
+            elif selTbl[h] in found:
+                num = found[selTbl[h]]
+            else:
+                num = found[selTbl[h]] = len(found)
+                grpDict[num] = []
+            grpDict[num].append(h)
+        newGrpDict = {i:grpDict[i] for i in sorted(grpDict)}
+
+        if reorg and any([found[i] != i for i in found]): # renumber columns in groupNames & groupEdited
+             groupNames_tmp = copy.copy(groupNames)
+             groupEdited_tmp = copy.copy(groupEdited)
+             for oldCol,newCol in found.items():
+                 groupNames[newCol] = groupNames_tmp[oldCol]
+                 groupEdited[newCol] = groupEdited_tmp[oldCol]
+        return newGrpDict,ungrouped,len(found)
+
+    def dict2sel(grpDict):
+        '''Converts a dict of groups into a table of selected histograms
+
+        :param selList: a nested list of selected histograms where the inner
+          lists show the histograms that are grouped.
+        :type selList: list
+
+        :rtype: tuple[dict, int]
+        :returns: The first item is a dict with a table of selected 
+          histograms. The dict key is the histogram name and value is the 
+          column number. Histograms that are assigned the same column number 
+          are grouped together.
+        '''
+        selTbl = {}
+        maxcol = 0
+        for i,key in enumerate(grpDict):
+            for h in grpDict[key]:
+                selTbl[h] = i
+                maxcol = max(maxcol,i)
+        return selTbl,maxcol+1
+
+    def _OnRBevent(event):
+        '''Respond to selection of a histogram into a group
+
+        :param event: a wx.Event that points to the object that was pressed
+        :type event: wx.Event
+        '''
+        ri = event.GetEventObject()
+        h = hlist[ri.row]
+        selTbl[h] = ri.col
+        groupStatus()
+
+    def _OnClear(event):
+        '''Respond to the clear button for a histogram
+
+        :param event: a wx.Event that points to the object that was pressed
+        :type event: wx.Event
+        '''
+        ri = event.GetEventObject()
+        h = ri.hist
+        selTbl[h] = None
+        groupStatus()
+        dlg.EndModal(3)
+
+    def groupStatus():
+        grpDict,ungrouped,groups = sel2dict(selTbl)
+        grpList = [grpDict.get(i,[]) for i in range(cols)]
+        defNames = groupDescriptors(grpList)
+        out = []
+        for i in range(cols):
+            if i not in groupNames or not groupEdited[i]:
+                groupNames[i] = defNames[i]
+                groupEdited[i] = False
+            # make sure names are unique
+            j = 0
+            namStart = groupNames[i][:]
+            while groupNames[i] in out:
+                j += 1
+                groupNames[i] = namStart + f'_{j}'
+            out.append(groupNames[i])
+        #origNames = groupNames[:]
+        #for nam in
+        s = f'({groups} groups; '
+        if ungrouped:
+            s +=f'{ungrouped} ungrouped histograms)'
+        else:
+            s+= 'all histograms grouped)'
+        statusTxt.SetLabel(s)
+        #statusTxt.SetLabel('stat info ')
+        showNames()
+        dlg.Layout()
+
+    def FillTbl():
+        '''Places widgets into the scrolled section of the dialog
+        allowing selection of entries
+        '''
+        if spanel.GetSizer():
+            spanel.GetSizer().Clear(True)
+        flagSizer = wx.FlexGridSizer(0,3+cols,5,5)
+        spanel.SetSizer(flagSizer)
+        flagSizer.Add(wx.StaticText(spanel,wx.ID_ANY,''))
+        flagSizer.Add(wx.StaticText(spanel,wx.ID_ANY,'Histogram name'),0,wx.ALIGN_CENTER_HORIZONTAL)
+        for icol in range(cols):
+            flagSizer.Add(wx.StaticText(spanel,wx.ID_ANY,f'{icol+1}'))
+        flagSizer.Add(wx.StaticText(spanel,wx.ID_ANY,'clear'))
+        for irow,h in enumerate(hlist):
+            selTbl[h] = selTbl.get(h)
+            flagSizer.Add(wx.StaticText(spanel,wx.ID_ANY,f'{irow}'), 0, WACV)
+            flagSizer.Add(wx.StaticText(spanel,wx.ID_ANY,h[5:70]), 0, WACV) # N.B. shortens long names
+            for icol in range(cols):
+                if icol == 0:
+                    ri = wx.RadioButton(spanel, wx.ID_ANY, style = wx.RB_GROUP )
+                else:
+                    ri = wx.RadioButton(spanel, wx.ID_ANY)
+                ri.row = irow
+                ri.col = icol
+                flagSizer.Add(ri,0,WACV)
+                if selTbl[h] == icol:
+                    ri.SetValue(True)
+                ri.Bind(wx.EVT_RADIOBUTTON, _OnRBevent)
+            #flagSizer.Add(wx.StaticText(spanel,wx.ID_ANY,'clear'))
+            btn = wx.Button(spanel, label="x", style=wx.BU_EXACTFIT)
+            #btn = wx.Button(spanel, label="x", style=wx.BU_EXACTFIT | wx.BORDER_NONE)
+            btn.SetFont(wx.SMALL_FONT)
+            btn.Bind(wx.EVT_BUTTON, _OnClear)
+            btn.hist = h
+            flagSizer.Add(btn,0,WACV)
+        spanel.SetAutoLayout(1)
+        spanel.SetupScrolling()
+        dlg.SetSizer(mainSizer)
+        groupStatus()
+    def showNames():
+        '''Display/edit the names of groups 
+        '''
+        def process(event):
+            'Respond to an edit for a group name'
+            event.Skip()
+            txt = event.GetEventObject()
+            val = txt.GetValue()
+            if groupNames[txt.col] != val:
+                groupNames[txt.col] = val
+                groupEdited[txt.col] = True  # prevents name from being set to default
+        # check if an update can be avoided
+        changed = False
+        delList = []
+        for i,nam in groupNames.items():
+            if i >= cols:
+                delList.append(i)
+                changed = True
+            elif lastGroupNames.get(i,'not defined') != nam:
+                lastGroupNames[i] = nam
+                changed = True
+        if not changed: return
+        for i in delList:
+            if i in lastGroupNames: del lastGroupNames[i]
+            del groupNames[i]
+        labelSizer.Clear(True)
+        for i in groupNames:
+            if i >= cols: break
+            labelSizer.Add(wx.StaticText(dlg,wx.ID_ANY,f'{i+1}'))
+            txt = wx.TextCtrl(dlg,wx.ID_ANY, size=(250,-1))
+            txt.col = i
+            txt.Bind(wx.EVT_KEY_UP, process)
+            labelSizer.Add(txt)
+            txt.SetValue(groupNames[i])
+
+    #### Start of groupByTable ###################
+    Controls['Groups'] = Controls.get('Groups',{})
+    groupDict = Controls['Groups'].get('groupDict',{})
+    lastGroupNames = {}
+    selTbl = dict2sel({i:v for i,(k,v) in enumerate(groupDict.items())})[0]
+    groupNames = {i:k for i,k in enumerate(groupDict)}
+    groupEdited = {i:True for i in groupNames}
+    if len(selTbl) == 0:
+        cols = len(hlist) // 2
+    else:
+        cols = max(selTbl.values())+1
+    dlg = wx.Dialog(G2frame,wx.ID_ANY,'Select grouping of histograms',
+        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    # top of window
+    mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+        'Assign histograms to a group by clicking the button in that group’s numbered column.'))
+    #mainSizer.Add(topSizer)
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_ANY, 'Add Row')
+    btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(1))
+    topSizer.Add(btn)
+    topSizer.Add((5,-1))
+    btn = wx.Button(dlg, wx.ID_ANY,'Remove unused rows')
+    btn.Bind(wx.EVT_BUTTON, lambda event:dlg.EndModal(2))
+    #topSizer.Add((5,-1))
+    topSizer.Add(btn)
+    topSizer.Add((10,-1),1,wx.EXPAND,1)
+    statusTxt = wx.StaticText(dlg,wx.ID_ANY,'')
+    topSizer.Add(statusTxt)
+    mainSizer.Add(topSizer,0,wx.EXPAND,0)
+    # group table placeholder (middle of window)
+    spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(200, 200))
+    mainSizer.Add((-1,5))
+    mainSizer.Add(spanel,1,wx.EXPAND,1)
+    mainSizer.Add((-1,5))
+    # Group names place holder
+    mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Group names'))
+    labelSizer = wx.FlexGridSizer(0,4,5,5)
+    for i in range(5):
+        labelSizer.Add(wx.StaticText(dlg,wx.ID_ANY,f'{i}'))
+        labelSizer.Add(wx.TextCtrl(dlg,wx.ID_ANY, size=(250,-1)))
+    mainSizer.Add(labelSizer)
+    # bottom button row
+    mainSizer.Add((-1,5))
+    botSizer = wx.BoxSizer(wx.HORIZONTAL)
+    botSizer.Add((-1,-1),1,wx.EXPAND,1)
+    botSizer.Add(wx.StaticText(dlg,wx.ID_ANY,''))
+    OKbtn = wx.Button(dlg, wx.ID_OK, 'Accept Groups')
+    botSizer.Add((5,-1))
+    botSizer.Add(OKbtn)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    botSizer.Add((5,-1))
+    botSizer.Add(btn)
+    botSizer.Add((-1,-1),1,wx.EXPAND,1)
+    mainSizer.Add(botSizer,0,wx.EXPAND,0)
+    first = True
+    while True:
+        FillTbl()
+        groupStatus()
+        if first:
+            first = False
+            mainSizer.Fit(dlg)
+        res = dlg.ShowModal()
+        if res == wx.ID_OK:
+            dlg.Destroy()
+            break
+        elif res == wx.ID_CANCEL:
+            dlg.Destroy()
+            return None
+        elif res == 1: # add a row
+            cols += 1
+        elif res == 2: # compress out unused rows
+            selTbl,cols = dict2sel(sel2dict(selTbl,True)[0])
+        elif res == 3: # repaint
+            continue
+        else:
+            print('GroupByTable Unexpected dialog code',res)
+        #return result.get('Selection'),result.get('Key')
+    grpDict,notgrouped,b = sel2dict(selTbl)
+    Controls['Groups'] = {
+            'groupDict':{groupNames[i]:grpDict[i] for i in grpDict},
+            'notGrouped': notgrouped,
+            'template': '',
+            'groupSeqSel': [groupNames[i] for i in grpDict],
+            }

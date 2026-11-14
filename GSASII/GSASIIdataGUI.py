@@ -8316,19 +8316,25 @@ def UpdateControls(G2frame,data):
             dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping: '),0,WACV)
             groupCount = [len(groupDict[k]) for k in groupDict]
             if min(groupCount) == max(groupCount):
-                msg = f'Have {len(groupDict)} group(s) with {min(groupCount)} histograms in each'
+                msg = f'{len(groupDict)} groups, each w/{min(groupCount)} hists'
             else:
-                msg = (f'Have {len(groupDict)} group(s) with {min(groupCount)}'
-                           f' to {min(groupCount)} histograms in each')
+                msg = (f'{len(groupDict)} groups each w/ {min(groupCount)}'
+                           f' to {min(groupCount)}')
             notGrouped = data.get('Groups',{}).get('notGrouped',0)
             if notGrouped:
-                msg += f". {notGrouped} not in a group"
+                msg += f". {notGrouped} not in a group. Reselect..."
+            else:
+                msg += ". Reselect..."
             dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=msg),0,WACV)
             dataSizer.Add((5,-1))
-            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Redefine groupings')
-            btn.Bind(wx.EVT_BUTTON,SearchGroups)
-            dataSizer.Add((5,-1))
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'...by label ',style=wx.BU_EXACTFIT)
+            btn.Bind(wx.EVT_BUTTON,GroupByLabel)
             dataSizer.Add(btn)
+            dataSizer.Add((5,-1))
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'...by table ',style=wx.BU_EXACTFIT)
+            btn.Bind(wx.EVT_BUTTON,GroupByTable)
+            dataSizer.Add(btn)
+            dataSizer.Add((5,-1))
             btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear groupings')
             btn.Bind(wx.EVT_BUTTON,ClearGroups)
             dataSizer.Add((5,-1))
@@ -8358,9 +8364,14 @@ def UpdateControls(G2frame,data):
             dataSizer.Add(selSeqData,0,WACV)
             seqSizer.Add(dataSizer)
             dataSizer = wx.BoxSizer(wx.HORIZONTAL)
-            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping: '),0,WACV)
-            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
-            btn.Bind(wx.EVT_BUTTON,SearchGroups)
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Define histogram Grouping: '),0,WACV)
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'From hist labels')
+            btn.Bind(wx.EVT_BUTTON,GroupByLabel)
+            dataSizer.Add((5,-1))
+            dataSizer.Add(btn)
+            dataSizer.Add((5,-1))
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Select in table')
+            btn.Bind(wx.EVT_BUTTON,GroupByTable)
             dataSizer.Add(btn)
             seqSizer.Add(dataSizer)
 
@@ -8483,10 +8494,12 @@ def UpdateControls(G2frame,data):
         Controls['parmFrozen'] = {}
         wx.CallAfter(UpdateControls,G2frame,data)
 
-    def SearchGroups(event):
+    def GroupByLabel(event):
         '''Create a dict to group similar histograms. Similarity
         is judged by a common string that matches a template
-        supplied by the user
+        supplied by the user. 
+
+        Note that this routine saves the .gpx file and reloads it
         '''
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         for hist in Histograms:
@@ -8505,6 +8518,31 @@ def UpdateControls(G2frame,data):
         G2frame.clearProject() # clear out data tree
         G2frame.StartProject(False)
         #self.EnablePlot = True
+        Id = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+        SelectDataTreeItem(G2frame,Id)
+        G2frame.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+        
+    def GroupByTable(event):
+        '''Create a dict to group similar histograms. Similarity
+        is judged by a common string that matches a template
+        supplied by the user
+        '''
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        hlist = []
+        for hist in Histograms:
+            if hist.startswith('PWDR '):
+                hlist.append(hist)
+        if len(hlist) == 0:
+            G2G.G2MessageBox(G2frame,'No used PWDR histograms found to group. Histograms must be assigned phase(s).',
+                                     'Cannot group')
+            return
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        G2gr.groupByTable(G2frame,hlist,data)
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        G2frame.clearProject() # clear out data tree
+        G2frame.StartProject(False)
         Id = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
         SelectDataTreeItem(G2frame,Id)
         G2frame.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere

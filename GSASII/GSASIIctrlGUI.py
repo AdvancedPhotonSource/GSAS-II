@@ -6275,6 +6275,12 @@ class MyHelp(wx.Menu):
             helpobj = self.Append(wx.ID_ANY,lbl,'')
             frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
             self.HelpById[helpobj.GetId()] = indx
+        # scripted GUI demos (the demos directory of a git install)
+        if os.path.isdir(os.path.join(
+                os.path.dirname(GSASIIpath.path2GSAS2), 'demos')):
+            helpobj = self.Append(wx.ID_ANY,'Run a GUI demo...',
+                'Watch GSAS-II run a scripted demo, e.g. a tutorial')
+            frame.Bind(wx.EVT_MENU, self.OnRunDemo, id=helpobj.GetId())
         # add help lookup(s) in GSAS-II Help
         self.AppendSeparator()
         if includeTree:
@@ -6319,6 +6325,16 @@ class MyHelp(wx.Menu):
             return
         else:
             ShowHelp(helpType,self.frame)
+
+    def OnRunDemo(self, event):
+        '''Choose and run a scripted GUI demo from the demos directory
+        (see GSASIIGUIdriver); it starts with a new project'''
+        from . import GSASIIGUIdriver
+        G2frame = self.frame
+        if not hasattr(G2frame, 'GPXtree'):
+            G2frame = getattr(G2frame, 'G2frame', None) or \
+                wx.GetApp().GetTopWindow()
+        GSASIIGUIdriver.run_demo_dialog(G2frame)
 
     def OnHelpAbout(self, event):
         "Display an 'About GSAS-II' box"

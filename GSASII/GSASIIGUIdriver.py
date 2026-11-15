@@ -145,7 +145,10 @@ class Answers:
         self.queue = []
         self.errors = []
         self.lock = threading.Lock()
-        self.on_show = None      # called with (kind, text, answer) in demo mode
+        # demo mode: called with (kind, text, answer, info) on the GUI
+        # thread, before the answer is returned; info is a dict with the
+        # dialog's 'title', 'message' and 'style'
+        self.on_show = None
 
     def add(self, kind, expect, answer, optional=False):
         '''Queue an answer; returns the entry (for :meth:`discard`)'''
@@ -164,7 +167,7 @@ class Answers:
                     return True
         return False
 
-    def take(self, kind, text):
+    def take(self, kind, text, info=None):
         with self.lock:
             while self.queue:
                 k, expect, answer, optional = self.queue[0]
@@ -184,7 +187,7 @@ class Answers:
             self.queue.pop(0)
         log(f'{kind} dialog {text.splitlines()[0]!r} -> {_answer_name(answer)}')
         if self.on_show:
-            self.on_show(kind, text, answer)
+            self.on_show(kind, text, answer, info or {})
         return answer
 
 def _answer_name(answer):
@@ -216,7 +219,8 @@ class FakeFileDialog(_Inert):
         self.message, self.wildcard, self.style = message, wildcard, style
         self.paths = []
     def ShowModal(self):
-        ans = ANSWERS.take('file', self.message)
+        ans = ANSWERS.take('file', self.message,
+                           dict(title=self.message, style=self.style))
         if ans is None:
             return wx.ID_CANCEL
         self.paths = [os.path.abspath(p) for p in
@@ -243,9 +247,11 @@ class FakeMessageDialog(_Inert):
     'Stand-in for wx.MessageDialog; returns a button id queued in ANSWERS'
     def __init__(self, parent=None, message='', caption='', style=0,
                  *args, **kw):
-        self.message, self.caption = message, caption
+        self.message, self.caption, self.style = message, caption, style
     def ShowModal(self):
-        ans = ANSWERS.take('message', f'{self.caption}: {self.message}')
+        ans = ANSWERS.take('message', f'{self.caption}: {self.message}',
+                           dict(title=self.caption, message=self.message,
+                                style=self.style))
         return wx.ID_CANCEL if ans is None else ans
     def SetYesNoLabels(self, *a): return True
     def SetOKLabel(self, *a): return True
@@ -259,7 +265,8 @@ class FakeMessageDialog(_Inert):
 
 def fake_message_box(message, caption='Message', style=wx.OK, *a, **kw):
     'Stand-in for wx.MessageBox'
-    ans = ANSWERS.take('message', f'{caption}: {message}')
+    ans = ANSWERS.take('message', f'{caption}: {message}',
+                       dict(title=caption, message=message, style=style))
     return wx.OK if ans is None else ans
 
 def fake_file_browser(parent, message, defaultDir='', *args,
@@ -366,15 +373,16 @@ class _Caption(wx.Frame):
             self.on_choice(choice)
 
     def show(self, msg, frame, buttons=False):
+        '''Show msg below frame. buttons: True for Next and Stop, "stop"
+        for Stop only, False for none'''
         self.text.SetLabel(msg)
-        self.nextBtn.Show(buttons); self.stopBtn.Show(buttons)
+        shown = [self.nextBtn, self.stopBtn] if buttons is True else \
+            [self.stopBtn] if buttons else []
+        self.nextBtn.Show(buttons is True); self.stopBtn.Show(bool(buttons))
         r = frame.GetScreenRect()
         w = max(r.width, 400)
-        bw = 0               # width taken by the buttons on the right
-        if buttons:
-            nw, nh = self.nextBtn.GetBestSize()
-            sw, sh = self.stopBtn.GetBestSize()
-            bw = nw + sw + 30
+        # width taken by the buttons on the right
+        bw = sum(b.GetBestSize()[0] + 10 for b in shown) + (10 if shown else 0)
         self.text.Wrap(w - 40 - 2*bw)
         tw, th = self.text.GetBestSize()
         h = max(th + 24, 44)
@@ -384,9 +392,13 @@ class _Caption(wx.Frame):
         if r.y + r.height + 4 + h > area.y + area.height:   # no room below
             self.SetPosition((r.x, r.y + r.height - h - 4))
         self.text.SetPosition(((w - tw) // 2, (h - th) // 2))
-        if buttons:
-            self.nextBtn.SetSize(w - nw - 10, (h - nh) // 2, nw, nh)
-            self.stopBtn.SetSize(w - nw - sw - 20, (h - sh) // 2, sw, sh)
+        x = w - 10
+        for b in shown:
+            bw_, bh_ = b.GetBestSize()
+            x -= bw_
+            b.SetSize(x, (h - bh_) // 2, bw_, bh_)
+            x -= 10
+        if buttons is True:
             self.nextBtn.SetDefault()
         if not self.IsShown():
             self.ShowWithoutActivating()
@@ -414,6 +426,258 @@ class _Outline(wx.Frame):
             self.ShowWithoutActivating()
         self.Raise()
         self.Refresh(); self.Update()
+
+def _bigger(font, points, bold=False, italic=False):
+    'A copy of font, points larger'
+    f = wx.Font(font)
+    f.SetPointSize(f.GetPointSize() + points)
+    if bold:
+        f.SetWeight(wx.FONTWEIGHT_BOLD)
+    if italic:
+        f.SetStyle(wx.FONTSTYLE_ITALIC)
+    return f
+
+def _gui_font(points=0, bold=False, italic=False):
+    return _bigger(wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT),
+                   points, bold, italic)
+
+def _yield_for(seconds, done=None):
+    '''GUI thread: let events run for a while (or until done() is true).
+    Used inside the GSAS-II handler that opened a native dialog, which
+    cannot return to the event loop until the dialog is answered.'''
+    end = time.time() + seconds
+    while time.time() < end and not (done and done()):
+        wx.GetApp().Yield(True)
+        wx.MilliSleep(20)
+
+def _place_over(win, frame):
+    'Centre a window over frame, kept on frame\'s display'
+    r = frame.GetScreenRect()
+    w, h = win.GetSize()
+    area = wx.Display(max(0, wx.Display.GetFromWindow(frame))).GetClientArea()
+    x = r.x + (r.width - w) // 2
+    y = r.y + max(60, (r.height - h) // 3)
+    x = max(area.x, min(x, area.x + area.width - w))
+    y = max(area.y, min(y, area.y + area.height - h))
+    win.SetPosition((x, y))
+
+def _message_buttons(style):
+    '''The buttons of a wx.MessageDialog or wx.MessageBox with this style:
+    a list of (label, answers meaning that button)'''
+    btns = []
+    if style & wx.YES:
+        btns.append(('Yes', (wx.ID_YES, wx.YES)))
+    if style & wx.NO:
+        btns.append(('No', (wx.ID_NO, wx.NO)))
+    if style & wx.OK or not btns:
+        btns.append(('OK', (wx.ID_OK, wx.OK)))
+    if style & wx.CANCEL:
+        btns.append(('Cancel', (wx.ID_CANCEL, wx.CANCEL)))
+    return btns
+
+class _DialogMock(wx.Frame):
+    '''Demo mode: a picture of a native dialog (a file chooser or a
+    message box), which the demo answers for the viewer. It shows the
+    dialog's text; the driver then "types" the file name and marks the
+    button that the demo presses. In step mode it also has Next and Stop
+    buttons.'''
+    def __init__(self, kind, title, message='', buttons=('OK',),
+                 filename='', folder='', step=False):
+        super().__init__(None, style=wx.FRAME_NO_TASKBAR | wx.STAY_ON_TOP
+                         | wx.FRAME_TOOL_WINDOW | wx.BORDER_SIMPLE)
+        font = _gui_font(2)
+        self.panel = panel = wx.Panel(self)
+        panel.SetBackgroundColour(wx.Colour(236, 236, 236))
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        # a title bar
+        head = wx.Panel(panel)
+        head.SetBackgroundColour(wx.Colour(45, 75, 145))
+        txt = wx.StaticText(head, label=title or 'GSAS-II')
+        txt.SetFont(_gui_font(3, bold=True))
+        txt.SetForegroundColour(wx.WHITE)
+        hs = wx.BoxSizer()
+        hs.Add(txt, 0, wx.ALL, 8)
+        head.SetSizer(hs)
+        vbox.Add(head, 0, wx.EXPAND)
+        inner = wx.BoxSizer(wx.VERTICAL)
+        self.filename = filename
+        self.nameCtrl = None
+        if kind == 'file':
+            if folder:
+                txt = wx.StaticText(panel, label=f'Folder:  {folder}')
+                txt.SetFont(font)
+                inner.Add(txt, 0, wx.BOTTOM, 10)
+            row = wx.BoxSizer()
+            txt = wx.StaticText(panel, label='File name:')
+            txt.SetFont(font)
+            row.Add(txt, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+            self.nameCtrl = wx.TextCtrl(panel, size=(420, -1),
+                                        style=wx.TE_READONLY)
+            self.nameCtrl.SetFont(font)
+            row.Add(self.nameCtrl, 1, wx.EXPAND)
+            inner.Add(row, 0, wx.EXPAND)
+        else:
+            txt = wx.StaticText(panel, label=message)
+            txt.SetFont(font)
+            txt.Wrap(560)
+            inner.Add(txt, 0)
+        vbox.Add(inner, 0, wx.EXPAND | wx.ALL, 16)
+        brow = wx.BoxSizer()
+        note = wx.StaticText(panel, label='Demo: GSAS-II shows this dialog;'
+                             '\nthe demo answers it for you')
+        note.SetFont(_gui_font(0, italic=True))
+        note.SetForegroundColour(wx.Colour(130, 70, 0))
+        brow.Add(note, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 20)
+        brow.AddStretchSpacer()
+        self.buttons = {}
+        for label in buttons:
+            b = wx.Button(panel, label=label)
+            b.SetFont(font)
+            brow.Add(b, 0, wx.LEFT, 8)
+            self.buttons[label] = b
+        vbox.Add(brow, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 16)
+        # step mode: let the viewer continue or stop
+        self.nextBtn = self.stopBtn = None
+        if step:
+            sp = wx.Panel(panel)
+            sp.SetBackgroundColour(wx.Colour(255, 245, 170))
+            ss = wx.BoxSizer()
+            txt = wx.StaticText(sp, label='Press Next to continue')
+            txt.SetFont(_gui_font(2, bold=True))
+            txt.SetForegroundColour(wx.BLACK)
+            ss.Add(txt, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 8)
+            ss.AddStretchSpacer()
+            self.stopBtn = wx.Button(sp, label='Stop')
+            self.nextBtn = wx.Button(sp, label='Next  ▸')
+            for b in (self.stopBtn, self.nextBtn):
+                b.SetFont(font)
+                ss.Add(b, 0, wx.ALL, 6)
+            self.stopBtn.SetToolTip('End the demo (after this dialog)')
+            self.nextBtn.SetToolTip('Continue (or press Enter in the '
+                                    'terminal)')
+            sp.SetSizer(ss)
+            vbox.Add(sp, 0, wx.EXPAND)
+        panel.SetSizer(vbox)
+        fs = wx.BoxSizer()
+        fs.Add(panel, 1, wx.EXPAND)
+        self.SetSizerAndFit(fs)
+
+    def type_name(self, n):
+        'Show the first n characters of the file name in the name field'
+        self.nameCtrl.ChangeValue(self.filename[:n])
+        self.nameCtrl.SetInsertionPointEnd()
+        self.nameCtrl.Update()
+
+class _MenuMock(wx.Frame):
+    '''Demo mode: a drawn copy of one level of a menu, with a highlight
+    that the driver moves to the item chosen. rows is a list of
+    (label, accelerator, kind, enabled, checked), where kind is "item",
+    "sub" (a submenu), "sep" (a separator) or "more" (rows left out)'''
+    @staticmethod
+    def row_height():
+        dc = wx.ScreenDC()
+        dc.SetFont(_gui_font(3))
+        return dc.GetTextExtent('Ag')[1] + 10
+
+    def __init__(self, rows, title=''):
+        super().__init__(None, style=wx.FRAME_NO_TASKBAR | wx.STAY_ON_TOP
+                         | wx.FRAME_TOOL_WINDOW | wx.BORDER_SIMPLE)
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+        self.rows, self.title, self.sel = rows, title, -1
+        self.font, self.bold = _gui_font(3), _gui_font(3, bold=True)
+        dc = wx.ScreenDC()
+        dc.SetFont(self.font)
+        self.rowh, self.seph, self.left = self.row_height(), 9, 32
+        lw = max([dc.GetTextExtent(r[0])[0] for r in rows] + [0])
+        aw = max([dc.GetTextExtent(r[1])[0] for r in rows if r[1]] + [0])
+        dc.SetFont(self.bold)
+        tw = dc.GetTextExtent(title)[0] if title else 0
+        self.width = max(self.left + lw + (aw + 30 if aw else 0) + 40,
+                         tw + 30, 160)
+        self.titleh = self.rowh if title else 0
+        self.tops = []
+        y = self.titleh + 3
+        for r in rows:
+            self.tops.append(y)
+            y += self.seph if r[2] == 'sep' else self.rowh
+        self.SetClientSize(self.width, y + 3)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+    def row_rect(self, i):
+        'Rectangle of row i (client coordinates)'
+        h = self.seph if self.rows[i][2] == 'sep' else self.rowh
+        return wx.Rect(0, self.tops[i], self.width, h)
+
+    def select(self, i):
+        'Highlight row i (-1 for none)'
+        self.sel = i
+        self.Refresh()
+        self.Update()
+
+    def OnPaint(self, event):
+        dc = wx.AutoBufferedPaintDC(self)
+        w, h = self.GetClientSize()
+        dc.SetBackground(wx.Brush(wx.Colour(250, 250, 250)))
+        dc.Clear()
+        if self.title:      # the menu's title, as in the menu bar
+            dc.SetBrush(wx.Brush(wx.Colour(45, 75, 145)))
+            dc.SetPen(wx.TRANSPARENT_PEN)
+            dc.DrawRectangle(0, 0, w, self.titleh)
+            dc.SetFont(self.bold)
+            dc.SetTextForeground(wx.WHITE)
+            dc.DrawText(self.title, 12,
+                        (self.titleh - dc.GetTextExtent('Ag')[1]) // 2)
+        dc.SetFont(self.font)
+        th = dc.GetTextExtent('Ag')[1]
+        for i, (label, accel, kind, enabled, checked) in enumerate(self.rows):
+            r = self.row_rect(i)
+            if kind == 'sep':
+                dc.SetPen(wx.Pen(wx.Colour(200, 200, 200)))
+                y = r.y + r.height // 2
+                dc.DrawLine(8, y, w - 8, y)
+                continue
+            fg = wx.Colour(20, 20, 20) if enabled else wx.Colour(160, 160, 160)
+            if i == self.sel:
+                dc.SetBrush(wx.Brush(wx.Colour(50, 110, 230)))
+                dc.SetPen(wx.TRANSPARENT_PEN)
+                dc.DrawRoundedRectangle(4, r.y + 1, w - 8, r.height - 2, 4)
+                fg = wx.WHITE
+            dc.SetTextForeground(fg)
+            ty = r.y + (r.height - th) // 2
+            if checked:
+                dc.DrawText('✓', 10, ty)
+            dc.DrawText(label, self.left, ty)
+            if kind == 'sub':
+                dc.DrawText('▸', w - 22, ty)
+            elif accel:
+                dc.DrawText(accel, w - 14 - dc.GetTextExtent(accel)[0], ty)
+
+def _menu_rows(menu, target, max_rows):
+    '''Rows for a :class:`_MenuMock` of menu, and the index of the row of
+    target (a wx.MenuItem in menu). A menu longer than max_rows is shown
+    in part, around target.'''
+    rows, ti = [], -1
+    tid = target.GetId()
+    for item in menu.GetMenuItems():
+        if item.IsSeparator():
+            rows.append(('', '', 'sep', True, False))
+            continue
+        if item.GetId() == tid:
+            ti = len(rows)
+        full = item.GetItemLabel()
+        accel = full.split('\t', 1)[1] if '\t' in full else ''
+        rows.append((wx.MenuItem.GetLabelText(full), accel,
+                     'sub' if item.IsSubMenu() else 'item', item.IsEnabled(),
+                     item.IsCheckable() and item.IsChecked()))
+    if len(rows) > max_rows:
+        n = max_rows - 2
+        lo = max(0, min(ti - n // 2, len(rows) - n))
+        hi = min(len(rows), lo + n)
+        more = ('⋯', '', 'more', False, False)
+        ti = ti - lo + (1 if lo > 0 else 0)
+        rows = ([more] if lo > 0 else []) + rows[lo:hi] + \
+            ([more] if hi < len(rows) else [])
+    return rows, ti
 
 #==============================================================================
 # The driver
@@ -447,9 +711,13 @@ class GUIDriver:
     :param float typing: demo-mode delay per typed character, in seconds
     :param bool step_mode: demo mode in which each step waits for the
       viewer to press Next (implies demo=True)
+    :param str workdir: directory for the scenario's files (downloads,
+      saved projects), made if needed; default: a new scratch directory
+    :param bool terminal: step mode: also accept Enter (Next) and q (Stop)
+      typed in the terminal GSAS-II was started from
     '''
     def __init__(self, G2frame, demo=False, delay=1.5, typing=0.08,
-                 step_mode=False):
+                 step_mode=False, workdir=None, terminal=True):
         self.frame = G2frame
         self.step_mode = step_mode
         self.demo = demo or step_mode
@@ -466,6 +734,12 @@ class GUIDriver:
         self._reader = None          # thread reading Enter from the terminal
         self._phase = None           # last phase added (default for phase tasks)
         self._tmpdir = None
+        if workdir:
+            os.makedirs(workdir, exist_ok=True)
+            self._tmpdir = os.path.abspath(workdir)
+        self._terminal = terminal
+        self._step_waits = False     # current step waited for Next
+        self._stop_requested = False # Stop pressed when nothing waited
         if self.demo:
             ANSWERS.on_show = self._show_native
 
@@ -519,6 +793,7 @@ class GUIDriver:
         end = time.time() + timeout
         nerr = len(self.answers.errors)
         while True:
+            self._check_stop()
             if GUI_EXCEPTIONS:
                 raise ScenarioError('GSAS-II raised an exception while '
                                     f'waiting for {what}: {GUI_EXCEPTIONS[-1]}')
@@ -542,9 +817,11 @@ class GUIDriver:
         Stop buttons, and the step's actions wait until Next is pressed;
         with wait=False this step starts without waiting (as in demo mode),
         e.g. for a preparation step that has nothing to show.'''
+        self._check_stop()
         self.nsteps += 1
         log(f'step {self.nsteps}: {text}')
         self._step_text = text
+        self._step_waits = wait
         if self.step_mode and wait:
             self.wait_for_user(text)
         elif self.demo:
@@ -564,11 +841,27 @@ class GUIDriver:
         if not self.demo:
             return
         self._caption_text = text
-        def show():
-            if self._caption is None:
-                self._caption = _Caption()
-            self._caption.show(text, self.frame)
-        self.gui(show)
+        self.gui(self._show_caption, text)
+
+    def _get_caption(self):
+        'GUI thread: the caption bar (created when first needed)'
+        if self._caption is None:
+            self._caption = _Caption()
+            self._caption.on_choice = self._choose
+        return self._caption
+
+    def _show_caption(self, text, buttons='stop'):
+        '''GUI thread: show text in the caption bar; in demo mode it always
+        has a Stop button (Next too while waiting in step mode)'''
+        cap = self._get_caption()
+        cap.show(text, self.frame, buttons=buttons)
+        if buttons and not cap.IsEnabled():
+            cap.Enable()   # a modal dialog disabled it
+
+    def _check_stop(self):
+        'Raise ScenarioStopped if the viewer pressed Stop'
+        if self._stop_requested:
+            raise ScenarioStopped('stopped by the viewer')
 
     def wait_for_user(self, text=None):
         '''Step mode: show text (default: the current caption) with Next
@@ -579,35 +872,33 @@ class GUIDriver:
         :class:`ScenarioStopped`. Does nothing unless in step mode.'''
         if not self.step_mode:
             return
+        self._check_stop()
         text = self._caption_text if text is None else text
         self._caption_text = text
         event, box = threading.Event(), {}
         with self._wait_lock:
             self._waiter = (event, box)
         self._start_terminal_reader()
-        def show(buttons):
-            if self._caption is None:
-                self._caption = _Caption()
-            self._caption.on_choice = self._choose
-            self._caption.show(text, self.frame, buttons=buttons)
-            if buttons and not self._caption.IsEnabled():
-                self._caption.Enable()   # a modal dialog disabled it
-        self.gui(show, True)
+        self.gui(self._show_caption, text, True)
         event.wait()
         with self._wait_lock:
             self._waiter = None
-        self.gui(show, False)
+        self.gui(self._show_caption, text)
         if box.get('choice') == 'stop':
             log('stopped by the viewer')
             raise ScenarioStopped('stopped by the viewer')
 
     def _choose(self, choice):
-        'Any thread: the viewer chose "next" or "stop"'
+        '''Any thread: the viewer chose "next" or "stop". Stop pressed
+        when nothing is waiting ends the scenario at its next action.'''
         with self._wait_lock:
             if self._waiter:
                 event, box = self._waiter
                 box['choice'] = choice
                 event.set()
+            elif choice == 'stop' and not self._stop_requested:
+                self._stop_requested = True
+                log('stop requested by the viewer')
 
     def _start_terminal_reader(self):
         '''Step mode: read lines typed in the terminal (if stdin is one);
@@ -615,6 +906,8 @@ class GUIDriver:
         if self._reader is not None:
             return
         self._reader = False
+        if not self._terminal:
+            return
         try:
             if not sys.stdin.isatty():
                 return
@@ -639,7 +932,11 @@ class GUIDriver:
     def pause(self, seconds=None):
         'Pause in demo mode (seconds defaults to the step delay)'
         if self.demo:
-            time.sleep(self.delay if seconds is None else seconds)
+            end = time.time() + (self.delay if seconds is None else seconds)
+            while time.time() < end:
+                self._check_stop()
+                time.sleep(min(0.05, max(0, end - time.time())))
+            self._check_stop()
 
     def highlight(self, target, seconds=None):
         '''Demo mode: outline a widget (or a wx.Rect in screen coordinates)
@@ -660,29 +957,104 @@ class GUIDriver:
         if self._outline is not None:
             self.gui(self._outline.Hide)
 
-    def _show_native(self, kind, text, answer):
-        '''Demo mode: native dialogs are answered by the stand-ins, so tell
-        the viewer what would have been chosen. Runs on the GUI thread.'''
-        text = text.split('\n')[0]
+    def _show_native(self, kind, text, answer, info=None):
+        '''Demo mode: native dialogs are answered by the stand-ins, so show
+        the viewer a picture of the dialog and the answer chosen. Runs on
+        the GUI thread, inside the GSAS-II handler that opened the dialog,
+        which must not see an error from here.'''
+        info = info or {}
+        title = (info.get('title') or text).split('\n')[0]
         if kind == 'file':
-            msg = f'{text}:  {os.path.basename(str(answer))}'
+            paths = answer if isinstance(answer, (list, tuple)) else [answer]
+            names = [os.path.basename(str(p)) for p in paths]
+            short = ', '.join(names)
         else:
-            msg = f'{text}  →  {_answer_name(answer)}'
-        if self._step_text:
-            msg = f'{self._step_text}\n{msg}'
-        if self._caption is None:
-            self._caption = _Caption()
-        self._caption.show(msg, self.frame)
-        # pause on the GUI thread (we are inside the handler that opened
-        # the dialog), yielding so that the caption is drawn
-        end = time.time() + self.delay
-        while time.time() < end:
+            short = _answer_name(answer)
+        msg = f'{title}  →  {short}'
+        try:
+            self._show_caption(f'{self._step_text}\n{msg}' if self._step_text
+                               else msg)
+            self._dialog_picture(kind, title, info, answer)
+        except Exception:
+            log('demo: could not show the dialog picture:\n'
+                + traceback.format_exc())
+            _yield_for(self.delay)
+
+    def _dialog_picture(self, kind, title, info, answer):
+        '''GUI thread: show a :class:`_DialogMock` of a native dialog,
+        type the file name, mark the button pressed and (step mode) wait
+        for Next'''
+        filename = folder = ''
+        if kind == 'file':
+            paths = answer if isinstance(answer, (list, tuple)) else [answer]
+            paths = [str(p) for p in paths]
+            folder = os.path.dirname(os.path.abspath(paths[0])) if paths else ''
+            names = [os.path.basename(p) for p in paths]
+            filename = names[0] if len(names) == 1 else \
+                ' '.join(f'"{n}"' for n in names)
+            save = info.get('style', 0) & wx.FD_SAVE
+            buttons = [('Cancel', ()), ('Save' if save else 'Open', None)]
+            pressed = buttons[1][0]
+        else:
+            buttons = _message_buttons(info.get('style', wx.OK))
+            pressed = buttons[0][0]
+            for label, ids in buttons:
+                if answer in ids:
+                    pressed = label
+                    break
+        wait = self.step_mode and self._step_waits
+        mock = _DialogMock(kind, title, info.get('message', ''),
+                           [b[0] for b in buttons], filename, folder,
+                           step=wait)
+        outline = None
+        try:
+            _place_over(mock, self.frame)
+            mock.ShowWithoutActivating()
+            mock.Raise()
+            _yield_for(self.delay * 0.4)
+            if mock.nameCtrl is not None and filename:   # "type" the name
+                per = min(self.typing, 1.5 / len(filename))
+                for n in range(1, len(filename) + 1):
+                    mock.type_name(n)
+                    _yield_for(per)
+                _yield_for(self.delay * 0.2)
+            outline = _Outline()
+            outline.show(mock.buttons[pressed].GetScreenRect())
+            if wait:
+                event, box = threading.Event(), {}
+                with self._wait_lock:
+                    self._waiter = (event, box)
+                self._start_terminal_reader()
+                mock.nextBtn.Bind(wx.EVT_BUTTON,
+                                  lambda e: self._choose('next'))
+                mock.stopBtn.Bind(wx.EVT_BUTTON,
+                                  lambda e: self._choose('stop'))
+                mock.nextBtn.SetDefault()
+                _yield_for(1e9, event.is_set)
+                with self._wait_lock:
+                    self._waiter = None
+                if box.get('choice') == 'stop':
+                    # GSAS-II gets its answer; the scenario stops at its
+                    # next action
+                    self._stop_requested = True
+                    log('stopped by the viewer')
+            else:
+                _yield_for(self.delay * 0.8)
+        finally:
+            if outline is not None:
+                outline.Destroy()
+            mock.Destroy()
             wx.GetApp().Yield(True)
-            wx.MilliSleep(30)
 
     # ---- menus ----------------------------------------------------------
     def _find_menu_item(self, path):
         'GUI thread: (menu, item) for a menu path such as ("File","Open...")'
+        return self._walk_menu(path)[1][-1]
+
+    def _walk_menu(self, path):
+        '''GUI thread: the menu bar position of path[0] and a list of
+        (menu, item) for each level of a menu path'''
+        levels = []
         if len(path) < 2:
             raise ValueError('menu path needs a menu title and an item label')
         mb = self.frame.GetMenuBar()
@@ -705,13 +1077,82 @@ class GUIDriver:
                           for i in menu.GetMenuItems() if not i.IsSeparator()]
                 raise LookupError(f'no item {label!r} in menu '
                                   f'{" > ".join(path[:depth])}: {labels}')
+            levels.append((menu, item))
             if depth < len(path) - 1:
                 if not item.IsSubMenu():
                     raise LookupError(f'{label!r} is not a submenu')
                 menu = item.GetSubMenu()
         if item.IsSubMenu():
             raise LookupError(f'{" > ".join(path)} is a submenu, not a command')
-        return menu, item
+        return pos, levels
+
+    def _build_menu_pictures(self, path):
+        '''GUI thread: a (hidden) :class:`_MenuMock` for each level of a
+        menu path, placed as the open menus would be, with the index of
+        the row chosen in each'''
+        pos, levels = self._walk_menu(path)
+        mb = self.frame.GetMenuBar()
+        area = wx.Display(max(0, wx.Display.GetFromWindow(self.frame))
+                          ).GetClientArea()
+        maxrows = max(6, (area.height - 80) // _MenuMock.row_height())
+        # left edge of the menu's title in the menu bar (estimated)
+        dc = wx.ScreenDC()
+        dc.SetFont(_gui_font())
+        x = self.frame.ClientToScreen((0, 0)).x + 8 + sum(
+            dc.GetTextExtent(wx.MenuItem.GetLabelText(mb.GetMenuLabel(i)))[0]
+            + 24 for i in range(pos))
+        y = self.frame.ClientToScreen((0, 0)).y
+        out = []
+        for k, (menu, item) in enumerate(levels):
+            rows, ti = _menu_rows(menu, item, maxrows)
+            m = _MenuMock(rows, title='' if k else
+                          wx.MenuItem.GetLabelText(mb.GetMenuLabel(pos)))
+            w, h = m.GetSize()
+            if k:          # a submenu opens beside its item
+                prev, pti = out[-1]
+                pr = prev.GetScreenRect()
+                x = pr.x + pr.width - 4
+                y = pr.y + prev.row_rect(pti).y - 3
+                if x + w > area.x + area.width:    # no room: open leftwards
+                    x = pr.x - w + 4
+            x = max(area.x, min(x, area.x + area.width - w))
+            y = max(area.y, min(y, area.y + area.height - h))
+            m.SetPosition((x, y))
+            out.append((m, ti))
+        return out
+
+    def _animate_menu(self, path):
+        '''Demo mode (scenario thread): show the menus opening, the
+        highlight moving down to each item of path, and the command
+        flashing as it is chosen'''
+        pics = self.gui(self._build_menu_pictures, path)
+        speed = min(1.0, self.delay / 1.5)
+        try:
+            for m, ti in pics:
+                def show(m=m):
+                    m.ShowWithoutActivating()
+                    m.Raise()
+                self.gui(show)
+                self.pause(0.25 * speed)
+                rows = [i for i, r in enumerate(m.rows[:ti + 1])
+                        if r[2] in ('item', 'sub')]
+                per = min(0.12, 1.2 / max(1, len(rows))) * speed
+                for i in rows:
+                    self.gui(m.select, i)
+                    self.pause(per)
+                self.pause(0.25 * speed)
+            m, ti = pics[-1]
+            for _ in range(3):
+                self.gui(m.select, -1)
+                self.pause(0.1)
+                self.gui(m.select, ti)
+                self.pause(0.1)
+            self.pause(0.3 * speed)
+        finally:
+            def close():
+                for m, _ in pics:
+                    m.Destroy()
+            self.gui(close)
 
     def _menu_command(self, path, check=None):
         'GUI thread: send the menu event, as a real selection would'
@@ -746,10 +1187,18 @@ class GUIDriver:
         it is disabled.
         '''
         log('menu: ' + ' > '.join(path))
+        self._check_stop()
+        self.gui(self._find_menu_item, path)    # fail early, in this thread
         if self.demo:
             self.detail('  ▸  '.join(path))
-            self.pause(self.delay * 0.7)
-        self.gui(self._find_menu_item, path)    # fail early, in this thread
+            try:
+                self._animate_menu(path)
+            except ScenarioStopped:
+                raise
+            except Exception:
+                log('demo: could not show the menu picture:\n'
+                    + traceback.format_exc())
+                self.pause(self.delay * 0.7)
         if modal:
             self.gui_nowait(self._menu_command, path, check)
         else:
@@ -1195,8 +1644,9 @@ class GUIDriver:
     # last added with add_phase, or the only phase in the project.
     @property
     def tmpdir(self):
-        '''A scratch directory for downloads and saved projects, made on
-        first use (it is not removed afterwards)'''
+        '''The directory for downloads and saved projects: the workdir
+        given to the driver, or else a scratch directory made on first use
+        (it is not removed afterwards)'''
         if self._tmpdir is None:
             self._tmpdir = tempfile.mkdtemp(prefix='G2GUIscenario_')
             log('working directory', self._tmpdir)
@@ -1713,7 +2163,7 @@ def _wait_for_main_frame(timeout=180):
         time.sleep(0.2)
 
 def run(scenario, demo=False, delay=1.5, keep_open=False, startup_wait=1.0,
-        step=False, artifacts=None):
+        step=False, artifacts=None, workdir=None):
     '''Start GSAS-II and run scenario(driver) in a background thread.
 
     :param scenario: function taking a :class:`GUIDriver`
@@ -1728,6 +2178,8 @@ def run(scenario, demo=False, delay=1.5, keep_open=False, startup_wait=1.0,
     :param str artifacts: directory for screenshots and a report if the
       scenario fails (default: the G2_GUI_ARTIFACTS environment variable;
       none are saved if neither is set); see :meth:`GUIDriver.save_failure`
+    :param str workdir: directory for the scenario's files (default: a new
+      scratch directory); files there with the same names are overwritten
 
     Does not return unless keep_open is set and the user closes GSAS-II.
     '''
@@ -1745,7 +2197,8 @@ def run(scenario, demo=False, delay=1.5, keep_open=False, startup_wait=1.0,
         d = None
         try:
             G2frame = _wait_for_main_frame()
-            d = GUIDriver(G2frame, demo=demo, delay=delay, step_mode=step)
+            d = GUIDriver(G2frame, demo=demo, delay=delay, step_mode=step,
+                          workdir=workdir)
             d.gui(install_config_stub)
             if not keep_open:
                 d.gui(install_excepthook)
@@ -1834,6 +2287,226 @@ def load_scenario(path):
         raise SystemExit(f'{path} does not define scenario(d)')
     return mod.scenario
 
+#==============================================================================
+# Running a demo inside a running GSAS-II (Help menu, "Run a GUI demo...")
+#==============================================================================
+_ACTIVE = {}     # the demo running in this GSAS-II, if any
+
+def scenario_description(path):
+    '''The description of a scenario file, from its docstring (the file
+    is parsed, not run); command-line examples are left out'''
+    import ast
+    try:
+        with open(path, encoding='utf-8') as fp:
+            doc = ast.get_docstring(ast.parse(fp.read())) or ''
+    except Exception as err:
+        return f'(could not read {path}: {err})'
+    keep = []
+    for para in doc.split('\n\n'):
+        if 'python -m' in para or 'GSASIIGUIdriver' in para:
+            continue
+        # join the docstring's hard-wrapped lines so the text reflows
+        keep.append(' '.join(line.strip() for line in para.splitlines()))
+    text = '\n\n'.join(keep).replace('GSAS-II GUI scenario: ', '', 1)
+    return text[:1].upper() + text[1:]
+
+def _new_project(G2frame):
+    '''GUI thread: start a new, empty project with GSAS-II's own
+    File > New project command, which offers to save the current one.
+    An empty project is just cleared. Returns False if the user cancels.'''
+    if G2frame.GPXtree.GetChildrenCount(G2frame.root, False):
+        return G2frame.OnFileClose(None)
+    G2frame.GSASprojectfile = ''
+    G2frame.clearProject()
+    return True
+
+def start_in_gui(G2frame, path, step=True, delay=1.5, workdir=None):
+    '''GUI thread: run the scenario in file path as a demo in this
+    (already running) GSAS-II, after starting a new project. Returns at
+    once; the scenario runs in a background thread and a message reports
+    the result. Native dialogs are answered by the demo's stand-ins (and
+    configuration saving is off) only while it runs.
+
+    :param bool step: step mode (each step waits for Next); else demo mode
+    :param float delay: pause per step (s)
+    :param str workdir: directory for the demo's files; default: a new
+      scratch directory
+    '''
+    if _ACTIVE:
+        wx.MessageBox('A demo is already running.', 'Run a GUI demo',
+                      wx.OK | wx.ICON_INFORMATION, G2frame)
+        return False
+    try:
+        scenario = load_scenario(path)
+    except (SystemExit, Exception) as err:
+        wx.MessageBox(f'Could not load the demo {path}:\n{err}',
+                      'Run a GUI demo', wx.OK | wx.ICON_ERROR, G2frame)
+        return False
+    if not _new_project(G2frame):
+        return False
+    name = os.path.splitext(os.path.basename(path))[0]
+    _ACTIVE['name'] = name
+    with ANSWERS.lock:
+        ANSWERS.queue.clear()
+    ANSWERS.errors.clear()
+    del GUI_EXCEPTIONS[:]
+    oldhook = sys.excepthook
+    install_fakes()
+    install_config_stub()
+    install_excepthook()
+    d = GUIDriver(G2frame, demo=True, delay=delay, step_mode=step,
+                  workdir=workdir, terminal=False)
+    _ACTIVE['driver'] = d
+
+    def runner():
+        result = 'failed'
+        msg = ''
+        try:
+            log(f'running demo {name}', '(step mode)' if step else '')
+            t0 = time.time()
+            scenario(d)
+            d.check_native_dialogs()
+            log(f'PASS ({d.nsteps} steps, {time.time()-t0:.1f} s)')
+            result = 'finished'
+            if step:
+                d.wait_for_user('Done. Press Next or Stop to finish')
+            else:
+                d.caption('Done')
+                d.pause(2 * delay)
+        except ScenarioStopped:
+            if result != 'finished':
+                result = 'stopped'
+                log(f'STOPPED by the viewer at step {d.nsteps}')
+        except Exception as err:
+            log('FAIL:', repr(err))
+            traceback.print_exc()
+            msg = f'\n\n{err}'
+            try:
+                d.caption(f'Failed: {err}')
+                if step:
+                    d.wait_for_user()
+                else:
+                    d.pause(3 * delay)
+            except Exception:
+                pass
+        finally:
+            ANSWERS.on_show = None
+            try:
+                d.close_decorations()
+            except Exception:
+                pass
+        where = f'\n\nIts files are in {d._tmpdir}' if d._tmpdir else ''
+        def restore():
+            uninstall_fakes()
+            uninstall_config_stub()
+            sys.excepthook = oldhook
+            with ANSWERS.lock:
+                ANSWERS.queue.clear()
+            _ACTIVE.clear()
+            wx.MessageBox(f'The demo "{name}" {result} after {d.nsteps} '
+                          f'steps.{msg}{where}', 'Run a GUI demo',
+                          wx.OK | (wx.ICON_ERROR if result == 'failed'
+                                   else wx.ICON_INFORMATION), G2frame)
+        wx.CallAfter(restore)
+
+    threading.Thread(target=runner, daemon=True, name='GUIdriver').start()
+    return True
+
+class DemoChooser(wx.Dialog):
+    '''Choose a demo from the demos directory, how to run it and where
+    its files go'''
+    def __init__(self, parent, paths, workdir=''):
+        super().__init__(parent, title='Run a GUI demo',
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.paths = paths
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        txt = wx.StaticText(self, label='GSAS-II will run the demo while you '
+            'watch: it starts a new project, then shows each menu command,'
+            ' dialog and entry as it is made.')
+        txt.Wrap(560)
+        vbox.Add(txt, 0, wx.ALL, 10)
+        row = wx.BoxSizer()
+        self.list = wx.ListBox(self, choices=[
+            os.path.splitext(os.path.basename(p))[0] for p in paths],
+            style=wx.LB_SINGLE, size=(200, 220))
+        row.Add(self.list, 0, wx.EXPAND | wx.RIGHT, 10)
+        self.desc = wx.TextCtrl(self, size=(400, 220), style=wx.TE_MULTILINE
+                                | wx.TE_READONLY | wx.TE_WORDWRAP)
+        row.Add(self.desc, 1, wx.EXPAND)
+        vbox.Add(row, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        self.mode = wx.RadioBox(self, label='Run', choices=[
+            'Step by step (press Next to continue)', 'Continuously'],
+            majorDimension=1)
+        vbox.Add(self.mode, 0, wx.EXPAND | wx.ALL, 10)
+        row = wx.BoxSizer()
+        row.Add(wx.StaticText(self, label='Pause per step (s):'), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
+        self.delay = wx.SpinCtrlDouble(self, min=0.2, max=10, initial=1.5,
+                                       inc=0.5)
+        row.Add(self.delay, 0)
+        vbox.Add(row, 0, wx.LEFT | wx.RIGHT, 10)
+        box = wx.StaticBoxSizer(wx.VERTICAL, self, 'Files of the demo')
+        self.scratch = wx.RadioButton(self, label='in a new scratch '
+                                      'directory', style=wx.RB_GROUP)
+        self.chosen = wx.RadioButton(self, label='in this directory:')
+        self.scratch.SetValue(True)
+        self.picker = wx.DirPickerCtrl(self, path=workdir or os.getcwd(),
+                                       style=wx.DIRP_USE_TEXTCTRL)
+        box.Add(self.scratch, 0, wx.ALL, 4)
+        box.Add(self.chosen, 0, wx.ALL, 4)
+        box.Add(self.picker, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 24)
+        note = wx.StaticText(self, label='Files the demo writes replace any '
+                             'with the same names there.')
+        note.SetFont(_gui_font(-1, italic=True))
+        box.Add(note, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 24)
+        vbox.Add(box, 0, wx.EXPAND | wx.ALL, 10)
+        btns = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
+        self.FindWindow(wx.ID_OK).SetLabel('Run demo')
+        vbox.Add(btns, 0, wx.EXPAND | wx.ALL, 10)
+        self.SetSizerAndFit(vbox)
+        self.list.Bind(wx.EVT_LISTBOX, self.OnSelect)
+        self.list.Bind(wx.EVT_LISTBOX_DCLICK,
+                       lambda e: self.EndModal(wx.ID_OK))
+        self.picker.Bind(wx.EVT_DIRPICKER_CHANGED,
+                         lambda e: self.chosen.SetValue(True))
+        self.list.SetSelection(0)
+        self.OnSelect(None)
+        self.CentreOnParent()
+
+    def OnSelect(self, event):
+        i = self.list.GetSelection()
+        if i != wx.NOT_FOUND:
+            self.desc.SetValue(scenario_description(self.paths[i]))
+
+    def GetValues(self):
+        'path, step mode, delay, workdir (None for a scratch directory)'
+        return (self.paths[self.list.GetSelection()],
+                self.mode.GetSelection() == 0, self.delay.GetValue(),
+                self.picker.GetPath() if self.chosen.GetValue() else None)
+
+def run_demo_dialog(G2frame):
+    '''GUI thread: ask which demo to run and how, then start it (the
+    Help menu's "Run a GUI demo..." command)'''
+    if _ACTIVE:
+        wx.MessageBox('A demo is already running.', 'Run a GUI demo',
+                      wx.OK | wx.ICON_INFORMATION, G2frame)
+        return
+    paths = list_scenarios()
+    if not paths:
+        wx.MessageBox(f'No demos were found in {SCENARIO_DIR}.\nThe demos '
+                      'directory comes with a git installation of GSAS-II.',
+                      'Run a GUI demo', wx.OK | wx.ICON_INFORMATION, G2frame)
+        return
+    dlg = DemoChooser(G2frame, paths, getattr(G2frame, 'LastGPXdir', '')
+                      or os.getcwd())
+    try:
+        if dlg.ShowModal() != wx.ID_OK:
+            return
+        path, step, delay, workdir = dlg.GetValues()
+    finally:
+        dlg.Destroy()
+    start_in_gui(G2frame, path, step=step, delay=delay, workdir=workdir)
+
 def main(argv=None):
     import argparse
     p = argparse.ArgumentParser(
@@ -1856,6 +2529,10 @@ def main(argv=None):
     p.add_argument('--timeout-scale', type=float, metavar='X',
                    help='multiply all timeouts by X, e.g. 3 on a slow '
                    'machine (default: $G2_GUI_TIMEOUT_SCALE or 1)')
+    p.add_argument('--workdir', metavar='DIR',
+                   help='directory for the scenario\'s files (downloads, '
+                   'projects; made if needed, same-named files are '
+                   'overwritten). Default: a new scratch directory')
     p.add_argument('--artifacts', metavar='DIR',
                    help='if the scenario fails, save screenshots and a '
                    'report in DIR (default: $G2_GUI_ARTIFACTS)')
@@ -1872,7 +2549,7 @@ def main(argv=None):
     scenario = load_scenario(args.scenario)
     return run(scenario, demo=args.demo, delay=args.delay,
                keep_open=args.keep_open, step=args.step,
-               artifacts=args.artifacts)
+               artifacts=args.artifacts, workdir=args.workdir)
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -1,0 +1,73 @@
+name: GUI self-test
+
+# Runs the GUI scenarios in demos/ (e.g. the CWCombined
+# tutorial) through the real GSAS-II GUI on a virtual display, using
+# tests/test_gui_scenarios.py. Each scenario's log, and screenshots and a
+# report for any that fail, are uploaded as the "gui-selftest" artifact.
+
+on:
+  push:
+    branches-ignore:
+      - master
+    paths:
+      - 'GSASII/**'
+      - 'demos/**'
+      - 'tests/test_gui_scenarios.py'
+      - '.github/workflows/gui-selftest.yml'
+  pull_request:
+    branches: ['main']
+  schedule:
+    # weekly, Mondays at 6:00 UTC
+    - cron: '0 6 * * 1'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Default to bash
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  gui:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          environments: py313
+          pixi-version: v0.39.5
+          manifest-path: pixi/pixi.toml
+
+      # wxPython itself comes from conda-forge (pixi); the runner needs a
+      # virtual X server and Mesa for OpenGL
+      - name: Install a virtual display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth libgl1-mesa-dri libglu1-mesa libegl1
+
+      - name: Build and install GSAS-II
+        run: pixi run --manifest-path pixi/pixi.toml -e py313 install
+
+      # run from pixi/ so that the installed GSAS-II is tested, not the
+      # source tree
+      - name: Run the GUI scenarios
+        env:
+          G2_GUI_TESTS: 'require'   # fail, not skip, if there is no display
+          G2_GUI_TIMEOUT_SCALE: '3'
+          G2_GUI_TEST_TIMEOUT: '1200'
+          G2_GUI_ARTIFACTS: ${{ github.workspace }}/gui-artifacts
+          NO_AT_BRIDGE: '1'
+        run: |
+          cd pixi
+          xvfb-run -a -s "-screen 0 1600x1200x24" \
+            pixi run -e py313 python -m pytest -v -rs ../tests/test_gui_scenarios.py
+
+      - name: Upload logs and failure screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gui-selftest
+          path: gui-artifacts/
+          if-no-files-found: ignore

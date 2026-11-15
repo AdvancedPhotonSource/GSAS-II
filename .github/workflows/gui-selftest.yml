@@ -5,20 +5,22 @@ name: GUI self-test
 # tests/test_gui_scenarios.py. Each scenario's log, and screenshots and a
 # report for any that fail, are uploaded as the "gui-selftest" artifact.
 
+# For now, run only by hand (Actions tab > GUI self-test > Run workflow).
+# Uncomment the other triggers to run it automatically.
 on:
-  push:
-    branches-ignore:
-      - master
-    paths:
-      - 'GSASII/**'
-      - 'demos/**'
-      - 'tests/test_gui_scenarios.py'
-      - '.github/workflows/gui-selftest.yml'
-  pull_request:
-    branches: ['main']
-  schedule:
-    # weekly, Mondays at 6:00 UTC
-    - cron: '0 6 * * 1'
+#  push:
+#    branches-ignore:
+#      - master
+#    paths:
+#      - 'GSASII/**'
+#      - 'demos/**'
+#      - 'tests/test_gui_scenarios.py'
+#      - '.github/workflows/gui-selftest.yml'
+#  pull_request:
+#    branches: ['main']
+#  schedule:
+#    # weekly, Mondays at 6:00 UTC
+#    - cron: '0 6 * * 1'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 

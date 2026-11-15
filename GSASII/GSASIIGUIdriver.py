@@ -70,7 +70,9 @@ and close dialogs that GSAS-II opens.
 
 Native dialogs (``wx.FileDialog``, ``wx.MessageDialog``, ``wx.MessageBox``)
 cannot be driven with events, so they are replaced with scripted stand-ins
-before GSAS-II starts. A scenario queues each answer before the action that
+before GSAS-II starts. GSAS-II's own file browser
+(``GSASIIctrlGUI.G2FileBrowser``, used instead of ``wx.FileDialog`` on
+Linux) is answered the same way. A scenario queues each answer before the action that
 opens the dialog (:meth:`GUIDriver.expect_file`,
 :meth:`GUIDriver.expect_message`). A native dialog that was not expected,
 or that does not match the queued answer, is recorded as an error and is
@@ -260,6 +262,17 @@ def fake_message_box(message, caption='Message', style=wx.OK, *a, **kw):
     ans = ANSWERS.take('message', f'{caption}: {message}')
     return wx.OK if ans is None else ans
 
+def fake_file_browser(parent, message, defaultDir='', *args,
+                      style=wx.FD_OPEN, **kw):
+    '''Stand-in for GSASIIctrlGUI.G2FileBrowser, the file dialog GSAS-II
+    uses instead of wx.FileDialog on Linux (config G2FileBrowser); answered
+    from the same queue as wx.FileDialog'''
+    dlg = FakeFileDialog(parent, message, defaultDir, style=style)
+    if dlg.ShowModal() != wx.ID_OK:
+        return []
+    paths = dlg.GetPaths()
+    return paths if style & wx.FD_MULTIPLE else paths[:1]
+
 def install_fakes():
     '''Replace the native dialogs. GSAS-II looks these up on the wx module
     at call time, so patching wx is enough. Safe to call before the wx.App
@@ -280,6 +293,7 @@ def uninstall_fakes():
     _REAL.clear()
 
 _realSaveConfig = None
+_realFileBrowser = None
 GUI_EXCEPTIONS = []   # uncaught exceptions in GSAS-II event handlers
 
 def install_excepthook():
@@ -294,21 +308,26 @@ def install_excepthook():
     sys.excepthook = hook
 
 def install_config_stub():
-    '''Stop GSAS-II from writing ~/.GSASII/config.ini. Must run on the GUI
-    thread after GSAS-II has started: importing GSAS-II GUI modules before
-    the wx.App exists breaks them (e.g. module-level wx constants such as
-    WACV in GSASIIphsGUI fail silently, giving a NameError later).
+    '''Stop GSAS-II from writing ~/.GSASII/config.ini, and replace GSAS-II's
+    own file browser (used on Linux) with :func:`fake_file_browser`. Must
+    run on the GUI thread after GSAS-II has started: importing GSAS-II GUI
+    modules before the wx.App exists breaks them (e.g. module-level wx
+    constants such as WACV in GSASIIphsGUI fail silently, giving a
+    NameError later).
     '''
-    global _realSaveConfig
+    global _realSaveConfig, _realFileBrowser
     from . import GSASIIctrlGUI as G2G
     if _realSaveConfig is None:
         _realSaveConfig = G2G.SaveConfigVars
+        _realFileBrowser = G2G.G2FileBrowser
     G2G.SaveConfigVars = lambda *a, **k: log('(config.ini save skipped)')
+    G2G.G2FileBrowser = fake_file_browser
 
 def uninstall_config_stub():
     from . import GSASIIctrlGUI as G2G
     if _realSaveConfig is not None:
         G2G.SaveConfigVars = _realSaveConfig
+        G2G.G2FileBrowser = _realFileBrowser
 
 #==============================================================================
 # Demo-mode decorations: caption bar and widget outline

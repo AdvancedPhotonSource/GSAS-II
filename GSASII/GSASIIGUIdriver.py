@@ -738,6 +738,7 @@ class GUIDriver:
         self._caption = None
         self._outline = None
         self._waiter = None          # (Event, dict) while waiting for Next
+        self._wait_ended = 0.0       # time the last wait for Next ended
         self._wait_lock = threading.Lock()
         self._reader = None          # thread reading Enter from the terminal
         self._phase = None           # last phase added (default for phase tasks)
@@ -752,6 +753,13 @@ class GUIDriver:
             ANSWERS.on_show = self._show_native
 
     # ---- running code on the GUI thread ---------------------------------
+    def _user_clock(self):
+        '''Now, while waiting for the viewer to press Next (step mode);
+        otherwise the time the last such wait ended. Timeouts count from
+        here, so a viewer can take as long as they like.'''
+        with self._wait_lock:
+            return time.time() if self._waiter else self._wait_ended
+
     def gui(self, fn, *args, timeout=30, **kw):
         '''Run fn(*args, **kw) on the GUI thread, wait for it and return
         its result (an exception there is re-raised here). Not for actions
@@ -772,11 +780,15 @@ class GUIDriver:
             finally:
                 done.set()
         wx.CallAfter(run)
-        if not done.wait(timeout * TIMEOUT_SCALE):
-            raise TimeoutError(f'GUI call {getattr(fn, "__name__", fn)} '
-                               f'did not finish in {timeout * TIMEOUT_SCALE:g}'
-                               ' s (did it open a modal dialog? use '
-                               'modal=True)')
+        timeout *= TIMEOUT_SCALE
+        start = time.time()
+        # time spent waiting for the viewer's Next (e.g. on a dialog
+        # picture shown inside fn, in step mode) does not count
+        while not done.wait(0.2):
+            if time.time() > max(start, self._user_clock()) + timeout:
+                raise TimeoutError(f'GUI call {getattr(fn, "__name__", fn)} '
+                                   f'did not finish in {timeout:g} s (did it '
+                                   'open a modal dialog? use modal=True)')
         if 'error' in box:
             log('error on GUI thread:\n' + box['tb'])
             raise box['error']
@@ -798,7 +810,7 @@ class GUIDriver:
         dialog meanwhile (e.g. an error message from a failed refinement).
         The timeout is multiplied by :data:`TIMEOUT_SCALE`.'''
         timeout *= TIMEOUT_SCALE
-        end = time.time() + timeout
+        start = time.time()
         nerr = len(self.answers.errors)
         while True:
             self._check_stop()
@@ -813,7 +825,8 @@ class GUIDriver:
             val = self.gui(cond, timeout=max(30, timeout))
             if val:
                 return val
-            if time.time() > end:
+            # time spent waiting for the viewer's Next does not count
+            if time.time() > max(start, self._user_clock()) + timeout:
                 raise TimeoutError(f'timed out after {timeout:g} s waiting '
                                    f'for {what}')
             time.sleep(0.05)
@@ -891,6 +904,7 @@ class GUIDriver:
         event.wait()
         with self._wait_lock:
             self._waiter = None
+            self._wait_ended = time.time()
         self.gui(self._show_caption, text)
         if box.get('choice') == 'stop':
             log('stopped by the viewer')
@@ -1041,6 +1055,7 @@ class GUIDriver:
                 _yield_for(1e9, event.is_set)
                 with self._wait_lock:
                     self._waiter = None
+                    self._wait_ended = time.time()
                 if box.get('choice') == 'stop':
                     # GSAS-II gets its answer; the scenario stops at its
                     # next action

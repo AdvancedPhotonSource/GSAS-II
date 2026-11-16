@@ -42,10 +42,10 @@ TESTINP = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                        '..', 'tests', 'testinp')
 PHASE = 'PbSO4'
 ATOMS = [  # type, x, y, z
-    ('Pb', '0.1882', '0.25', '0.167'),
-    ('S', '0.063', '0.25', '0.686'),
-    ('O', '-0.095', '0.25', '0.600'),
-    ('O', '0.181', '0.25', '0.543'),
+    ('Pb', '0.1882', '1/4', '0.167'),
+    ('S', '0.063', '1/4', '0.686'),
+    ('O', '-0.095', '1/4', '0.600'),
+    ('O', '0.181', '1/4', '0.543'),
     ('O', '0.085', '0.026', '0.806'),
 ]
 # Rwp (%) reported by the tutorial after each refinement:
@@ -80,15 +80,15 @@ def scenario(d):
 
     # ---- Step 1: read the data ------------------------------------------
     # (wait=False: in step mode, go straight on from the download)
-    d.step('Read the neutron data: Import > Powder Data > from GSAS powder '
-           'data file, PBSO4.CWN with instrument file inst_d1a.prm',
+    d.step('Read the neutron data. Import > Powder Data > from GSAS powder (menu)\n'
+           'data file: PBSO4.CWN; instrument file: inst_d1a.prm',
            wait=True)
     reader = 'from GSAS powder data file'
     new = d.import_powder(files['PBSO4.CWN'], files['inst_d1a.prm'], reader)
     d.check(len(new) == 1, f'one histogram read from PBSO4.CWN: {new}')
     hN = new[0]
     d.step('Read the X-ray data: PBSO4.XRA with instrument file '
-           'INST_XRY.PRM (separately, so each gets its own instrument file)')
+           'INST_XRY.PRM')
     new = d.import_powder(files['PBSO4.XRA'], files['INST_XRY.PRM'], reader)
     d.check(len(new) == 1, f'one histogram read from PBSO4.XRA: {new}')
     hX = new[0]
@@ -99,22 +99,22 @@ def scenario(d):
             f'neutron and X-ray histograms ({instN}, {instX})')
 
     # ---- Step 2: the phase ----------------------------------------------
-    d.step(f'Add a phase named {PHASE}: Data > Add new phase')
+    d.step(f'Add a phase named {PHASE}: Data > Add new phase (menu)')
     d.add_phase(PHASE)
 
-    d.step('General tab: space group P n m a')
+    d.step('Change space group on General tab: P n m a')
     d.set_space_group('P n m a')
     d.check(True, 'space group is P n m a')
 
-    d.step('General tab: unit cell a = 8.480, b = 5.398, c = 6.958 Å')
+    d.step('Set lattice on General tab: a = 8.480, b = 5.398, c = 6.958 Å')
     d.set_cell(a='8.480', b='5.398', c='6.958')
     d.check(True, 'cell is 8.480, 5.398, 6.958')
 
-    d.step('Atoms tab: Edit Atoms > Append atom, five times')
+    d.step('Create atoms on Atoms tab: Edit Atoms > Append atom, x5')
     d.append_atoms(len(ATOMS))
 
     for row, (elem, x, y, z) in enumerate(ATOMS):
-        d.step(f'Atom {row+1}: {elem} at {x}, {y}, {z} (double-click the '
+        d.step(f'Set Atom {row+1}: to {elem} at {x}, {y}, {z} (double-click the '
                'Type cell to pick the element, then type x, y, z)')
         d.set_atom(row, elem, (x, y, z))
     atoms = d.phase_data()['Atoms']
@@ -122,7 +122,7 @@ def scenario(d):
             'atoms are ' + ', '.join(f'{a[0]} {a[1]}' for a in atoms))
 
     # ---- Step 3: link the histograms ------------------------------------
-    d.step(f'{d.hap_location()}: Edit Phase > Add powder histograms, '
+    d.step(f'{d.hap_location()}: Edit Phase > Add powder histograms (menu), '
            'Set All, OK')
     d.add_histograms()
     d.check(sorted(d.phase_data()['Histograms']) == sorted(hists),
@@ -130,13 +130,13 @@ def scenario(d):
 
     results = []
     # ---- Step 4: refinement 1 -------------------------------------------
-    d.step('Refinement 1: Calculate > Refine, saving as NXPbSO4.gpx '
-           '(refines scale and background)')
+    d.step('Refinement step 1: Calculate > Refine (menu) '
+           '(refines scale and background); save as NXPbSO4.gpx')
     refine(d, hists, results, gpx=gpx)
     d.check(os.path.exists(gpx), f'project saved as {gpx}')
 
     # ---- Step 5: refinement 2 -------------------------------------------
-    d.step('Refinement 2: General tab, tick "Refine unit cell", refine')
+    d.step('Ref. step 2: General tab, add "Refine unit cell"; refine')
     d.phase_tab('General')
     d.set_check('Refine unit cell')
     d.check(d.phase_data()['General']['Cell'][0],
@@ -144,8 +144,8 @@ def scenario(d):
     refine(d, hists, results)
 
     # ---- Step 6: refinement 3 -------------------------------------------
-    d.step(f'Refinement 3: {d.hap_location()}, neutron histogram: tick D11, '
-           'D22, D33 (hydrostatic strain), refine')
+    d.step(f'Ref. step 3: {d.hap_location()}, neutron histogram: add D11, '
+           'D22, D33 (hydrostatic strain); refine')
     d.show_hap()
     d.select_hap_histogram(hN)
     for lbl in ('D11', 'D22', 'D33'):
@@ -155,8 +155,8 @@ def scenario(d):
     refine(d, hists, results)
 
     # ---- Step 7: refinement 4 -------------------------------------------
-    d.step(f'Refinement 4: {d.hap_location()}, X-ray histogram: tick size '
-           'and microstrain, refine')
+    d.step(f'Ref. step 4: {d.hap_location()}, X-ray histogram: add size '
+           'and microstrain; refine')
     d.show_hap()
     d.select_hap_histogram(hX)
     d.set_check('size(')
@@ -167,13 +167,13 @@ def scenario(d):
     refine(d, hists, results)
 
     # ---- Step 8: refinement 5 -------------------------------------------
-    d.step('Refinement 5: X-ray Sample Parameters: tick Sample displacement')
+    d.step('Ref. step 5: X-ray Sample Parameters: add Sample displacement')
     d.select_tree(hX, 'Sample Parameters')
     d.check(d.tree_data(hX, 'Sample Parameters')['Type'] == 'Bragg-Brentano',
             'X-ray diffractometer type is Bragg-Brentano')
     d.set_check(' Sample displacement')
 
-    d.step('Neutron Sample Parameters: goniometer radius 650 mm, tick '
+    d.step('Neutron Sample Parameters: set goniometer radius 650 mm, add '
            'Sample X and Y displacement')
     d.select_tree(hN, 'Sample Parameters')
     d.check(d.tree_data(hN, 'Sample Parameters')['Type'] == 'Debye-Scherrer',
@@ -184,11 +184,11 @@ def scenario(d):
     sN = d.tree_data(hN, 'Sample Parameters')
     d.check(sN['Gonio. radius'] == 650 and sN['DisplaceX'][1]
             and sN['DisplaceY'][1],
-            'neutron goniometer radius 650 mm, X and Y displacement flagged')
+            'neutron goniometer radius 650 mm; add X and Y displacement')
     d.check(d.tree_data(hX, 'Sample Parameters')['Shift'][1],
             'X-ray sample displacement flagged')
 
-    d.step('Atoms tab: double-click the "refine" column heading, choose '
+    d.step('Refine atoms on Atoms tab: double-click the "refine" column heading; choose '
            'X and U for all atoms')
     d.grid_event(d.atoms_grid(), -1, 'refine',
                  wx.grid.wxEVT_GRID_LABEL_LEFT_DCLICK, modal=True)
@@ -205,7 +205,7 @@ def scenario(d):
 
     # ---- Step 9: refinement 6 -------------------------------------------
     for h, kind in ((hN, 'neutron'), (hX, 'X-ray')):
-        d.step(f'Refinement 6: {kind} Instrument Parameters: refine U, V, W')
+        d.step(f'Ref. step 6: {kind} Instrument Parameters: add U, V, W')
         d.select_tree(h, 'Instrument Parameters')
         for p in 'UVW':
             d.set_check(d.find_after(f' {p} (', wx.CheckBox))

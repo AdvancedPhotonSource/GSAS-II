@@ -29,6 +29,10 @@ import os
 import wx
 import wx.grid
 
+# the tutorial this demo follows (its directory in GSASII/tutorialIndex.py);
+# Help > Run a GUI demo... offers to open its web page
+TUTORIAL = 'CWCombined'
+
 URL = ('https://advancedphotonsource.github.io/GSAS-II-tutorials/'
        'CWCombined/data/')
 FILES = ['PBSO4.CWN', 'inst_d1a.prm', 'PBSO4.XRA', 'INST_XRY.PRM']

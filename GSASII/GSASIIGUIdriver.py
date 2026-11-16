@@ -59,6 +59,14 @@ screenshots and a report in DIR if the scenario fails (also settable with
 the G2_GUI_TIMEOUT_SCALE and G2_GUI_ARTIFACTS environment variables).
 tests/test_gui_scenarios.py runs every scenario this way under pytest.
 
+In GSAS-II, Help > "Run a GUI demo..." (shown when the demos directory is
+present) lists the scenarios there, with each file's docstring as its
+description, and runs the chosen one in the open window. A scenario that
+follows a tutorial can name it with a module-level
+``TUTORIAL = 'CWCombined'`` (the tutorial's directory in
+GSASII/tutorialIndex.py, or a full URL); that window then has a button
+that opens the tutorial's web page.
+
 How it works
 ------------
 GSAS-II is started normally (``GSASIIGUI.main()``). Before that, a
@@ -2292,15 +2300,23 @@ def load_scenario(path):
 #==============================================================================
 _ACTIVE = {}     # the demo running in this GSAS-II, if any
 
+def _parse_scenario(path):
+    'The ast module of a scenario file (parsed, not run), or an error string'
+    import ast
+    try:
+        with open(path, encoding='utf-8') as fp:
+            return ast.parse(fp.read())
+    except Exception as err:
+        return f'(could not read {path}: {err})'
+
 def scenario_description(path):
     '''The description of a scenario file, from its docstring (the file
     is parsed, not run); command-line examples are left out'''
     import ast
-    try:
-        with open(path, encoding='utf-8') as fp:
-            doc = ast.get_docstring(ast.parse(fp.read())) or ''
-    except Exception as err:
-        return f'(could not read {path}: {err})'
+    tree = _parse_scenario(path)
+    if isinstance(tree, str):
+        return tree
+    doc = ast.get_docstring(tree) or ''
     keep = []
     for para in doc.split('\n\n'):
         if 'python -m' in para or 'GSASIIGUIdriver' in para:
@@ -2309,6 +2325,33 @@ def scenario_description(path):
         keep.append(' '.join(line.strip() for line in para.splitlines()))
     text = '\n\n'.join(keep).replace('GSAS-II GUI scenario: ', '', 1)
     return text[:1].upper() + text[1:]
+
+def scenario_tutorial(path):
+    '''The tutorial a scenario follows: (URL, title), or None. A scenario
+    names it with a module-level ``TUTORIAL = '...'``, either the tutorial's
+    directory in :data:`tutorialIndex.tutorialIndex` (e.g. 'CWCombined')
+    or a full URL. The file is parsed, not run.'''
+    import ast
+    tree = _parse_scenario(path)
+    if isinstance(tree, str):
+        return None
+    name = None
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == 'TUTORIAL'
+                and isinstance(node.value, ast.Constant)
+                and isinstance(node.value.value, str)):
+            name = node.value.value
+    if not name:
+        return None
+    if name.startswith(('http://', 'https://')):
+        return name, name
+    from . import GSASIIctrlGUI as G2G
+    for entry in G2G.tutorialCatalog:   # as Help > Tutorials builds the URL
+        if entry[0] == name:
+            return G2G.G2TutURL + entry[0] + '/' + entry[1], entry[2]
+    return None
 
 def _new_project(G2frame):
     '''GUI thread: start a new, empty project with GSAS-II's own
@@ -2404,7 +2447,7 @@ def start_in_gui(G2frame, path, step=True, delay=1.5, workdir=None):
                 ANSWERS.queue.clear()
             _ACTIVE.clear()
             wx.MessageBox(f'The demo "{name}" {result} after {d.nsteps} '
-                          f'steps.{msg}{where}', 'Run a GUI demo',
+                          f'steps.{msg}{where}', 'Demo complete',
                           wx.OK | (wx.ICON_ERROR if result == 'failed'
                                    else wx.ICON_INFORMATION), G2frame)
         wx.CallAfter(restore)
@@ -2434,6 +2477,15 @@ class DemoChooser(wx.Dialog):
                                 | wx.TE_READONLY | wx.TE_WORDWRAP)
         row.Add(self.desc, 1, wx.EXPAND)
         vbox.Add(row, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        row = wx.BoxSizer()
+        self.tutBtn = wx.Button(self, label='Open the tutorial in a browser')
+        self.tutBtn.Bind(wx.EVT_BUTTON, self.OnTutorial)
+        row.Add(self.tutBtn, 0, wx.ALIGN_CENTER_VERTICAL)
+        self.tutLabel = wx.StaticText(self, label='',
+                                      style=wx.ST_ELLIPSIZE_END)
+        row.Add(self.tutLabel, 1, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 8)
+        vbox.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        self.tutorial = None
         self.mode = wx.RadioBox(self, label='Run', choices=[
             'Step by step (press Next to continue)', 'Continuously'],
             majorDimension=1)
@@ -2477,6 +2529,16 @@ class DemoChooser(wx.Dialog):
         i = self.list.GetSelection()
         if i != wx.NOT_FOUND:
             self.desc.SetValue(scenario_description(self.paths[i]))
+            self.tutorial = scenario_tutorial(self.paths[i])
+            self.tutBtn.Enable(self.tutorial is not None)
+            self.tutLabel.SetLabel(self.tutorial[1] if self.tutorial
+                                   else '(this demo does not follow a tutorial)')
+
+    def OnTutorial(self, event):
+        'Open the tutorial web page, as Help > Tutorials does'
+        if self.tutorial:
+            from . import GSASIIctrlGUI as G2G
+            G2G.ShowWebPage(self.tutorial[0], self.GetParent())
 
     def GetValues(self):
         'path, step mode, delay, workdir (None for a scratch directory)'

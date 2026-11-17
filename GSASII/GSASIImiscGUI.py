@@ -767,6 +767,7 @@ def ProjFileSave(G2frame):
         finally:
             wx.EndBusyCursor()
         print('project save successful')
+        return True
     return True
 
 def SaveIntegration(G2frame,PickId,data,Overwrite=False):

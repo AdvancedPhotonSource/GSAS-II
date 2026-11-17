@@ -1,27 +1,29 @@
-'''GSAS-II GUI scenario: the "CW Neutron Powder fit for Yttrium-Iron Garnet"
-tutorial,
-https://advancedphotonsource.github.io/GSAS-II-tutorials/CWNeutron/Neutron%20CW%20Powder%20Data.htm
+'''Demo for the "CW Neutron Powder fit for Yttrium-Iron Garnet"
+tutorial, which fits the structure of yttrium iron/aluminum garnet 
+using constant wavelength neutron data. The structure is cubic with 
+four different atomic sites, two of which are jointly occupied by 
+both iron and aluminum.
 
+Tutorial location: https://advancedphotonsource.github.io/GSAS-II-tutorials/CWNeutron/Neutron%20CW%20Powder%20Data.htm
+
+The input for this demo is downloaded from the tutorials web site
+into a selected directory along with the created project file (YAG.gpx).
+
+The tutorial is followed through its four refinements; each one's Rwp is
+logged next to the tutorial's. Not included in the demo: viewing 
+the .lst file and the covariance matrix at the end.
+'''
+import os
+import wx
+
+'''
+To run this directly, use:
 Self-test:  python -m GSASII.GSASIIGUIdriver demos/CWNeutron_tutorial.py
 Demo:       python -m GSASII.GSASIIGUIdriver --demo demos/CWNeutron_tutorial.py
 Step-by-step demo (press Next for each step):
             python -m GSASII.GSASIIGUIdriver --step demos/CWNeutron_tutorial.py
 Add --keep-open to explore the finished project afterwards.
-
-The two input files are copied from tests/testinp when this file is in a
-GSAS-II source tree, otherwise downloaded from the tutorials web site
-(G2_GUI_DOWNLOAD=1 forces the download), into a temporary directory
-(d.tmpdir). The project is saved there too (YAG.gpx).
-
-The GSAS-II tasks (import_powder, add_phase, set_atom, add_constraint,
-refine, ...) are methods of the driver; see GSASII/GSASIIGUIdriver.py.
-
-The tutorial is followed through its four refinements; each one's Rwp is
-logged next to the tutorial's. Not scripted: looking at the .lst file and
-the covariance matrix at the end.
 '''
-import os
-import wx
 
 # the tutorial this demo follows (its directory in GSASII/tutorialIndex.py);
 # Help > Run a GUI demo... offers to open its web page

@@ -1,28 +1,32 @@
-'''GSAS-II GUI scenario: the "Combined X-ray/TOF-neutron Rietveld
-refinement" tutorial,
-https://advancedphotonsource.github.io/GSAS-II-tutorials/TOF-CW%20Joint%20Refinement/TOF%20combined%20XN%20Rietveld%20refinement%20in%20GSAS.htm
+'''Demo for the "Combined X-ray/TOF-neutron Rietveld refinement" tutorial,
+which fits the structure of Na2Ca3Al2F14 (NAC) to high-resolution 
+powder diffraction data collected at both the SNS (POWGEN, TOF neutron)
+and the APS (synchrotron, 11-BM) in combination, providing a better
+model than would be obtained from either set of data alone. 
 
+Tutorial location: https://advancedphotonsource.github.io/GSAS-II-tutorials/TOF-CW%20Joint%20Refinement/TOF%20combined%20XN%20Rietveld%20refinement%20in%20GSAS.htm
+
+The input for this demo is downloaded from the tutorials web site
+into a selected directory along with the created project file 
+(NAC.gpx).
+
+The tutorial is followed through Step 5; each refinement's Rwp is logged
+next to the tutorial's. The data limits that the tutorial picks on the plot
+are typed in the Limits window instead. Not included in the demo: 
+Step 6 (further work).
+'''
+import os
+import wx
+import wx.grid
+
+'''
+To run this directly, use:
 Self-test:  python -m GSASII.GSASIIGUIdriver demos/TOFCombined_tutorial.py
 Demo:       python -m GSASII.GSASIIGUIdriver --demo demos/TOFCombined_tutorial.py
 Step-by-step demo (press Next for each step):
             python -m GSASII.GSASIIGUIdriver --step demos/TOFCombined_tutorial.py
 Add --keep-open to explore the finished project afterwards.
-
-The seven input files are downloaded from the tutorials web site into a
-temporary directory (d.tmpdir). The project is saved there too (NAC.gpx).
-
-The GSAS-II tasks (import_phase, import_powder, set_limits, copy_hap,
-add_constraint, refine, ...) are methods of the driver; see
-GSASII/GSASIIGUIdriver.py.
-
-The tutorial is followed through Step 5; each refinement's Rwp is logged
-next to the tutorial's. The data limits that the tutorial picks on the plot
-are typed in the Limits window instead. Not scripted: Step 6 (further
-work).
 '''
-import os
-import wx
-import wx.grid
 
 # the tutorial this demo follows (its directory in GSASII/tutorialIndex.py);
 # Help > Run a GUI demo... offers to open its web page

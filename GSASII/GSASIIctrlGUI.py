@@ -6278,8 +6278,8 @@ class MyHelp(wx.Menu):
         # scripted GUI demos (the demos directory of a git install)
         if os.path.isdir(os.path.join(
                 os.path.dirname(GSASIIpath.path2GSAS2), 'demos')):
-            helpobj = self.Append(wx.ID_ANY,'Run a GUI demo...',
-                'Watch GSAS-II run a scripted demo, e.g. a tutorial')
+            helpobj = self.Append(wx.ID_ANY,'Run tutorial as demo',
+                'Watch GSAS-II run a tutorial as a scripted demo')
             frame.Bind(wx.EVT_MENU, self.OnRunDemo, id=helpobj.GetId())
         # add help lookup(s) in GSAS-II Help
         self.AppendSeparator()

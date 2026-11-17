@@ -1,25 +1,32 @@
-'''GSAS-II GUI scenario: the "Simulating Powder Diffraction with GSAS-II"
-tutorial,
-https://advancedphotonsource.github.io/GSAS-II-tutorials/Simulation/SimTutorial.htm
+'''Demo for the "Simulating Powder Diffraction with GSAS-II"
+tutorial. Simulation of a diffraction data requires input of
+a set of instrument parameter (GSAS-II provides default values
+if no file is available) and one or more crystal structures, which 
+are usually read in, but can be entered manually. Here two phases, 
+CuCr2O4 and CuO are read from CIF files and a high-resolution 
+synchrotron pattern is simulated. Simulation is also commonly performed 
+using scripting, (see https://gsas-ii-scripting.readthedocs.io/).
 
+Tutorial location: https://advancedphotonsource.github.io/GSAS-II-tutorials/Simulation/SimTutorial.htm
+
+The input for this demo is downloaded from the tutorials web site
+into a selected directory along with the created project file 
+(CuCr2O4-sim.gpx).
+
+The tutorial is followed through Step 6 (the simulation). 
+Not included in the demo: rearranging the plot and the optional Step 7.
+'''
+import os
+import wx
+
+'''
+To run this directly, use:
 Self-test:  python -m GSASII.GSASIIGUIdriver demos/Simulation_tutorial.py
 Demo:       python -m GSASII.GSASIIGUIdriver --demo demos/Simulation_tutorial.py
 Step-by-step demo (press Next for each step):
             python -m GSASII.GSASIIGUIdriver --step demos/Simulation_tutorial.py
 Add --keep-open to explore the finished project afterwards.
-
-The three input files are downloaded from the tutorials web site into a
-temporary directory (d.tmpdir). The project is saved there too
-(CuCr2O4-sim.gpx).
-
-The GSAS-II tasks (import_phase, simulate_powder, copy_hap, refine, ...)
-are methods of the driver; see GSASII/GSASIIGUIdriver.py.
-
-The tutorial is followed through Step 6 (the simulation). Not scripted:
-rearranging the plot and the optional Step 7.
 '''
-import os
-import wx
 
 # the tutorial this demo follows (its directory in GSASII/tutorialIndex.py);
 # Help > Run a GUI demo... offers to open its web page

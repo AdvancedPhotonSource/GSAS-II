@@ -1,33 +1,39 @@
-'''GSAS-II GUI scenario: the "Combined X-ray/CW-neutron refinement" tutorial
-(PbSO4), https://advancedphotonsource.github.io/GSAS-II-tutorials/CWCombined/Combined%20refinement.htm
+'''Demo for the "Combined X-ray/CW-neutron refinement - PbSO4" tutorial, 
+which fits the structure of lead sulphate using both constant wavelength 
+X-ray and neutron data. These data were taken at different temperatures 
+and have differing lattice constants, so hydrostatic strain tensor (Dij)
+terms are used to allow the cell parameters to match the data. 
 
+Tutorial location: https://advancedphotonsource.github.io/GSAS-II-tutorials/CWCombined/Combined%20refinement.htm
+
+Input for this available in most GSAS-II installations via files in the
+tests/testinp directory, otherwise input downloaded from the tutorials web site
+into a selected directory along with the created project file (NXPbSO4.gpx).
+
+The tutorial is followed through its six refinements; each one's Rwp
+values are logged next to the tutorial's. Note that the tutorial
+demonstrates use of options to change the plotting of the fit by
+changing data limits and with key presses, but this is not in the
+demo. Likewise Fourier map computations are not included. 
+
+This demo is also used as a self-test via the script in 
+tests/test_gui_scenarios.py which is run via the gui-selftest.yml 
+GitHub workflow.
+'''
+
+import os
+import wx
+import wx.grid
+
+'''
+To run this directly, use:
 Self-test:  python -m GSASII.GSASIIGUIdriver demos/CWCombined_tutorial.py
 Demo:       python -m GSASII.GSASIIGUIdriver --demo demos/CWCombined_tutorial.py
 Step-by-step demo (press Next for each step):
             python -m GSASII.GSASIIGUIdriver --step demos/CWCombined_tutorial.py
 Add --keep-open to explore the finished project afterwards.
-
-The four input files are copied from tests/testinp when this file is in a
-GSAS-II source tree, otherwise downloaded from the tutorials web site
-(G2_GUI_DOWNLOAD=1 forces the download), into a temporary directory
-(d.tmpdir). The driver's file-dialog stand-in gives GSAS-II their local
-paths (the GUI's file dialogs cannot open URLs). The project is saved
-there too (NXPbSO4.gpx).
-
-This scenario is also a self-test: tests/test_gui_scenarios.py (and the
-gui-selftest GitHub workflow) run it and require it to pass.
-
-The GSAS-II tasks (import_powder, add_phase, set_atom, refine, ...) are
-methods of the driver; see GSASII/GSASIIGUIdriver.py.
-
-The tutorial is followed through its six refinements; each one's Rwp
-values are logged next to the tutorial's. Not scripted: the optional plot
-key presses, moving the data limits (no values are given) and the Fourier
-maps at the end.
 '''
-import os
-import wx
-import wx.grid
+
 
 # the tutorial this demo follows (its directory in GSASII/tutorialIndex.py);
 # Help > Run a GUI demo... offers to open its web page

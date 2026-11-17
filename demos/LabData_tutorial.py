@@ -1,28 +1,29 @@
-'''GSAS-II GUI scenario: the "Fitting laboratory X-ray powder data for
-fluoroapatite" tutorial,
-https://advancedphotonsource.github.io/GSAS-II-tutorials/LabData/Laboratory%20X.htm
+'''Demo for the "Fitting laboratory X-ray powder data for
+fluoroapatite" tutorial, which fits the structure of fluoroapatite, 
+Ca5F(PO4)3, using constant wavelength X-ray powder diffraction data
+from a laboratory K-alpha-1+K-alpha-2 diffractometer.
 
+Tutorial location: https://advancedphotonsource.github.io/GSAS-II-tutorials/LabData/Laboratory%20X.htm
+
+The input for this demo is downloaded from the tutorials web site
+into a selected directory along with the created project file (fap.gpx).
+
+The tutorial is followed through its four refinements; each one's Rwp is
+logged next to the tutorial's. Not included in the demo: the structure 
+drawing at the end (Step 9).
+'''
+import os
+import wx
+import wx.grid
+
+'''
+To run this directly, use:
 Self-test:  python -m GSASII.GSASIIGUIdriver demos/LabData_tutorial.py
 Demo:       python -m GSASII.GSASIIGUIdriver --demo demos/LabData_tutorial.py
 Step-by-step demo (press Next for each step):
             python -m GSASII.GSASIIGUIdriver --step demos/LabData_tutorial.py
 Add --keep-open to explore the finished project afterwards.
-
-The three input files are copied from tests/testinp when this file is in a
-GSAS-II source tree, otherwise downloaded from the tutorials web site
-(G2_GUI_DOWNLOAD=1 forces the download), into a temporary directory
-(d.tmpdir). The project is saved there too (fap.gpx).
-
-The GSAS-II tasks (import_powder, import_phase, set_background, refine,
-...) are methods of the driver; see GSASII/GSASIIGUIdriver.py.
-
-The tutorial is followed through its four refinements; each one's Rwp is
-logged next to the tutorial's. Not scripted: the structure drawing at the
-end (Step 9).
 '''
-import os
-import wx
-import wx.grid
 
 # the tutorial this demo follows (its directory in GSASII/tutorialIndex.py);
 # Help > Run a GUI demo... offers to open its web page

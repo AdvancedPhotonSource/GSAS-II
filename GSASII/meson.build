@@ -7,6 +7,7 @@ py.install_sources([
     'G2compare.py',
     'G2shapes.py',
     'GSASIIGUI.py',
+    'GSASIIGUIdriver.py',
     'GSASIIElem.py',
     'GSASIIElemGUI.py',
     'GSASIImiscGUI.py',

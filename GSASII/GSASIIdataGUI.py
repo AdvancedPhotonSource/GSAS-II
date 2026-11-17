@@ -4669,6 +4669,9 @@ If you continue from this point, it is quite likely that all intensity computati
         '''Clears the data tree in response to the
         File/New Project menu button. User is given option to save
         the project.
+
+        :returns: True if the project was cleared, False if the user
+          cancelled or the save failed (the project is then kept)
         '''
         dlg = wx.MessageDialog(self,
                     'Do you want to save the current project before starting with an empty one?\n(Use No to clear without saving or Cancel to continue with current project)',
@@ -4676,13 +4679,15 @@ If you continue from this point, it is quite likely that all intensity computati
                     wx.YES | wx.NO | wx.CANCEL)
         try:
             result = dlg.ShowModal()
-            if result == wx.ID_OK:
-                self.OnFileSaveMenu(event)
-            if result != wx.ID_CANCEL:
-                self.GSASprojectfile = ''
-                self.clearProject()
         finally:
             dlg.Destroy()
+        if result == wx.ID_CANCEL:
+            return False
+        if result == wx.ID_YES and not self.OnFileSave(event):
+            return False    # save cancelled or failed: keep the project
+        self.GSASprojectfile = ''
+        self.clearProject()
+        return True
 
     def clearProject(self):
         'Initializes the data tree etc.'
@@ -4707,8 +4712,7 @@ If you continue from this point, it is quite likely that all intensity computati
         if self.GSASprojectfile:
             self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
             self.CheckNotebook()
-            G2IO.ProjFileSave(self)
-            return True
+            return G2IO.ProjFileSave(self)
         else:
             return self.OnFileSaveas(event)
 
@@ -4762,11 +4766,17 @@ If you continue from this point, it is quite likely that all intensity computati
             'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:     #TODO: what about Cancel?
+                old_projectfile = self.GSASprojectfile
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
                 self.CheckNotebook()
-                G2IO.ProjFileSave(self)
+                if not G2IO.ProjFileSave(self):
+                    self.GSASprojectfile = old_projectfile
+                    self.GPXtree.SetItemText(
+                        self.root, 'Project: '+old_projectfile)
+                    self.SetTitleByGPX()
+                    return False
                 self.SetTitleByGPX()
                 self.LastGPXdir = dlg.GetDirectory()
                 os.chdir(self.LastGPXdir)

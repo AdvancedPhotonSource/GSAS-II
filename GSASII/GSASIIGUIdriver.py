@@ -753,6 +753,8 @@ class GUIDriver:
         self._reader = None          # thread reading Enter from the terminal
         self._phase = None           # last phase added (default for phase tasks)
         self._tmpdir = None
+        self._async_actions = set()
+        self._async_lock = threading.Lock()
         if workdir:
             os.makedirs(workdir, exist_ok=True)
             self._tmpdir = os.path.abspath(workdir)
@@ -830,12 +832,42 @@ class GUIDriver:
 
     def gui_nowait(self, fn, *args, **kw):
         'Start fn(*args, **kw) on the GUI thread and return at once'
+        done = threading.Event()
+        with self._async_lock:
+            self._async_actions.add(done)
         def run():
             try:
                 fn(*args, **kw)
-            except Exception:
+            except Exception as err:
+                GUI_EXCEPTIONS.append(f'{type(err).__name__}: {err}')
                 log('error on GUI thread:\n' + traceback.format_exc())
+            finally:
+                with self._async_lock:
+                    self._async_actions.discard(done)
+                done.set()
         wx.CallAfter(run)
+        return done
+
+    def cancel_async_actions(self):
+        '''Cancel modal dialogs opened by asynchronous demo actions and
+        wait for those actions to return before restoring GUI hooks.'''
+        def cancel_dialogs():
+            for win in wx.GetTopLevelWindows():
+                if (isinstance(win, wx.Dialog) and win.IsShown()
+                        and win.IsModal()):
+                    try:
+                        win.EndModal(wx.ID_CANCEL)
+                    except Exception:
+                        log('could not cancel modal dialog:',
+                            repr(win.GetTitle()))
+        while True:
+            with self._async_lock:
+                actions = list(self._async_actions)
+            if not actions:
+                return
+            self.gui(cancel_dialogs)
+            for action in actions:
+                action.wait(0.1)
 
     def wait_until(self, cond, what='condition', timeout=10):
         '''Call cond() on the GUI thread until it returns something truthy;
@@ -2828,11 +2860,22 @@ def start_in_gui(G2frame, path, step=True, delay=1.5, workdir=None):
     ANSWERS.errors.clear()
     del GUI_EXCEPTIONS[:]
     oldhook = sys.excepthook
+    old_answer_handler = ANSWERS.on_show
     install_fakes()
     install_config_stub()
     install_excepthook()
-    d = GUIDriver(G2frame, demo=True, delay=delay, step_mode=step,
-                  workdir=workdir, terminal=False)
+    try:
+        d = GUIDriver(G2frame, demo=True, delay=delay, step_mode=step,
+                      workdir=workdir, terminal=False)
+    except OSError as err:
+        ANSWERS.on_show = old_answer_handler
+        uninstall_fakes()
+        uninstall_config_stub()
+        sys.excepthook = oldhook
+        _ACTIVE.clear()
+        wx.MessageBox(f'Could not create the demo working directory:\n{err}',
+                      'Run a GUI demo', wx.OK | wx.ICON_ERROR, G2frame)
+        return False
     _ACTIVE['driver'] = d
 
     def runner():
@@ -2867,6 +2910,7 @@ def start_in_gui(G2frame, path, step=True, delay=1.5, workdir=None):
             except Exception:
                 pass
         finally:
+            d.cancel_async_actions()
             ANSWERS.on_show = None
             try:
                 d.close_decorations()

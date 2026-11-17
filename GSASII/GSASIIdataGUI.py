@@ -4712,8 +4712,7 @@ If you continue from this point, it is quite likely that all intensity computati
         if self.GSASprojectfile:
             self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
             self.CheckNotebook()
-            G2IO.ProjFileSave(self)
-            return True
+            return G2IO.ProjFileSave(self)
         else:
             return self.OnFileSaveas(event)
 
@@ -4767,11 +4766,17 @@ If you continue from this point, it is quite likely that all intensity computati
             'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:     #TODO: what about Cancel?
+                old_projectfile = self.GSASprojectfile
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
                 self.CheckNotebook()
-                G2IO.ProjFileSave(self)
+                if not G2IO.ProjFileSave(self):
+                    self.GSASprojectfile = old_projectfile
+                    self.GPXtree.SetItemText(
+                        self.root, 'Project: '+old_projectfile)
+                    self.SetTitleByGPX()
+                    return False
                 self.SetTitleByGPX()
                 self.LastGPXdir = dlg.GetDirectory()
                 os.chdir(self.LastGPXdir)

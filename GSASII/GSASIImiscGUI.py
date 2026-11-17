@@ -723,7 +723,7 @@ def ProjFileSave(G2frame):
             gpxfile = open(G2frame.GSASprojectfile,'wb')
         except PermissionError:
             G2G.G2MessageBox(G2frame,'Read only file','Project cannot be saved; change permission & try again')
-            return
+            return False
         print ('save to file: '+G2frame.GSASprojectfile)
         # stick the file name into the tree and version info into tree so they are saved.
         # (Controls should always have been created in tree at this point)
@@ -767,6 +767,7 @@ def ProjFileSave(G2frame):
         finally:
             wx.EndBusyCursor()
         print('project save successful')
+    return True
 
 def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     'Save image integration results as powder pattern(s)'

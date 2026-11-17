@@ -9,9 +9,15 @@ Step-by-step demo (press Next for each step):
 Uses the driver's phase tasks (add_phase, set_space_group, phase_tab,
 append_atoms), File menu commands and native file and message dialogs
 (answered by the driver's stand-ins).
+
+This is a self-test only (tests/test_gui_scenarios.py runs it); it is not
+offered by Help > Run a GUI demo...
 '''
 import os
 import wx
+
+# not listed by Help > Run a GUI demo... (see scenario_in_menu)
+GUI_DEMO = False
 
 PHASE = 'Test phase'
 

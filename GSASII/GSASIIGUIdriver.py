@@ -107,6 +107,7 @@ Rules for scenarios
   ``scenario()`` or use :meth:`GUIDriver.tree_data`.
 '''
 import os
+import re
 import sys
 import time
 import tempfile
@@ -157,6 +158,8 @@ class Answers:
         # thread, before the answer is returned; info is a dict with the
         # dialog's 'title', 'message' and 'style'
         self.on_show = None
+        # (kind, text, answer) of the dialogs answered, in order
+        self.answered = []
 
     def add(self, kind, expect, answer, optional=False):
         '''Queue an answer; returns the entry (for :meth:`discard`)'''
@@ -193,13 +196,17 @@ class Answers:
                 log(self.errors[-1])
                 return None
             self.queue.pop(0)
+            self.answered.append((kind, text, answer))
         log(f'{kind} dialog {text.splitlines()[0]!r} -> {_answer_name(answer)}')
         if self.on_show:
             self.on_show(kind, text, answer, info or {})
         return answer
 
 def _answer_name(answer):
-    'Readable form of a native-dialog answer (button ids by name)'
+    '''Readable form of a native-dialog answer (button ids by name; None,
+    which cancels a file dialog, as Cancel)'''
+    if answer is None:
+        return 'Cancel'
     if isinstance(answer, int):
         for name in ('ID_YES', 'ID_NO', 'ID_OK', 'ID_CANCEL',
                      'YES', 'NO', 'OK', 'CANCEL'):
@@ -732,6 +739,9 @@ class GUIDriver:
         self.delay = delay
         self.typing = typing
         self.answers = ANSWERS
+        # top-level windows (dialogs) handed to the scenario thread; see
+        # _hold
+        self._held = []
         self.nsteps = 0
         self._step_text = ''
         self._caption_text = ''
@@ -760,6 +770,30 @@ class GUIDriver:
         with self._wait_lock:
             return time.time() if self._waiter else self._wait_ended
 
+    def _hold(self, result):
+        '''GUI thread: keep a reference to each top-level window (e.g. a
+        dialog) in result (or in a tuple/list result) until the scenario
+        has finished; returns result. The scenario thread must never drop
+        the last reference to a dialog: freeing its wrapper there runs the
+        wx destructor off the GUI thread, racing GSAS-II's own Destroy(),
+        which crashed (segfault, or abort with a double free) or hung.
+        :meth:`release_windows` drops them on the GUI thread.'''
+        items = result if isinstance(result, (tuple, list)) else (result,)
+        for w in items:
+            if isinstance(w, wx.TopLevelWindow) and w is not self.frame:
+                self._held.append(w)
+        return result
+
+    def release_windows(self):
+        '''Drop the references kept by :meth:`_hold`, on the GUI thread.
+        Call once the scenario has returned (its local variables are
+        gone).'''
+        held, self._held = self._held, []
+        try:
+            self.gui(held.clear)
+        except Exception as err:        # GUI hung: leave them
+            log('could not release windows:', repr(err))
+
     def gui(self, fn, *args, timeout=30, **kw):
         '''Run fn(*args, **kw) on the GUI thread, wait for it and return
         its result (an exception there is re-raised here). Not for actions
@@ -773,7 +807,7 @@ class GUIDriver:
         box = {}
         def run():
             try:
-                box['result'] = fn(*args, **kw)
+                box['result'] = self._hold(fn(*args, **kw))
             except BaseException as err:
                 box['error'] = err
                 box['tb'] = traceback.format_exc()
@@ -986,11 +1020,11 @@ class GUIDriver:
         which must not see an error from here.'''
         info = info or {}
         title = (info.get('title') or text).split('\n')[0]
-        if kind == 'file':
+        if kind == 'file' and answer is not None:
             paths = answer if isinstance(answer, (list, tuple)) else [answer]
             names = [os.path.basename(str(p)) for p in paths]
             short = ', '.join(names)
-        else:
+        else:     # a message answer, or None: Cancel the file dialog
             short = _answer_name(answer)
         msg = f'{title}  →  {short}'
         try:
@@ -1008,7 +1042,8 @@ class GUIDriver:
         for Next'''
         filename = folder = ''
         if kind == 'file':
-            paths = answer if isinstance(answer, (list, tuple)) else [answer]
+            paths = [] if answer is None else (
+                answer if isinstance(answer, (list, tuple)) else [answer])
             paths = [str(p) for p in paths]
             folder = os.path.dirname(os.path.abspath(paths[0])) if paths else ''
             names = [os.path.basename(p) for p in paths]
@@ -1016,7 +1051,7 @@ class GUIDriver:
                 ' '.join(f'"{n}"' for n in names)
             save = info.get('style', 0) & wx.FD_SAVE
             buttons = [('Cancel', ()), ('Save' if save else 'Open', None)]
-            pressed = buttons[1][0]
+            pressed = buttons[1][0] if paths else 'Cancel'
         else:
             buttons = _message_buttons(info.get('style', wx.OK))
             pressed = buttons[0][0]
@@ -1195,7 +1230,7 @@ class GUIDriver:
         if not menu.ProcessEvent(evt):
             self.frame.GetEventHandler().ProcessEvent(evt)
 
-    def menu(self, *path, modal=False, check=None, timeout=60):
+    def menu(self, *path, modal=False, check=None, timeout=60, finished=None):
         '''Run a menu command, e.g. ``d.menu('File', 'Open project...')`` or,
         for a submenu, ``d.menu('Import', 'Phase', 'from CIF file')``.
         Labels are matched without ``&`` and accelerators. GSAS-II changes
@@ -1206,6 +1241,8 @@ class GUIDriver:
           (the call then returns at once; wait for the dialog with
           :meth:`dialog`)
         :param check: for a check item, the state to set (default: toggle)
+        :param threading.Event finished: with modal=True, an event to set
+          when the menu command returns (after all of its dialogs)
         Raises LookupError if the item does not exist and ScenarioError if
         it is disabled.
         '''
@@ -1223,7 +1260,13 @@ class GUIDriver:
                     + traceback.format_exc())
                 self.pause(self.delay * 0.7)
         if modal:
-            self.gui_nowait(self._menu_command, path, check)
+            def run():
+                try:
+                    self._menu_command(path, check)
+                finally:
+                    if finished is not None:
+                        finished.set()
+            self.gui_nowait(run)
         else:
             self.gui(self._menu_command, path, check, timeout=timeout)
         self.pause(self.delay * 0.3)
@@ -1288,7 +1331,8 @@ class GUIDriver:
     def expect_file(self, message, path, optional=False):
         '''Queue the answer for the next native file dialog. message must
         be part of the dialog's message; path may be a list (multiple
-        selection). Call before the action that opens the dialog. With
+        selection), or None to press Cancel. Call before the action that
+        opens the dialog. With
         optional=True the dialog may not appear (the answer is then
         skipped); remove an unused optional answer with
         ``d.answers.discard(entry)``. Returns the queue entry.'''
@@ -1725,12 +1769,15 @@ class GUIDriver:
         return paths
 
     def import_powder(self, data, instprm=None,
-                      reader='guess format from file', timeout=60):
+                      reader='guess format from file', phases=None,
+                      timeout=60):
         '''Import a powder data file with Import > Powder Data > reader
         and return the names of the new histograms (a list). The file
         preview question is answered Yes; the instrument parameter file
         dialog (shown when no matching file is found next to the data
-        file) gets instprm. Both are optional: GSAS-II may not ask.
+        file) gets instprm. Both are optional: GSAS-II may not ask. When
+        the project has phases, the histogram is added to phases (a list;
+        default: all) in the "Add to phase(s)" dialog.
 
         :param str data: local path of the data file
         :param str instprm: local path of the instrument parameter file
@@ -1744,8 +1791,14 @@ class GUIDriver:
         if instprm:
             optional.append(self.expect_file('Choose inst. param file',
                                              instprm, optional=True))
+        handlers = {'Add to phase(s)': lambda dlg: self.pick(dlg, phases)}
+        finished = threading.Event()
         try:
-            self.menu('Import', 'Powder Data', reader, timeout=timeout)
+            self.menu('Import', 'Powder Data', reader, modal=True,
+                      finished=finished)
+            self.answer_dialogs(handlers, finished,
+                                f'import of {os.path.basename(data)}',
+                                timeout)
             new = self.wait_until(
                 lambda: [n for n in self.tree_children() if n.startswith(
                     'PWDR') and n not in before],
@@ -2014,13 +2067,344 @@ class GUIDriver:
             f'histograms added to {name}')
         return want
 
+    # ---- choice dialogs and dialog sequences ------------------------------
+    @staticmethod
+    def _choice_list(dlg):
+        '''GUI thread: (choices, list control) of a choice dialog: a
+        GSAS-II G2MultiChoiceDialog/G2SingleChoiceDialog (choices are its
+        ChoiceList) or a wx.SingleChoiceDialog/wx.MultiChoiceDialog'''
+        def walk(w):
+            for c in w.GetChildren():
+                if isinstance(c, wx.ListBox) and c.IsShown():
+                    return c
+                found = walk(c)
+                if found:
+                    return found
+        lb = walk(dlg)
+        choices = getattr(dlg, 'ChoiceList', None)
+        if choices is None:
+            choices = list(lb.GetStrings()) if lb else []
+        return list(choices), lb
+
+    @staticmethod
+    def _match_choices(choices, wanted):
+        '''Indices of the wanted strings in choices: each matches a choice
+        exactly, else the choice's first word (e.g. a GSAS-II variable name
+        such as '0::AUiso:1' in the constraint dialogs), else the start of
+        a choice. A leading item number such as '  3) ' is ignored.'''
+        def first_word(c):
+            words = c.split()
+            if words and words[0].endswith(')') and words[0][:-1].isdigit():
+                words = words[1:]
+            return words[0] if words else ''
+        out = []
+        for w in wanted:
+            for test in (lambda c: c == w,
+                         lambda c: first_word(c) == w,
+                         lambda c: c.startswith(w)):
+                hits = [i for i, c in enumerate(choices) if test(c)]
+                if hits:
+                    out.append(hits[0])
+                    break
+            else:
+                raise LookupError(f'{w!r} is not a choice: {choices}')
+        return out
+
+    def pick(self, dlg, wanted=None, ok=True):
+        '''Choose items in a choice dialog (GSAS-II's G2MultiChoiceDialog
+        and G2SingleChoiceDialog, also wx.SingleChoiceDialog and
+        wx.MultiChoiceDialog) and press OK. wanted is a list of strings,
+        each matched to a choice by its full text, its first word or its
+        start (see :meth:`_match_choices`); None selects everything in a
+        multiple-choice dialog (with its Set All button, if any) or keeps
+        the default of a single-choice dialog. Returns the chosen
+        strings.'''
+        choices, lb = self.gui(self._choice_list, dlg)
+        multi = self.gui(lambda: hasattr(dlg, 'SetSelections'))
+        title = self.gui(dlg.GetTitle)
+        if wanted is not None and not isinstance(wanted, (list, tuple)):
+            wanted = [wanted]
+        if multi and wanted is None:
+            btn = self.find(wx.Button, label='Set All', parent=dlg, wait=False)
+            if btn:
+                self.click(btn)
+            else:
+                self.highlight(lb)
+                self.gui(dlg.SetSelections, list(range(len(choices))))
+            idx = list(range(len(choices)))
+        elif wanted is None:
+            idx = [self.gui(dlg.GetSelection)]
+        else:
+            idx = self._match_choices(choices, wanted)
+            if not multi and len(idx) != 1:
+                raise ValueError(f'dialog {title!r} takes one choice')
+            if lb:
+                self.highlight(lb)
+            def select():
+                if multi:
+                    dlg.SetSelections(idx)
+                elif hasattr(dlg, 'filterlist'):     # G2SingleChoiceDialog
+                    dlg.clb.SetSelection(list(dlg.filterlist).index(idx[0]))
+                else:
+                    dlg.SetSelection(idx[0])
+            self.gui(select)
+            self.pause(self.delay * 0.5)
+        picked = [choices[i] for i in idx if 0 <= i < len(choices)]
+        log(f'dialog {title!r}: chose {picked}')
+        if ok:
+            self.click(dlg, wx.ID_OK)
+        return picked
+
+    def answer_dialogs(self, handlers, finished, what, timeout=60):
+        '''Answer the modal wx dialogs a command opens one after another
+        (e.g. the questions of Import > Phase), until finished (a
+        threading.Event, set when the command returns; see the finished
+        argument of :meth:`menu`) is set. handlers maps a dialog title to
+        a function of the dialog that answers it; a title ending in ``*``
+        matches titles that start with the rest. A dialog with a title
+        not in handlers raises ScenarioError.'''
+        def handler(title):
+            for key, fn in handlers.items():
+                if (title.startswith(key[:-1]) if key.endswith('*')
+                        else title == key):
+                    return fn
+        def look():
+            for w in wx.GetTopLevelWindows():
+                if isinstance(w, wx.Dialog) and w.IsShown() and w.IsModal():
+                    return w
+            return 'done' if finished.is_set() else None
+        while True:
+            dlg = self.wait_until(look, what, timeout)
+            if dlg == 'done':
+                return
+            title = self.gui(dlg.GetTitle)
+            fn = handler(title)
+            if fn is None:
+                raise ScenarioError(f'unexpected dialog {title!r} during '
+                                    f'{what} (dialogs: {self.open_dialogs()})')
+            self.pause(self.delay * 0.5)
+            fn(dlg)
+            def gone():
+                try:
+                    return not (dlg.IsShown() and dlg.IsModal())
+                except RuntimeError:        # already destroyed
+                    return True
+            # (gui() keeps dlg alive until the scenario ends; see _hold)
+            self.wait_until(gone, f'dialog {title!r} to close', timeout)
+
+    def import_phase(self, path, reader='guess format from file',
+                     choose=None, name=None, hists=None, origin=None,
+                     timeout=60):
+        '''Import a phase with Import > Phase > reader and answer its
+        questions: the file preview (Yes), which phase to read from a file
+        with several (choose, e.g. a phase name from a GSAS .EXP file;
+        default: the first), the phase name (name; default: as offered),
+        an origin choice for space groups with two origins (origin: the
+        label of the button to press; default: the dialog's default
+        button) and, when the project has histograms, which to add to the
+        phase (hists, a list; default: all). The new phase becomes the
+        default phase for the phase tasks; returns its name.
+
+        :param str path: local path of the phase file
+        :param str reader: the reader's item in the Phase submenu, e.g.
+          'from CIF file' or 'from GSAS .EXP file'
+        '''
+        before = set(self.phase_names())
+        self.expect_file('Choose phase input file', [path])
+        optional = self.expect_message('Is this the file you want?',
+                                       wx.ID_YES, optional=True)
+        def set_name(dlg):
+            if name:
+                self.type(dlg, name)
+            self.click(dlg, wx.ID_OK)
+        def set_origin(dlg):
+            def button():
+                if origin:
+                    for b in dlg.GetChildren():
+                        if isinstance(b, wx.Button) and b.GetLabel() == origin:
+                            return b
+                    raise LookupError(f'no {origin!r} button')
+                b = dlg.GetDefaultItem()
+                if isinstance(b, wx.Button):
+                    return b
+                for b in dlg.GetChildren():
+                    if (isinstance(b, wx.Button)
+                            and b.GetLabel() == 'Keep current coordinates'):
+                        return b
+            btn = self.gui(button)
+            log('origin: ' + self.gui(btn.GetLabel))
+            self.click(btn)
+        handlers = {
+            'Read phase data': lambda dlg: self.pick(
+                dlg, None if choose is None else [choose]),
+            'Edit phase name': set_name,
+            'Warning: Shift origin?': set_origin,
+            'Add histogram(s)': lambda dlg: self.pick(dlg, hists),
+        }
+        finished = threading.Event()
+        try:
+            self.menu('Import', 'Phase', reader, modal=True,
+                      finished=finished)
+            self.answer_dialogs(handlers, finished,
+                                f'import of {os.path.basename(path)}',
+                                timeout)
+            new = self.wait_until(
+                lambda: [p for p in self.phase_names() if p not in before],
+                f'phase from {os.path.basename(path)}', timeout=10)
+        finally:
+            self.answers.discard(optional)
+        self._phase = new[0]
+        log(f'imported phase {new[0]} from {os.path.basename(path)}')
+        return new[0]
+
+    def simulate_powder(self, instprm=None, default=None, name=None,
+                        start=None, end=None, step=None, phases=None,
+                        timeout=60):
+        '''Import > Powder Data > Simulate a dataset: make a simulated
+        (dummy) histogram. The instrument parameters come from the file
+        instprm or, with instprm=None (Cancel in the file dialog), from
+        GSAS-II's list of defaults (default: the start of the entry, e.g.
+        'Defaults for APS 30keV 11BM'). name, start, end and step change
+        the values offered for the histogram name and range (degrees 2θ or
+        TOF, μs). With more than one phase, phases (a list; default: all)
+        are those to simulate. Returns the new histogram's name.'''
+        before = set(self.tree_children())
+        self.expect_file('Choose inst. param file', instprm)
+        done_msg = self.expect_message('Use "Refine"', wx.ID_OK)
+        def edit(dlg):
+            ctrls = self.find_all(wx.TextCtrl, parent=dlg)
+            for ctrl, val in zip(ctrls, (name, start, end, step)):
+                if val is not None:
+                    self.type(ctrl, str(val))
+            self.click(dlg, wx.ID_OK)
+        handlers = {
+            'Select default inst parms': lambda dlg: self.pick(
+                dlg, None if default is None else [default]),
+            'Edit items': edit,
+            'Phases to simulate': lambda dlg: self.pick(dlg, phases),
+            'Add to phase(s)': lambda dlg: self.pick(dlg, phases),
+        }
+        finished = threading.Event()
+        try:
+            self.menu('Import', 'Powder Data', 'Simulate a dataset',
+                      modal=True, finished=finished)
+            self.answer_dialogs(handlers, finished, 'simulation setup',
+                                timeout)
+        except Exception:
+            self.answers.discard(done_msg)
+            raise
+        new = self.wait_until(
+            lambda: [n for n in self.tree_children()
+                     if n.startswith('PWDR') and n not in before],
+            'simulated histogram', timeout=10)
+        log(f'simulated histogram: {new[0]}')
+        return new[0]
+
+    _CONSTRAINT_MENU = {'equivalence': 'Add equivalence',
+                        'equation': 'Add constraint equation',
+                        'function': 'Add New Var'}
+    _CONSTRAINT_TITLE = {'equivalence': 'Create equivalence*',
+                         'equation': 'Creating constraint*',
+                         'function': 'Setup new variable*'}
+    _CONSTRAINT_TAB = {'Phase': 'Phase', 'Histogram/Phase': 'HAP',
+                       'Histogram': 'Hist', 'Global': 'Global'}
+
+    def add_constraint(self, kind, first, others, tab='Phase', timeout=30):
+        '''Constraints item: add a constraint with the Edit Constr. menu.
+        kind is 'equivalence', 'equation' (a constraint equation, sum =
+        1) or 'function' (a new variable); first is the 1st variable (e.g.
+        '0::AUiso:1') and others the variables to combine it with (a
+        list), chosen in the two dialogs that follow. tab is the tab of
+        the Constraints window: 'Phase', 'Histogram/Phase', 'Histogram'
+        or 'Global'. Variables exist only after a refinement (or a
+        Calculate > View LS parms).'''
+        key = self._CONSTRAINT_TAB[tab]
+        self.select_tree('Constraints')
+        self.wait_until(lambda: tab in (self.menu_items('Select tab') or []),
+                        'Constraints menus')
+        self.menu('Select tab', tab)
+        self.wait_until(lambda: getattr(self.frame, 'constr', None) and
+                        self.current_tab(self.frame.constr) == tab,
+                        f'{tab} constraints tab')
+        count = len(self.tree_data('Constraints')[key])
+        if isinstance(others, str):
+            others = [others]
+        handlers = {
+            self._CONSTRAINT_TITLE[kind]: lambda dlg: self.pick(dlg, [first]),
+            f'Constrain {first} with...': lambda dlg: self.pick(dlg, others),
+            # e.g. "Contains no varied parameters": keep the constraint
+            'Constraint Warning': lambda dlg: self.click(dlg, wx.ID_YES),
+        }
+        finished = threading.Event()
+        self.menu('Edit Constr.', self._CONSTRAINT_MENU[kind], modal=True,
+                  finished=finished)
+        self.answer_dialogs(handlers, finished, f'{kind} constraint', timeout)
+        self.wait_until(
+            lambda: len(self.tree_data('Constraints')[key]) > count,
+            f'{kind} constraint on {first} added')
+        self.settle(0.5)        # the window is redrawn with CallAfter
+        log(f'constraint ({kind}): {first} with {others}')
+
+    def set_background(self, hist, function=None, terms=None, refine=None):
+        '''Background item of a histogram: set the background function
+        (e.g. 'chebyschev-1', 'log interpolate'), the number of terms
+        and/or the refine flag'''
+        self.select_tree(hist, 'Background')
+        if function is not None:
+            self.choose(self.find_after(' Background function: ',
+                                        wx.ComboBox), function)
+            self.settle()
+        if terms is not None:
+            self.choose(self.find_after(' Number of coeff.: ', wx.ComboBox),
+                        str(terms))
+            self.settle(0.4)      # redrawn with CallLater(100)
+        if refine is not None:
+            self.set_check(self.find(wx.CheckBox,
+                                     label=lambda s: s.strip() == 'Refine?'),
+                           refine)
+        bak = self.gui(lambda: list(self.tree_data(hist, 'Background')[0][:3]))
+        if ((function is not None and bak[0] != function)
+                or (terms is not None and bak[2] != int(terms))
+                or (refine is not None and bak[1] != bool(refine))):
+            raise ScenarioError(f'background of {hist} is {bak}')
+
+    def set_limits(self, hist, tmin=None, tmax=None):
+        '''Limits item of a histogram: type new data limits (2θ or TOF)'''
+        self.select_tree(hist, 'Limits')
+        for label, val, i in ((' Original Tmin', tmin, 0),
+                              (' Original Tmax', tmax, 1)):
+            if val is None:
+                continue
+            self.type(self.find_after(label), str(val), enter=True)
+            self.settle()
+            got = self.gui(lambda: self.tree_data(hist, 'Limits')[1][i])
+            if abs(got - float(val)) > 1e-4:
+                raise ScenarioError(f'{label.strip()} limit is {got}, '
+                                    f'not {val}')
+
+    def copy_hap(self, flags=False, hists=None, phase=None):
+        '''HAP settings (see :meth:`show_hap`): Edit Phase > Copy data (or,
+        with flags=True, Copy flags) from the selected histogram to hists
+        (a list; default: all, with Set All)'''
+        self.show_hap(phase)
+        item = 'Copy flags' if flags else 'Copy data'
+        title = 'Copy phase/hist flags' if flags else \
+            'Copy phase/hist parameters'
+        self.menu('Edit Phase', item, modal=True)
+        self.pick(self.dialog(title), hists)
+        self.wait_no_modal()
+        self.settle()
+
     def refine(self, gpx=None, timeout=600):
         '''Calculate > Refine, then accept the results (OK in the
         "Refinement results" dialog), and wait for GSAS-II to reload the
         project. A project that was never saved needs gpx, the file to
         save it as. Returns a dict: 'title' (of the results dialog), 'Rwp'
         (total, %), 'GOF', 'wR' ({histogram: wR %}) and 'Rvals' (all of
-        the Covariance item's Rvals).'''
+        the Covariance item's Rvals).
+
+        With Max cycles 0 on Controls (a simulation: compute only), GSAS-II
+        reports with a plain message box instead, which is answered OK.'''
         if gpx:
             self.expect_file('Choose GSAS-II project file name', gpx)
         elif not self.gui(lambda: self.frame.GSASprojectfile):
@@ -2028,22 +2412,42 @@ class GUIDriver:
                                 'pass gpx (a file name) to refine()')
         phases = self.phase_names()
         old = self.tree_data('Covariance')
+        zero = self.tree_data('Controls').get('max cyc', 1) == 0
+        if zero:
+            msg = self.expect_message('Zero cycle "refinement" computation '
+                                      'completed', wx.ID_OK)
         self.menu('Calculate', 'Refine', modal=True)
-        dlg = self.dialog('Refinement results', prefix=True, timeout=timeout)
-        title = self.gui(dlg.GetTitle)
-        self.detail(title)
-        self.pause()
-        self.click(dlg, wx.ID_OK)
+        if zero:
+            def answered():
+                with self.answers.lock:
+                    return all(e is not msg for e in self.answers.queue)
+            self.wait_until(answered, 'zero-cycle computation', timeout)
+            # the message box's caption: "Refinement results, Rw=..."
+            title = [t for k, t, a in self.answers.answered
+                     if 'Zero cycle' in t][-1].split(':')[0]
+            self.detail(title)
+        else:
+            dlg = self.dialog('Refinement results', prefix=True,
+                              timeout=timeout)
+            title = self.gui(dlg.GetTitle)
+            self.detail(title)
+            self.pause()
+            self.click(dlg, wx.ID_OK)
         # accepting reloads the project from the .gpx file; wait for that
         def reloaded():
             cov = self.tree_data('Covariance')
-            return (cov is not old and 'Rvals' in (cov or {})
+            # (a zero-cycle computation leaves Covariance empty)
+            return (cov is not old and cov is not None
+                    and (zero or 'Rvals' in cov)
                     and all(self._tree_item(('Phases', p)) for p in phases))
         self.wait_until(reloaded, 'project reloaded after refinement',
                         timeout=120)
         self.wait_no_modal(timeout=60)
         def results():
-            rv = dict(self.tree_data('Covariance')['Rvals'])
+            rv = dict(self.tree_data('Covariance').get('Rvals', {}))
+            if zero:
+                m = re.search(r'Rw=([-+.\deE]+)', title)
+                rv['Rwp'] = float(m.group(1)) if m else None
             wR = {}
             for h in self.tree_children():
                 if h.startswith(('PWDR', 'HKLF')):
@@ -2255,6 +2659,8 @@ def run(scenario, demo=False, delay=1.5, keep_open=False, startup_wait=1.0,
                     pass
             elif d is not None and demo:
                 time.sleep(3 * delay)
+        if d is not None:
+            d.release_windows()
         result['status'] = status
         sys.stdout.flush(); sys.stderr.flush()
         if keep_open:
@@ -2341,24 +2747,35 @@ def scenario_description(path):
     text = '\n\n'.join(keep).replace('GSAS-II GUI scenario: ', '', 1)
     return text[:1].upper() + text[1:]
 
+def _scenario_constant(path, var, default=None):
+    '''The value of a module-level ``var = <constant>`` in a scenario
+    file (the last one, if assigned more than once), or default. The file
+    is parsed, not run.'''
+    import ast
+    tree = _parse_scenario(path)
+    if isinstance(tree, str):
+        return default
+    value = default
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == var
+                and isinstance(node.value, ast.Constant)):
+            value = node.value.value
+    return value
+
+def scenario_in_menu(path):
+    '''True if Help > Run a GUI demo... should offer this scenario. A
+    scenario that is only a self-test sets ``GUI_DEMO = False``.'''
+    return bool(_scenario_constant(path, 'GUI_DEMO', True))
+
 def scenario_tutorial(path):
     '''The tutorial a scenario follows: (URL, title), or None. A scenario
     names it with a module-level ``TUTORIAL = '...'``, either the tutorial's
     directory in :data:`tutorialIndex.tutorialIndex` (e.g. 'CWCombined')
     or a full URL. The file is parsed, not run.'''
-    import ast
-    tree = _parse_scenario(path)
-    if isinstance(tree, str):
-        return None
-    name = None
-    for node in tree.body:
-        if (isinstance(node, ast.Assign) and len(node.targets) == 1
-                and isinstance(node.targets[0], ast.Name)
-                and node.targets[0].id == 'TUTORIAL'
-                and isinstance(node.value, ast.Constant)
-                and isinstance(node.value.value, str)):
-            name = node.value.value
-    if not name:
+    name = _scenario_constant(path, 'TUTORIAL')
+    if not (name and isinstance(name, str)):
         return None
     if name.startswith(('http://', 'https://')):
         return name, name
@@ -2455,6 +2872,7 @@ def start_in_gui(G2frame, path, step=True, delay=1.5, workdir=None):
                 pass
         where = f'\n\nIts files are in {d._tmpdir}' if d._tmpdir else ''
         def restore():
+            d._held.clear()     # on the GUI thread (see GUIDriver._hold)
             uninstall_fakes()
             uninstall_config_stub()
             sys.excepthook = oldhook
@@ -2568,7 +2986,7 @@ def run_demo_dialog(G2frame):
         wx.MessageBox('A demo is already running.', 'Run a GUI demo',
                       wx.OK | wx.ICON_INFORMATION, G2frame)
         return
-    paths = list_scenarios()
+    paths = [p for p in list_scenarios() if scenario_in_menu(p)]
     if not paths:
         wx.MessageBox(f'No demos were found in {SCENARIO_DIR}.\nThe demos '
                       'directory comes with a git installation of GSAS-II.',

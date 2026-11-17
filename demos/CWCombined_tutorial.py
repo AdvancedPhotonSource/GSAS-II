@@ -50,8 +50,8 @@ ATOMS = [  # type, x, y, z
 ]
 # Rwp (%) reported by the tutorial after each refinement:
 # (neutron, x-ray, total); None where the tutorial gives no value
-TUTORIAL = [(18, 41, None), (20, 38, None), (15, 31, None), (15, 26, None),
-            (7.05, 12.09, None), (4.53, 10.99, 6.71)]
+TUTORIAL_RWP = [(18, 41, None), (20, 38, None), (15, 31, None), (15, 26, None),
+                (7.05, 12.09, None), (4.53, 10.99, 6.71)]
 
 def refine(d, hists, results, gpx=None):
     """Refine (see GUIDriver.refine); log and show the Rwp values
@@ -61,7 +61,7 @@ def refine(d, hists, results, gpx=None):
     rw = [res['wR'][h] for h in hists] + [res['Rwp']]
     results.append(rw)
     fmt = lambda v: '  -  ' if v is None else f'{v:5.2f}'
-    tut = TUTORIAL[n - 1]
+    tut = TUTORIAL_RWP[n - 1]
     d.detail(f'Rwp: neutron {rw[0]:.2f}%, x-ray {rw[1]:.2f}%, '
              f'total {rw[2]:.2f}%   (tutorial: {fmt(tut[0])}, {fmt(tut[1])}'
              f', {fmt(tut[2])})')
@@ -219,7 +219,7 @@ def scenario(d):
     fmt = lambda v: '   - ' if v is None else f'{v:5.2f}'
     lines = ['Rwp (%)   neutron        x-ray          total',
              '          run  tutorial  run  tutorial  run  tutorial']
-    for n, (r, t) in enumerate(zip(results, TUTORIAL), 1):
+    for n, (r, t) in enumerate(zip(results, TUTORIAL_RWP), 1):
         lines.append(f'refine {n}  ' + '  '.join(
             f'{r[i]:5.2f} {fmt(t[i])}' for i in range(3)))
     print('\n'.join(lines), flush=True)

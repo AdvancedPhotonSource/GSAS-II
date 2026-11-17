@@ -2766,7 +2766,9 @@ def _scenario_constant(path, var, default=None):
 
 def scenario_in_menu(path):
     '''True if Help > Run a GUI demo... should offer this scenario. A
-    scenario that is only a self-test sets ``GUI_DEMO = False``.'''
+    scenario that is only a self-test sets ``GUI_DEMO = False``. (A
+    scenario that is only a demo sets ``SELF_TEST = False``, and
+    tests/test_gui_scenarios.py skips it.)'''
     return bool(_scenario_constant(path, 'GUI_DEMO', True))
 
 def scenario_tutorial(path):

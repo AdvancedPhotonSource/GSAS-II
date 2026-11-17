@@ -4,6 +4,8 @@ test_gui_scenarios.py
 Runs each GUI scenario in demos/ (e.g. the CWCombined
 tutorial) as a self-test: GSAS-II is started in a subprocess with
 ``python -m GSASII.GSASIIGUIdriver SCENARIO`` and the scenario must pass.
+A scenario that sets ``SELF_TEST = False`` is not run (it remains a GUI
+demo; see also ``GUI_DEMO = False`` for the opposite).
 
 These tests need a display and take a while, so they are skipped unless
 the environment variable G2_GUI_TESTS is set to 1 (or to "require", which
@@ -30,9 +32,30 @@ import pytest
 
 home = os.path.dirname(os.path.abspath(__file__))
 repo = os.path.dirname(home)
+
+def _in_selftest(path):
+    '''False if the scenario file sets ``SELF_TEST = False`` (a demo that
+    is not run as a self-test, e.g. the simulation tutorial). The file is
+    parsed, not run.'''
+    import ast
+    try:
+        with open(path, encoding='utf-8') as fp:
+            tree = ast.parse(fp.read(), path)
+    except (OSError, SyntaxError, ValueError):
+        return True         # run it, so that the problem is reported
+    value = True
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == 'SELF_TEST'
+                and isinstance(node.value, ast.Constant)):
+            value = bool(node.value.value)
+    return value
+
 SCENARIOS = sorted(p for p in glob.glob(os.path.join(repo, 'demos',
                                                      '*.py'))
-                   if not os.path.basename(p).startswith('_'))
+                   if not os.path.basename(p).startswith('_')
+                   and _in_selftest(p))
 
 def _gsas_path():
     '''Directory to put on PYTHONPATH so that the subprocess imports the

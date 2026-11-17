@@ -32,6 +32,10 @@ Add --keep-open to explore the finished project afterwards.
 # Help > Run a GUI demo... offers to open its web page
 TUTORIAL = 'Simulation'
 
+# a demo only: tests/test_gui_scenarios.py does not run it as a
+# self-test (it can still be run by hand with the command above)
+SELF_TEST = False
+
 URL = ('https://advancedphotonsource.github.io/GSAS-II-tutorials/'
        'Simulation/data/')
 FILES = ['CuCr2O4.cif', 'CuO.cif', 'BT1.prm']

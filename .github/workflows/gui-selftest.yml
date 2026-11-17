@@ -2,20 +2,18 @@ name: GUI self-test
 
 # Runs the GUI scenarios in demos/ (e.g. the CWCombined
 # tutorial) through the real GSAS-II GUI on a virtual display, using
-# tests/test_gui_scenarios.py. Each scenario's log, and screenshots and a
-# report for any that fail, are uploaded as the "gui-selftest" artifact.
+# tests/test_gui_scenarios.py (demos that set SELF_TEST = False, such as
+# the simulation tutorial, are skipped). Each scenario's log, and
+# screenshots and a report for any that fail, are uploaded as the
+# "gui-selftest" artifact.
 
-# For now, run only by hand (Actions tab > GUI self-test > Run workflow).
-# Uncomment the other triggers to run it automatically.
+# Runs on every push (as the smoke test does), and by hand from the
+# Actions tab (GUI self-test > Run workflow). Uncomment the other triggers
+# to run it on pull requests or on a schedule as well.
 on:
-#  push:
-#    branches-ignore:
-#      - master
-#    paths:
-#      - 'GSASII/**'
-#      - 'demos/**'
-#      - 'tests/test_gui_scenarios.py'
-#      - '.github/workflows/gui-selftest.yml'
+  push:
+    branches-ignore:
+      - master
 #  pull_request:
 #    branches: ['main']
 #  schedule:
